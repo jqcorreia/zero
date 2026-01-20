@@ -106,14 +106,40 @@ Parser :: struct {
 	pos:    int,
 }
 
-advance :: proc(p: ^Parser) -> Token {
-	res := p.tokens[p.pos]
-	p.pos += 1
-
-	return res
-}
 current :: proc(p: ^Parser) -> Token {
 	return p.tokens[p.pos]
+}
+
+advance :: proc(p: ^Parser) -> Token {
+	t := p.tokens[p.pos]
+	p.pos += 1
+	return t
+}
+
+match :: proc(p: ^Parser, kind: Token_Kind) -> bool {
+	if current(p).kind == kind {
+		p.pos += 1
+		return true
+	}
+	return false
+}
+
+parse_expression :: proc(p: ^Parser) -> Expr {
+	t := advance(p)
+
+	if t.kind == .Number {
+		c := current(p)
+		#partial switch c.kind {
+		case .Plus:
+			return Expr_Binary {
+				kind = .Binary,
+				left = Expr_Number{value = i64(t.value)},
+				op = .Add,
+				right = Expr_Number{value = i64(t.value)},
+			}
+		}
+	}
+	return {}
 }
 
 Expr_Kind :: enum {
@@ -140,25 +166,17 @@ Expr_Number :: struct {
 Expr_Binary :: struct {
 	using base: Expr,
 	op:         Binary_Op,
-	left:       ^Expr,
-	right:      ^Expr,
+	left:       Expr,
+	right:      Expr,
 }
 
 main :: proc() {
-	done := false
 	expr := "12 + 34"
 	tokens := lex(expr)
 
 	parser := Parser {
 		tokens = tokens,
 	}
-	for !done {
-		token := advance(&parser)
-		#partial switch token.kind {
-		case .EOF:
-			done = true
-		case:
-			fmt.println(token)
-		}
-	}
+	pexpr := parse_expression(&parser)
+	fmt.println(pexpr)
 }
