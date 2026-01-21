@@ -2261,6 +2261,7 @@ foreign LLVM_C {
 	InitializeX86Target :: proc() -> Bool ---
 	InitializeX86AsmPrinter :: proc() -> Bool ---
 	InitializeX86TargetInfo :: proc() -> Bool ---
+	InitializeX86TargetMC :: proc() -> Bool ---
 	GetModuleDataLayout :: proc(M: ModuleRef) -> TargetDataRef ---
 	SetModuleDataLayout :: proc(M: ModuleRef, DL: TargetDataRef) ---
 	CreateTargetData :: proc(StringRep: cstring) -> TargetDataRef ---

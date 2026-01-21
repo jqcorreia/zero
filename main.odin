@@ -29,8 +29,9 @@ main :: proc() {
 	BuildRet(builder, ConstInt(int32, 42, 0))
 
 	InitializeX86Target()
-	InitializeX86AsmPrinter()
 	InitializeX86TargetInfo()
+	InitializeX86TargetMC()
+	InitializeX86AsmPrinter()
 
 	triple := GetDefaultTargetTriple()
 
