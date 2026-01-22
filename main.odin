@@ -55,10 +55,6 @@ generate :: proc(e: ^Expr, ctx: ContextRef, module: ModuleRef, builder: BuilderR
 	PositionBuilderAtEnd(builder, entry)
 
 	ret := gen(e, ctx, builder)
-	args := []ValueRef {
-		fmt_ptr,
-		ret, // i32
-	}
 	i8 := Int8TypeInContext(ctx)
 	i32 := Int32TypeInContext(ctx)
 	i8p := PointerType(i8, 0)
@@ -71,7 +67,12 @@ generate :: proc(e: ^Expr, ctx: ContextRef, module: ModuleRef, builder: BuilderR
 	)
 
 	printf_fn = AddFunction(module, "printf", printf_ty)
-	fmt_ptr = BuildGlobalStringPtr(builder, "%d", "fmt")
+	fmt_ptr = BuildGlobalStringPtr(builder, "%d\n", "fmt")
+
+	args := []ValueRef {
+		fmt_ptr,
+		ret, // i32
+	}
 
 	BuildCall2(
 		builder,
@@ -134,10 +135,15 @@ main :: proc() {
 		"generic",
 		"",
 		.CodeGenLevelDefault,
-		.RelocDefault,
+		.RelocPIC,
 		.CodeModelDefault,
 	)
 
 	SetModuleDataLayout(module, CreateTargetDataLayout(tm))
-	TargetMachineEmitToFile(tm, module, "calc.o", .ObjectFile, &error)
+	if VerifyModule(module, .AbortProcessAction, &error) > 0 {
+		fmt.println(error)
+	}
+	if TargetMachineEmitToFile(tm, module, "calc.o", .ObjectFile, &error) > 0 {
+		fmt.println(error)
+	}
 }
