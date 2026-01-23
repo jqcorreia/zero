@@ -2,6 +2,8 @@
 
 package main
 
+import "core:fmt"
+
 Token_Kind :: enum {
 	Invalid,
 	EOF,
@@ -38,8 +40,12 @@ is_digit :: proc(c: byte) -> bool {
 	return c >= '0' && c <= '9'
 }
 
+is_newline :: proc(c: byte) -> bool {
+	return c == '\n' || c == '\r'
+}
+
 is_whitespace :: proc(c: byte) -> bool {
-	return c == ' ' || c == '\t' || c == '\n' || c == '\r'
+	return c == ' ' || c == '\t'
 }
 
 is_alphanumeric :: proc(c: byte) -> bool {
@@ -67,6 +73,12 @@ lex :: proc(input: string) -> []Token {
 		}
 
 		c := lexer.input[lexer.pos]
+
+		if is_newline(c) {
+			append(&tokens, Token{kind = .NewLine, lexeme = "\n", value = nil})
+			lexer.pos += 1
+			continue
+		}
 
 		// Skip whitespace
 		if is_whitespace(c) {
