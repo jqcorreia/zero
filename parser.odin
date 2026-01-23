@@ -48,7 +48,7 @@ parse_expression :: proc(p: ^Parser, min_lbp: int = 0) -> ^Expr {
 
 	#partial switch t.kind {
 	case .Number:
-		left = make_expr_int_lit(i64(t.value))
+		left = make_expr_int_lit(i64(t.value.(int)))
 	case .LParen:
 		left = parse_expression(p, 0)
 		expect(p, .RParen)
@@ -58,7 +58,6 @@ parse_expression :: proc(p: ^Parser, min_lbp: int = 0) -> ^Expr {
 
 	for {
 		op := current(p)
-		fmt.println(op)
 		lbp := precedence(op.kind)
 
 		if lbp < min_lbp do break

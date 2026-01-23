@@ -2,7 +2,6 @@ package main
 
 import "core:fmt"
 import "core:os"
-import "core:strings"
 
 gen :: proc(e: ^Expr, ctx: ContextRef, builder: BuilderRef) -> ValueRef {
 	int32 := Int32TypeInContext(ctx)
@@ -10,7 +9,6 @@ gen :: proc(e: ^Expr, ctx: ContextRef, builder: BuilderRef) -> ValueRef {
 	case .Int_Lit:
 		return ConstInt(int32, u64(e.data.(Expr_Int_Lit).value), false)
 	case .Binary:
-		fmt.println(e)
 		#partial switch e.data.(Expr_Binary).op {
 		case .Plus:
 			return BuildAdd(
@@ -92,58 +90,80 @@ printf_ty: TypeRef
 setup_runtime :: proc(ctx: ContextRef, module: ModuleRef, builder: BuilderRef) {
 }
 
+tokens_print :: proc(tokens: []Token) {
+	for token in tokens {
+		fmt.println(token)
+	}
+}
+expr_print :: proc(expr: ^Expr, lvl: u32 = 0) {
+	if expr == nil {
+		return
+	}
+	for _ in 0 ..< lvl {
+		fmt.print(" ")
+	}
+	switch expr.kind {
+	case .Int_Lit:
+		fmt.println("Int ", expr.data.(Expr_Int_Lit).value)
+	case .Binary:
+		data, _ := expr.data.(Expr_Binary)
+		fmt.println("Binary ", data.op)
+		expr_print(data.left, lvl + 1)
+		expr_print(data.right, lvl + 1)
+	}
+}
+
 main :: proc() {
 	expr := os.read_entire_file("test.z") or_else panic("No file found")
 	tokens := lex(string(expr))
+	// tokens_print(tokens)
 
-	fmt.println(tokens)
 	parser := Parser {
 		tokens = tokens,
 	}
 	// fmt.println(Binary{left = &Number{value = 100}, right = &Number{value = 200}})
 	pexpr := parse_expression(&parser)
-	fmt.println(pexpr)
-	// print_expr(&pexpr)
+	expr_print(pexpr)
 
-	ctx := ContextCreate()
-	module := ModuleCreateWithNameInContext("calc", ctx)
-	builder := CreateBuilderInContext(ctx)
-	setup_runtime(ctx, module, builder)
+	// ctx := ContextCreate()
+	// module := ModuleCreateWithNameInContext("calc", ctx)
+	// builder := CreateBuilderInContext(ctx)
+	// setup_runtime(ctx, module, builder)
 
-	generate(pexpr, ctx, module, builder)
+	// generate(pexpr, ctx, module, builder)
 
-	InitializeX86Target()
-	InitializeX86TargetInfo()
-	InitializeX86TargetMC()
-	InitializeX86AsmPrinter()
+	// InitializeX86Target()
+	// InitializeX86TargetInfo()
+	// InitializeX86TargetMC()
+	// InitializeX86AsmPrinter()
 
-	triple := GetDefaultTargetTriple()
+	// triple := GetDefaultTargetTriple()
 
-	target: TargetRef
+	// target: TargetRef
 
-	error: cstring
-	if GetTargetFromTriple(triple, &target, &error) > 0 {
-		fmt.println(triple, string(error))
-		return
-	}
-	SetTarget(module, triple)
+	// error: cstring
+	// if GetTargetFromTriple(triple, &target, &error) > 0 {
+	// 	fmt.println(triple, string(error))
+	// 	return
+	// }
+	// SetTarget(module, triple)
 
-	fmt.println(target, triple)
-	tm := CreateTargetMachine(
-		target,
-		triple,
-		"generic",
-		"",
-		.CodeGenLevelDefault,
-		.RelocPIC,
-		.CodeModelDefault,
-	)
+	// fmt.println(target, triple)
+	// tm := CreateTargetMachine(
+	// 	target,
+	// 	triple,
+	// 	"generic",
+	// 	"",
+	// 	.CodeGenLevelDefault,
+	// 	.RelocPIC,
+	// 	.CodeModelDefault,
+	// )
 
-	SetModuleDataLayout(module, CreateTargetDataLayout(tm))
-	if VerifyModule(module, .AbortProcessAction, &error) > 0 {
-		fmt.println(error)
-	}
-	if TargetMachineEmitToFile(tm, module, "calc.o", .ObjectFile, &error) > 0 {
-		fmt.println(error)
-	}
+	// SetModuleDataLayout(module, CreateTargetDataLayout(tm))
+	// if VerifyModule(module, .AbortProcessAction, &error) > 0 {
+	// 	fmt.println(error)
+	// }
+	// if TargetMachineEmitToFile(tm, module, "calc.o", .ObjectFile, &error) > 0 {
+	// 	fmt.println(error)
+	// }
 }

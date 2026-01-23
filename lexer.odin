@@ -1,5 +1,7 @@
 package main
 
+import "core:fmt"
+import "core:strings"
 Token_Kind :: enum {
 	Invalid,
 	EOF,
@@ -10,14 +12,21 @@ Token_Kind :: enum {
 	Slash, // /
 	LParen, // (
 	RParen, // )
+	Identifier,
+	NewLine,
 }
 
 Token :: struct {
 	kind:   Token_Kind,
 	lexeme: string,
-	value:  int, // only valid if kind == Number
+	value:  Token_Val, // only valid if kind == Number
 }
 
+
+Token_Val :: union {
+	int,
+	string,
+}
 Lexer :: struct {
 	input: string,
 	pos:   int,
@@ -29,6 +38,11 @@ is_digit :: proc(c: byte) -> bool {
 
 is_whitespace :: proc(c: byte) -> bool {
 	return c == ' ' || c == '\t' || c == '\n' || c == '\r'
+}
+
+is_alphanumeric :: proc(c: byte) -> bool {
+	return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')
+
 }
 
 lex :: proc(input: string) -> []Token {
@@ -70,6 +84,27 @@ lex :: proc(input: string) -> []Token {
 			)
 			continue
 		}
+		// Identifiers
+		if is_alphanumeric(c) {
+			start := lexer.pos
+			sb := strings.builder_make()
+
+			for lexer.pos < len(lexer.input) &&
+			    (is_alphanumeric(lexer.input[lexer.pos]) || is_digit(lexer.input[lexer.pos])) {
+				fmt.sbprint(&sb, strings.clone_from_bytes({lexer.input[lexer.pos]}))
+				lexer.pos += 1
+			}
+			append(
+				&tokens,
+				Token {
+					kind = .Identifier,
+					lexeme = lexer.input[start:lexer.pos],
+					value = strings.to_string(sb),
+				},
+			)
+			continue
+		}
+
 
 		// Single-character tokens
 		token := Token {
