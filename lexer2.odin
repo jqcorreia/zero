@@ -44,6 +44,9 @@ is_alphanumeric :: proc(c: byte) -> bool {
 is_whitespace :: proc(c: byte) -> bool {
 	return c == ' ' || c <= '\t'
 }
+is_newline :: proc(c: byte) -> bool {
+	return c == '\n' || c <= '\r'
+}
 
 lex :: proc(input: string) -> []Token {
 	tokens: [dynamic]Token
@@ -64,6 +67,9 @@ lex :: proc(input: string) -> []Token {
 		// Some repetition is good repetition...
 		switch {
 		case is_whitespace(c):
+			lexer.pos += 1
+		case is_newline(c):
+			append(&tokens, Token{kind = .NewLine, lexeme = "\n"})
 			lexer.pos += 1
 		case is_numeric(c):
 			start := lexer.pos
@@ -107,9 +113,6 @@ lex :: proc(input: string) -> []Token {
 			lexer.pos += 1
 		case c == '=':
 			append(&tokens, Token{kind = .Equal, lexeme = "="})
-			lexer.pos += 1
-		case c == '\n':
-			append(&tokens, Token{kind = .NewLine, lexeme = "\n"})
 			lexer.pos += 1
 		case:
 			lexer.pos += 1
