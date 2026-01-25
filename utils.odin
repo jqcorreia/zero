@@ -25,6 +25,7 @@ expr_print_sb :: proc(expr: ^Expr, lvl: u32 = 0) -> string {
 
 	return strings.to_string(sb)
 }
+
 statement_print :: proc(s: ^Statement, lvl: u32 = 0) {
 	if s == nil {
 		return
@@ -42,6 +43,7 @@ statement_print :: proc(s: ^Statement, lvl: u32 = 0) {
 		expr_print(a.expr, lvl + 1)
 	}
 }
+
 expr_print :: proc(expr: ^Expr, lvl: u32 = 0) {
 	if expr == nil {
 		return
