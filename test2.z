@@ -1,5 +1,4 @@
 // this is a comment
-a = 10 * (2 + 30)
-b = 1000
-print(a)
-print(10 * (2 - 1))
+a = 17
+b = 100 + a
+print(b + 100)

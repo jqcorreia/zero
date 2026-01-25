@@ -15,6 +15,7 @@ Function :: struct {
 
 State :: struct {
 	funcs:     map[string]Function,
+	vars:      map[string]ValueRef,
 	ret_value: ValueRef,
 }
 
@@ -46,25 +47,6 @@ tokens_print :: proc(tokens: []Token) {
 		fmt.println(token)
 	}
 }
-// expr_print :: proc(expr: ^Expr, lvl: u32 = 0) {
-// 	if expr == nil {
-// 		return
-// 	}
-// 	for _ in 0 ..< lvl {
-// 		fmt.print(" ")
-// 	}
-// 	#partial switch expr.kind {
-// 	case .Int_Lit:
-// 		fmt.println("Int ", expr.data.(Expr_Int_Lit).value)
-// 	case .Ident:
-// 		fmt.println("Identifier ", expr.data.(Expr_Ident).value)
-// 	case .Binary:
-// 		data, _ := expr.data.(Expr_Binary)
-// 		fmt.println("Binary ", data.op)
-// 		expr_print(data.left, lvl + 1)
-// 		expr_print(data.right, lvl + 1)
-// 	}
-// }
 
 main :: proc() {
 	// file := os.args[1]
@@ -72,7 +54,7 @@ main :: proc() {
 	tokens := lex(string(expr))
 
 	// fmt.println(tokens)
-	tokens_print(tokens)
+	// tokens_print(tokens)
 
 	parser := Parser {
 		tokens = tokens,
@@ -92,46 +74,46 @@ main :: proc() {
 	// // 	expr_print(data.value)
 	// // }
 
-	// ctx := ContextCreate()
-	// module := ModuleCreateWithNameInContext("calc", ctx)
-	// builder := CreateBuilderInContext(ctx)
-	// setup_runtime(ctx, module, builder)
+	ctx := ContextCreate()
+	module := ModuleCreateWithNameInContext("calc", ctx)
+	builder := CreateBuilderInContext(ctx)
+	setup_runtime(ctx, module, builder)
 
-	// generate(stmts, ctx, module, builder)
+	generate(stmts, ctx, module, builder)
 	// // generate(pexpr, ctx, module, builder)
 
-	// InitializeX86Target()
-	// InitializeX86TargetInfo()
-	// InitializeX86TargetMC()
-	// InitializeX86AsmPrinter()
+	InitializeX86Target()
+	InitializeX86TargetInfo()
+	InitializeX86TargetMC()
+	InitializeX86AsmPrinter()
 
-	// triple := GetDefaultTargetTriple()
+	triple := GetDefaultTargetTriple()
 
-	// target: TargetRef
+	target: TargetRef
 
-	// error: cstring
-	// if GetTargetFromTriple(triple, &target, &error) > 0 {
-	// 	fmt.println(triple, string(error))
-	// 	return
-	// }
-	// SetTarget(module, triple)
+	error: cstring
+	if GetTargetFromTriple(triple, &target, &error) > 0 {
+		fmt.println(triple, string(error))
+		return
+	}
+	SetTarget(module, triple)
 
-	// fmt.println(target, triple)
-	// tm := CreateTargetMachine(
-	// 	target,
-	// 	triple,
-	// 	"generic",
-	// 	"",
-	// 	.CodeGenLevelDefault,
-	// 	.RelocPIC,
-	// 	.CodeModelDefault,
-	// )
+	fmt.println(target, triple)
+	tm := CreateTargetMachine(
+		target,
+		triple,
+		"generic",
+		"",
+		.CodeGenLevelDefault,
+		.RelocPIC,
+		.CodeModelDefault,
+	)
 
-	// SetModuleDataLayout(module, CreateTargetDataLayout(tm))
-	// if VerifyModule(module, .AbortProcessAction, &error) > 0 {
-	// 	fmt.println(error)
-	// }
-	// if TargetMachineEmitToFile(tm, module, "calc.o", .ObjectFile, &error) > 0 {
-	// 	fmt.println(error)
-	// }
+	SetModuleDataLayout(module, CreateTargetDataLayout(tm))
+	if VerifyModule(module, .AbortProcessAction, &error) > 0 {
+		fmt.println(error)
+	}
+	if TargetMachineEmitToFile(tm, module, "calc.o", .ObjectFile, &error) > 0 {
+		fmt.println(error)
+	}
 }
