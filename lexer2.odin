@@ -20,6 +20,7 @@ Token_Kind :: enum {
 	EOF,
 	Comma,
 	Func_Keyword,
+	Return_Keyword,
 }
 
 Token_Val :: union {
@@ -54,7 +55,8 @@ is_newline :: proc(c: byte) -> bool {
 }
 
 Keyword_Map: map[string]Token_Kind = {
-	"fn" = .Func_Keyword,
+	"fn"     = .Func_Keyword,
+	"return" = .Return_Keyword,
 }
 
 lex :: proc(input: string) -> []Token {

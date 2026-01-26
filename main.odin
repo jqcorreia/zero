@@ -49,8 +49,13 @@ tokens_print :: proc(tokens: []Token) {
 }
 
 main :: proc() {
-	// file := os.args[1]
-	expr := os.read_entire_file("test3.z") or_else panic("No file found")
+	filename := "test3.z"
+
+	if len(os.args) > 1 {
+		filename = os.args[1]
+	}
+
+	expr := os.read_entire_file(filename) or_else panic("No file found")
 	tokens := lex(string(expr))
 
 	// fmt.println(tokens)
