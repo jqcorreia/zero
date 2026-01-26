@@ -1,8 +1,9 @@
 package main
 
 import "core:fmt"
+import "core:strings"
 
-emit_stmt :: proc(s: ^Statement, ctx: ContextRef, builder: BuilderRef) {
+emit_stmt :: proc(s: ^Statement, ctx: ContextRef, builder: BuilderRef, module: ModuleRef) {
 	#partial switch s.kind {
 	case .Expr:
 		data := s.data.(Statement_Expr)
@@ -12,7 +13,25 @@ emit_stmt :: proc(s: ^Statement, ctx: ContextRef, builder: BuilderRef) {
 		ptr := BuildAlloca(builder, Int32Type(), "")
 		BuildStore(builder, emit_expr(data.expr, ctx, builder), ptr)
 		state.vars[data.name] = ptr
-	// state.ret_value = ptr
+	// state.ret_value = fmt_ptr
+	case .Function:
+		old_pos := GetInsertBlock(builder)
+		data := s.data.(Statement_Function)
+		fn_type := FunctionType(VoidTypeInContext(ctx), nil, 0, false)
+		fn := AddFunction(module, strings.clone_to_cstring(data.name), fn_type)
+
+
+		state.funcs[data.name] = Function {
+			ty = fn_type,
+			fn = fn,
+		}
+
+		SetLinkage(fn, .InternalLinkage)
+		entry := AppendBasicBlockInContext(ctx, fn, "")
+
+		PositionBuilderAtEnd(builder, entry)
+		BuildRetVoid(builder)
+		PositionBuilderAtEnd(builder, old_pos)
 	case:
 		unimplemented(fmt.tprint("Unimplement emit statement", s))
 	}
@@ -82,37 +101,9 @@ generate :: proc(stmts: []^Statement, ctx: ContextRef, module: ModuleRef, builde
 	PositionBuilderAtEnd(builder, entry)
 
 	for stmt in stmts {
-		emit_stmt(stmt, ctx, builder)
+		emit_stmt(stmt, ctx, builder, module)
 	}
 
-	// ret := gen_expr(e, ctx, builder)
-	// i8 := Int8TypeInContext(ctx)
-	// i32 := Int32TypeInContext(ctx)
-	// i8p := PointerType(i8, 0)
-
-	// printf_ty = FunctionType(
-	// 	i32, // return type
-	// 	&i8p, // first arg: char *
-	// 	1,
-	// 	true, // variadic
-	// )
-
-	// printf_fn = AddFunction(module, "printf", printf_ty)
-	// fmt_ptr = BuildGlobalStringPtr(builder, "%d\n", "fmt")
-
-	// args := []ValueRef {
-	// 	fmt_ptr,
-	// 	ret, // i32
-	// }
-
-	// BuildCall2(
-	// 	builder,
-	// 	printf_ty, // <-- REQUIRED
-	// 	printf_fn,
-	// 	&args[0],
-	// 	u32(len(args)),
-	// 	"",
-	// )
 
 	BuildRet(builder, ConstInt(int32, 0, false))
 }

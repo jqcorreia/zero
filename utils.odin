@@ -70,5 +70,5 @@ expr_print :: proc(expr: ^Expr, lvl: u32 = 0) {
 	}
 }
 unexpected_token :: proc(token: Token) {
-	unimplemented(fmt.tprintln("Unexpected token: %s", token.lexeme))
+	unimplemented(fmt.tprintf("Unexpected token: %s", token.lexeme))
 }

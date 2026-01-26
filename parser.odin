@@ -109,8 +109,8 @@ parse_program :: proc(p: ^Parser) -> []^Statement {
 			done = true
 		case t.kind == .Identifier:
 			switch {
-			// ASSIGNMENT
 			case peek(p).kind == .Equal:
+				// --- Assignment ---
 				// Get variable name
 				name_tok := current(p)
 
@@ -128,8 +128,8 @@ parse_program :: proc(p: ^Parser) -> []^Statement {
 
 				append(&stmts, s)
 				expect(p, .NewLine) // This should end with newline
-			// FUNCTION CALL
 			case peek(p).kind == .LParen:
+				// --- Function Call ---
 				expr := parse_expression(p)
 
 				s := new(Statement)
@@ -143,8 +143,9 @@ parse_program :: proc(p: ^Parser) -> []^Statement {
 				unimplemented()
 			}
 		case t.kind == .Func_Keyword:
+			// --- Funcion decl ---
 			advance(p)
-			parse_function_decl(p)
+			append(&stmts, parse_function_decl(p))
 		case:
 			unimplemented(fmt.tprintf("Unexpected token: %s", t.lexeme))
 		}
@@ -291,11 +292,22 @@ parse_function_decl_params :: proc(p: ^Parser) -> []string {
 	done := false
 	expect(p, .LParen)
 	for !done {
-		arg_name := expect(p, .Identifier).lexeme
-		append(&params, arg_name)
+		// if current(p).kind == .RParen {
+		// 	advance(p)
+		// 	return params[:]
+		// }
+		// arg_name := expect(p, .Identifier).lexeme
+		// append(&params, arg_name)
 
 		#partial switch current(p).kind {
+		case .Identifier:
+			arg_name := current(p).lexeme
+			append(&params, arg_name)
+			advance(p)
 		case .Comma:
+			if peek(p).kind == .RParen {
+				unexpected_token(peek(p))
+			}
 			advance(p)
 		case .RParen:
 			advance(p)
