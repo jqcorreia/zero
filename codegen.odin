@@ -37,12 +37,24 @@ emit_stmt :: proc(s: ^Statement, ctx: ContextRef, builder: BuilderRef, module: M
 	}
 }
 
-emit_call :: proc(e: Expr_Call, ctx: ContextRef, builder: BuilderRef) -> ValueRef {
+emit_print_call :: proc(e: Expr_Call, ctx: ContextRef, builder: BuilderRef) -> ValueRef {
 	fmt_ptr = BuildGlobalStringPtr(builder, "%d\n", "")
 	func := state.funcs[e.callee.data.(Expr_Variable).value]
 	args := []ValueRef{fmt_ptr, emit_expr(e.args[0], ctx, builder)}
 
 	call := BuildCall2(builder, func.ty, func.fn, &args[0], u32(len(args)), "")
+	// call := BuildCall2(builder, func.ty, func.fn, nil, 0, "")
+
+	return call
+}
+
+emit_call :: proc(e: Expr_Call, ctx: ContextRef, builder: BuilderRef) -> ValueRef {
+	fmt_ptr = BuildGlobalStringPtr(builder, "%d\n", "")
+	func := state.funcs[e.callee.data.(Expr_Variable).value]
+	// args := []ValueRef{fmt_ptr, emit_expr(e.args[0], ctx, builder)}
+
+	// call := BuildCall2(builder, func.ty, func.fn, &args[0], u32(len(args)), "")
+	call := BuildCall2(builder, func.ty, func.fn, nil, 0, "")
 
 	return call
 }
@@ -53,7 +65,12 @@ emit_expr :: proc(e: ^Expr, ctx: ContextRef, builder: BuilderRef) -> ValueRef {
 	case .Int_Literal:
 		return ConstInt(int32, u64(e.data.(Expr_Int_Literal).value), false)
 	case .Call:
-		return emit_call(e.data.(Expr_Call), ctx, builder)
+		data := e.data.(Expr_Call)
+		if data.callee.data.(Expr_Variable).value == "print" {
+			return emit_print_call(e.data.(Expr_Call), ctx, builder)
+		} else {
+			return emit_call(e.data.(Expr_Call), ctx, builder)
+		}
 	case .Variable:
 		return BuildLoad2(builder, int32, state.vars[e.data.(Expr_Variable).value], "")
 	case .Binary:

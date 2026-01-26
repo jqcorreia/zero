@@ -153,6 +153,9 @@ parse_program :: proc(p: ^Parser) -> []^Statement {
 
 	return stmts[:]
 }
+parse_statement :: proc(p: ^Parser) -> ^Statement {
+	return {}
+}
 
 expr_int_literal :: proc(value: i64) -> ^Expr {
 	expr := new(Expr)
@@ -319,6 +322,18 @@ parse_function_decl_params :: proc(p: ^Parser) -> []string {
 
 	return params[:]
 }
+
+// parse_function_body :: proc(p: ^Parser) -> []^Statement {
+// 	res: [dynamic]^Statement
+
+// 	expect(p, .LBrace)
+
+// 	for advance(p).kind != .RBrace {
+// 		append(&res, parse_statement(p))
+// 	}
+
+// 	return res[:]
+// }
 
 parse_function_body :: proc(p: ^Parser) -> []^Statement {
 	expect(p, .LBrace)
