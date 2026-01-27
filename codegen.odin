@@ -4,7 +4,6 @@ import "core:fmt"
 import "core:strings"
 
 emit_stmt :: proc(s: ^Statement, ctx: ContextRef, builder: BuilderRef, module: ModuleRef) {
-	fmt.println(s)
 	#partial switch s.kind {
 	case .Expr:
 		data := s.data.(Statement_Expr)
@@ -16,30 +15,54 @@ emit_stmt :: proc(s: ^Statement, ctx: ContextRef, builder: BuilderRef, module: M
 		state.vars[data.name] = ptr
 	// state.ret_value = fmt_ptr
 	case .Function:
-		old_pos := GetInsertBlock(builder)
-		data := s.data.(Statement_Function)
-		fn_type := FunctionType(VoidTypeInContext(ctx), nil, 0, false)
-		fn := AddFunction(module, strings.clone_to_cstring(data.name), fn_type)
-
-
-		// By now the function must exist in state
-		// Complete the information with TypeRef and ValueRef
-		func := &state.funcs[data.name]
-		func.ty = fn_type
-		func.fn = fn
-
-		SetLinkage(fn, .InternalLinkage)
-		entry := AppendBasicBlockInContext(ctx, fn, "")
-
-		PositionBuilderAtEnd(builder, entry)
-		for bst in data.body {
-			emit_stmt(bst, ctx, builder, module)
-		}
-		BuildRetVoid(builder)
-		PositionBuilderAtEnd(builder, old_pos)
+		emit_function(s, ctx, builder, module)
 	case:
 		unimplemented(fmt.tprint("Unimplement emit statement", s))
 	}
+}
+
+emit_function :: proc(s: ^Statement, ctx: ContextRef, builder: BuilderRef, module: ModuleRef) {
+	old_pos := GetInsertBlock(builder)
+	data := s.data.(Statement_Function)
+	func := &state.funcs[data.name]
+
+	int32 := Int32TypeInContext(ctx)
+	param_types: [dynamic]TypeRef
+
+	fn_type: TypeRef
+	if len(func.params) > 0 {
+		for _ in data.params {
+			append(&param_types, int32)
+		}
+
+		fn_type = FunctionType(
+			VoidTypeInContext(ctx),
+			&param_types[0],
+			u32(len(param_types)),
+			false,
+		)
+	} else {
+		fn_type = FunctionType(VoidTypeInContext(ctx), nil, 0, false)
+
+	}
+
+	fn := AddFunction(module, strings.clone_to_cstring(data.name), fn_type)
+
+	// By now the function must exist in state
+	// Complete the information with TypeRef and ValueRef
+	func.ty = fn_type
+	func.fn = fn
+
+	SetLinkage(fn, .InternalLinkage)
+	entry := AppendBasicBlockInContext(ctx, fn, "")
+
+	PositionBuilderAtEnd(builder, entry)
+	for bst in data.body {
+		emit_stmt(bst, ctx, builder, module)
+	}
+	BuildRetVoid(builder)
+	PositionBuilderAtEnd(builder, old_pos)
+	DumpValue(fn)
 }
 
 emit_print_call :: proc(e: Expr_Call, ctx: ContextRef, builder: BuilderRef) -> ValueRef {
@@ -60,12 +83,19 @@ emit_call :: proc(e: Expr_Call, ctx: ContextRef, builder: BuilderRef) -> ValueRe
 	if !ok {
 		panic(fmt.tprintln("Function", fn_name, "not found"))
 	}
+	args: [dynamic]ValueRef
+	for a in e.args {
+		append(&args, emit_expr(a, ctx, builder))
+	}
 	// args := []ValueRef{fmt_ptr, emit_expr(e.args[0], ctx, builder)}
 
 	// call := BuildCall2(builder, func.ty, func.fn, &args[0], u32(len(args)), "")
-	call := BuildCall2(builder, func.ty, func.fn, nil, 0, "")
 
-	return call
+	if len(args) == 0 {
+		return BuildCall2(builder, func.ty, func.fn, nil, 0, "")
+	} else {
+		return BuildCall2(builder, func.ty, func.fn, &args[0], u32(len(args)), "")
+	}
 }
 
 emit_expr :: proc(e: ^Expr, ctx: ContextRef, builder: BuilderRef) -> ValueRef {

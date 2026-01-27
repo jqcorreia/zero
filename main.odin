@@ -41,9 +41,12 @@ setup_runtime :: proc(ctx: ContextRef, module: ModuleRef, builder: BuilderRef) {
 
 	printf_fn = AddFunction(module, "printf", printf_ty)
 
+	fmt.println("What?!")
 	state.funcs["print"] = Function {
-		ty = printf_ty,
-		fn = printf_fn,
+		name   = "print",
+		ty     = printf_ty,
+		fn     = printf_fn,
+		params = {"val"},
 	}
 }
 
@@ -66,6 +69,13 @@ tokens_print :: proc(tokens: []Token) {
 }
 
 main :: proc() {
+	ctx := ContextCreate()
+	module := ModuleCreateWithNameInContext("calc", ctx)
+	builder := CreateBuilderInContext(ctx)
+
+	setup_runtime(ctx, module, builder)
+
+	fmt.println(state)
 	start_time := time.now()
 	filename := "test3.z"
 
@@ -91,19 +101,7 @@ main :: proc() {
 		// expr_print(e)
 	}
 
-	// // for stmt in stmts {
-	// // 	fmt.println(stmt)
-	// // 	data := stmt.data.(Stmt_Let)
-	// // 	expr_print(data.value)
-	// // }
-
-	ctx := ContextCreate()
-	module := ModuleCreateWithNameInContext("calc", ctx)
-	builder := CreateBuilderInContext(ctx)
-	setup_runtime(ctx, module, builder)
-
 	generate(stmts, ctx, module, builder)
-	// // generate(pexpr, ctx, module, builder)
 
 	InitializeX86Target()
 	InitializeX86TargetInfo()

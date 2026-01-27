@@ -193,7 +193,20 @@ expr_ident :: proc(value: string) -> ^Expr {
 }
 
 expr_call :: proc(callee: ^Expr, args: []^Expr) -> ^Expr {
-	// func := state.funcs[callee.data.(Expr_Variable).value]
+	// fmt.println("------------", state)
+	func, ok := state.funcs[callee.data.(Expr_Variable).value]
+	if !ok {
+		panic("function not found")
+	}
+	// fmt.println(func, callee.data.(Expr_Variable).value)
+
+	if len(args) < len(func.params) {
+		panic(fmt.tprintf("Missing arguments in call to function '%s'", func.name))
+	}
+	// fmt.println(func.name, len(args), len(func.params))
+	if len(args) > len(func.params) {
+		panic(fmt.tprintf("Extra arguments in call to function '%s'", func.name))
+	}
 
 	expr := new(Expr)
 	expr.kind = .Call
@@ -288,10 +301,12 @@ parse_function_decl :: proc(p: ^Parser) -> ^Statement {
 	func := new(Statement)
 	func.kind = .Function
 
+	// Initial declaration of a function
 	state.funcs[func_name] = {
 		name   = func_name,
 		params = args,
 	}
+
 	func.data = Statement_Function {
 		name   = func_name,
 		params = args,
