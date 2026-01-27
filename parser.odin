@@ -155,7 +155,7 @@ parse_statement :: proc(p: ^Parser) -> ^Statement {
 		advance(p)
 		stmt = parse_function_decl(p)
 	case:
-		unimplemented(fmt.tprintf("Unexpected token: %s", t.lexeme))
+		unimplemented(fmt.tprintf("Unexpected token: %s", token_serialize(t)))
 	}
 	return stmt
 }
@@ -331,11 +331,15 @@ parse_function_body :: proc(p: ^Parser) -> []^Statement {
 
 	expect(p, .LBrace)
 
+	if current(p).kind == .NewLine do advance(p)
 	for {
 		t := current(p)
 		if t.kind == .RBrace do break
 		append(&res, parse_statement(p))
 	}
+	// Advance final RBrace and possible final newline
+	advance(p)
+	if current(p).kind == .NewLine do advance(p)
 
 	return res[:]
 }

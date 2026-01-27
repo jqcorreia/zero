@@ -4,6 +4,7 @@ import "core:fmt"
 import "core:strings"
 
 emit_stmt :: proc(s: ^Statement, ctx: ContextRef, builder: BuilderRef, module: ModuleRef) {
+	fmt.println(s)
 	#partial switch s.kind {
 	case .Expr:
 		data := s.data.(Statement_Expr)
@@ -30,6 +31,9 @@ emit_stmt :: proc(s: ^Statement, ctx: ContextRef, builder: BuilderRef, module: M
 		entry := AppendBasicBlockInContext(ctx, fn, "")
 
 		PositionBuilderAtEnd(builder, entry)
+		for bst in data.body {
+			emit_stmt(bst, ctx, builder, module)
+		}
 		BuildRetVoid(builder)
 		PositionBuilderAtEnd(builder, old_pos)
 	case:

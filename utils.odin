@@ -83,3 +83,22 @@ one_char_span :: proc(lexer: Lexer) -> Span {
 	return Span{start = lexer.pos, end = lexer.pos}
 
 }
+
+span_to_location :: proc(span: Span) -> (line: int, col: int) {
+	if len(state.line_starts) == 1 {
+		return 1, span.start
+	}
+	idx := 0
+	start := span.start
+	for {
+		left := state.line_starts[idx]
+		right := state.line_starts[idx + 1]
+
+		switch {
+		case left <= start && right <= start:
+			idx += 1
+		case left <= start && right >= start:
+			return idx, start - left
+		}
+	}
+}

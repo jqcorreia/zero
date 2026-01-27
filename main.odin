@@ -2,6 +2,7 @@ package main
 
 import "core:fmt"
 import "core:os"
+import "core:strings"
 
 printf_fn: ValueRef
 fmt_ptr: ValueRef
@@ -43,9 +44,21 @@ setup_runtime :: proc(ctx: ContextRef, module: ModuleRef, builder: BuilderRef) {
 	}
 }
 
+token_serialize :: proc(token: Token) -> string {
+	sb := strings.builder_make()
+	line, col := span_to_location(token.span)
+	lexeme := token.lexeme
+	if lexeme == "\n" {
+		lexeme = "\\n"
+	}
+	fmt.sbprintf(&sb, "%s \"%s\", line: %d, col: %d", token.kind, lexeme, line, col)
+
+	return strings.to_string(sb)
+}
+
 tokens_print :: proc(tokens: []Token) {
 	for token in tokens {
-		fmt.println(token)
+		fmt.println(token_serialize(token))
 	}
 }
 
@@ -122,4 +135,5 @@ main :: proc() {
 	if TargetMachineEmitToFile(tm, module, "calc.o", .ObjectFile, &error) > 0 {
 		fmt.println(error)
 	}
+	// DumpModule(module)
 }
