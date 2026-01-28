@@ -185,6 +185,8 @@ parse_statement :: proc(p: ^Parser) -> ^Statement {
 			expr = expr,
 		}
 		stmt = s
+	case t.kind == .If_Keyword:
+		stmt = parse_if(p)
 	case:
 		unimplemented(fmt.tprintf("Unexpected token: %s", token_serialize(t)))
 	}
@@ -252,10 +254,12 @@ precedence :: proc(op: Token_Kind) -> int {
 	#partial switch op {
 	case .LParen:
 		return 200
-	case .Plus, .Minus:
-		return 10
 	case .Star, .Slash:
 		return 20
+	case .Plus, .Minus:
+		return 10
+	case .Lesser, .Greater:
+		return 5
 	}
 	return -1
 }
@@ -413,4 +417,14 @@ parse_block :: proc(p: ^Parser) -> ^Statement_Block {
 	sb.statements = res[:]
 
 	return sb
+}
+
+parse_if :: proc(p: ^Parser) -> ^Statement {
+	advance(p)
+	parse_expression(p)
+	parse_block(p)
+	advance(p)
+	parse_block(p)
+
+	return nil
 }
