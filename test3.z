@@ -18,8 +18,4 @@ fn sum(a, b) {
 foo()
 bar()
 qux(7000)
-// sum(10, 20)  
-
-
-
-
+sum(10, 20)  
