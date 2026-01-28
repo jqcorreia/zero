@@ -23,6 +23,8 @@ emit_stmt :: proc(s: ^Statement, ctx: ContextRef, builder: BuilderRef, module: M
 
 emit_function :: proc(s: ^Statement, ctx: ContextRef, builder: BuilderRef, module: ModuleRef) {
 	old_pos := GetInsertBlock(builder)
+
+
 	data := s.data.(Statement_Function)
 	func := &state.funcs[data.name]
 
@@ -47,7 +49,6 @@ emit_function :: proc(s: ^Statement, ctx: ContextRef, builder: BuilderRef, modul
 	}
 
 	fn := AddFunction(module, strings.clone_to_cstring(data.name), fn_type)
-
 	// By now the function must exist in state
 	// Complete the information with TypeRef and ValueRef
 	func.ty = fn_type
@@ -55,14 +56,29 @@ emit_function :: proc(s: ^Statement, ctx: ContextRef, builder: BuilderRef, modul
 
 	SetLinkage(fn, .InternalLinkage)
 	entry := AppendBasicBlockInContext(ctx, fn, "")
-
 	PositionBuilderAtEnd(builder, entry)
+
+	// Allocate vars
+	old_vars := state.vars
+	state.vars = map[string]ValueRef{}
+	{
+		for param_name, i in data.params {
+			param := GetParam(fn, u32(i))
+
+			alloca := BuildAlloca(builder, int32, strings.clone_to_cstring(param_name))
+			BuildStore(builder, param, alloca)
+
+			state.vars[param_name] = alloca
+		}
+	}
+
 	for bst in data.body {
 		emit_stmt(bst, ctx, builder, module)
 	}
 	BuildRetVoid(builder)
 	PositionBuilderAtEnd(builder, old_pos)
 	DumpValue(fn)
+	state.vars = old_vars
 }
 
 emit_print_call :: proc(e: Expr_Call, ctx: ContextRef, builder: BuilderRef) -> ValueRef {

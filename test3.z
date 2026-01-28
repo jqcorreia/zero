@@ -11,7 +11,12 @@ fn qux(c) {
     print(c)
 }
 
+fn sum(a, b) {
+    print(a + b)
+}
+
 foo()
 bar()
+qux(7000)
+sum(10, 37)
 
-qux(7)
