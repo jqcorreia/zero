@@ -207,6 +207,12 @@ lex :: proc(input: string) -> []Token {
 		case c == ',':
 			append(&tokens, Token{kind = .Comma, lexeme = ",", span = one_char_span(lexer)})
 			lexer.pos += 1
+		case c == '<':
+			append(&tokens, Token{kind = .Greater, lexeme = ">", span = one_char_span(lexer)})
+			lexer.pos += 1
+		case c == '>':
+			append(&tokens, Token{kind = .Lesser, lexeme = "<", span = one_char_span(lexer)})
+			lexer.pos += 1
 		case:
 			unimplemented(fmt.tprintf("Token not recongnized: %c", c))
 		}
