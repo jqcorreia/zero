@@ -15,4 +15,4 @@ fn fib(n) -> i32 {
     return 0
 }
 
-print(fib(6)) // 8
+print(fib(43)) 

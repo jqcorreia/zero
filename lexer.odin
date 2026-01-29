@@ -23,11 +23,14 @@ Token_Kind :: enum {
 	GreaterOrEqual,
 	LesserOrEqual,
 	Comma,
+	RightArrow,
 	Func_Keyword,
 	Return_Keyword,
 	If_Keyword,
 	Else_Keyword,
-	RightArrow,
+	For_Keyword,
+	Break_Keyword,
+	Continue_Keyword,
 	EOF,
 }
 
@@ -71,10 +74,13 @@ is_newline :: proc(c: byte) -> bool {
 }
 
 Keyword_Map: map[string]Token_Kind = {
-	"fn"     = .Func_Keyword,
-	"return" = .Return_Keyword,
-	"if"     = .If_Keyword,
-	"else"   = .Else_Keyword,
+	"fn"       = .Func_Keyword,
+	"return"   = .Return_Keyword,
+	"if"       = .If_Keyword,
+	"else"     = .Else_Keyword,
+	"for"      = .For_Keyword,
+	"break"    = .Break_Keyword,
+	"continue" = .Continue_Keyword,
 }
 
 lex_current :: proc(lexer: ^Lexer) -> u8 {

@@ -30,6 +30,8 @@ emit_stmt :: proc(s: ^Statement, ctx: ContextRef, builder: BuilderRef, module: M
 		BuildRet(builder, emit_expr(data.expr, ctx, builder))
 	case .If:
 		emit_if(s, ctx, builder, module)
+	case .For:
+		emit_for_loop(s, ctx, builder, module)
 	case:
 		unimplemented(fmt.tprint("Unimplement emit statement", s))
 	}
@@ -101,9 +103,8 @@ emit_function :: proc(s: ^Statement, ctx: ContextRef, builder: BuilderRef, modul
 		scope_current().vars[param_name] = alloca
 	}
 
-	for bst in data.body.statements {
-		emit_stmt(bst, ctx, builder, module)
-	}
+	emit_block(data.body, ctx, builder, module)
+
 	if func.return_type == "" {
 		BuildRetVoid(builder)
 	}
@@ -166,28 +167,36 @@ emit_expr :: proc(e: ^Expr, ctx: ContextRef, builder: BuilderRef) -> ValueRef {
 				builder,
 				emit_expr(e.data.(Expr_Binary).left, ctx, builder),
 				emit_expr(e.data.(Expr_Binary).right, ctx, builder),
-				"foo",
+				"add",
 			)
 		case .Minus:
 			return BuildSub(
 				builder,
 				emit_expr(e.data.(Expr_Binary).left, ctx, builder),
 				emit_expr(e.data.(Expr_Binary).right, ctx, builder),
-				"foo",
+				"sub",
 			)
 		case .Star:
 			return BuildMul(
 				builder,
 				emit_expr(e.data.(Expr_Binary).left, ctx, builder),
 				emit_expr(e.data.(Expr_Binary).right, ctx, builder),
-				"foo",
+				"mul",
 			)
 		case .Slash:
 			return BuildSDiv(
 				builder,
 				emit_expr(e.data.(Expr_Binary).left, ctx, builder),
 				emit_expr(e.data.(Expr_Binary).right, ctx, builder),
-				"foo",
+				"div",
+			)
+		case .DoubleEqual:
+			return BuildICmp(
+				builder,
+				.IntEQ,
+				emit_expr(e.data.(Expr_Binary).left, ctx, builder),
+				emit_expr(e.data.(Expr_Binary).right, ctx, builder),
+				"gt",
 			)
 		case .Greater:
 			return BuildICmp(
@@ -195,7 +204,7 @@ emit_expr :: proc(e: ^Expr, ctx: ContextRef, builder: BuilderRef) -> ValueRef {
 				.IntUGT,
 				emit_expr(e.data.(Expr_Binary).left, ctx, builder),
 				emit_expr(e.data.(Expr_Binary).right, ctx, builder),
-				"foo",
+				"gt",
 			)
 		case .Lesser:
 			return BuildICmp(
@@ -203,7 +212,7 @@ emit_expr :: proc(e: ^Expr, ctx: ContextRef, builder: BuilderRef) -> ValueRef {
 				.IntULT,
 				emit_expr(e.data.(Expr_Binary).left, ctx, builder),
 				emit_expr(e.data.(Expr_Binary).right, ctx, builder),
-				"foo",
+				"lt",
 			)
 		case .GreaterOrEqual:
 			return BuildICmp(
@@ -211,7 +220,7 @@ emit_expr :: proc(e: ^Expr, ctx: ContextRef, builder: BuilderRef) -> ValueRef {
 				.IntUGE,
 				emit_expr(e.data.(Expr_Binary).left, ctx, builder),
 				emit_expr(e.data.(Expr_Binary).right, ctx, builder),
-				"foo",
+				"gte",
 			)
 		case .LesserOrEqual:
 			return BuildICmp(
@@ -219,11 +228,11 @@ emit_expr :: proc(e: ^Expr, ctx: ContextRef, builder: BuilderRef) -> ValueRef {
 				.IntULE,
 				emit_expr(e.data.(Expr_Binary).left, ctx, builder),
 				emit_expr(e.data.(Expr_Binary).right, ctx, builder),
-				"foo",
+				"lte",
 			)
 		}
 	}
-	return ConstInt(int32, 42, true)
+	unreachable()
 }
 
 emit_block :: proc(
@@ -278,6 +287,14 @@ emit_if :: proc(s: ^Statement, ctx: ContextRef, builder: BuilderRef, module: Mod
 		}
 	}
 	PositionBuilderAtEnd(builder, merge_bb)
+}
+
+emit_for_loop :: proc(s: ^Statement, ctx: ContextRef, builder: BuilderRef, module: ModuleRef) {
+
+}
+
+emit_break :: proc(s: ^Statement, ctx: ContextRef, builder: BuilderRef, module: ModuleRef) {
+
 }
 
 generate :: proc(stmts: []^Statement, ctx: ContextRef, module: ModuleRef, builder: BuilderRef) {

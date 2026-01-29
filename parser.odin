@@ -19,6 +19,9 @@ Statement_Kind :: enum {
 	Return,
 	Block,
 	If,
+	For,
+	Break,
+	Continue,
 }
 
 Statement_Data :: union {
@@ -28,7 +31,11 @@ Statement_Data :: union {
 	Statement_Return,
 	Statement_Block,
 	Statement_If,
+	Statement_For,
+	Statement_Break,
+	Statement_Continue,
 }
+
 
 Statement_Expr :: struct {
 	expr: ^Expr,
@@ -60,6 +67,13 @@ Statement_If :: struct {
 	then_block: ^Statement_Block,
 	else_block: ^Statement_Block, // nil if no else
 }
+
+Statement_For :: struct {
+	body: ^Statement_Block,
+}
+
+Statement_Break :: struct {}
+Statement_Continue :: struct {}
 
 Expr :: struct {
 	kind: Expr_Kind,
@@ -179,9 +193,17 @@ parse_statement :: proc(p: ^Parser) -> ^Statement {
 			unimplemented()
 		}
 	case t.kind == .Func_Keyword:
-		// --- Funcion decl ---
 		advance(p)
 		stmt = parse_function_decl(p)
+	case t.kind == .For_Keyword:
+		advance(p)
+		stmt = parse_for_loop(p)
+	case t.kind == .Break_Keyword:
+		advance(p)
+		stmt = parse_break(p)
+	case t.kind == .Continue_Keyword:
+		advance(p)
+		stmt = parse_continue(p)
 	case t.kind == .Return_Keyword:
 		// --- Return statment ---
 		advance(p)
@@ -195,6 +217,7 @@ parse_statement :: proc(p: ^Parser) -> ^Statement {
 		}
 		stmt = s
 	case t.kind == .If_Keyword:
+		advance(p)
 		stmt = parse_if(p)
 	case:
 		unimplemented(fmt.tprintf("Unexpected token: %s", token_serialize(t)))
@@ -267,7 +290,7 @@ precedence :: proc(op: Token_Kind) -> int {
 		return 20
 	case .Plus, .Minus:
 		return 10
-	case .Lesser, .Greater, .GreaterOrEqual, .LesserOrEqual:
+	case .Lesser, .Greater, .GreaterOrEqual, .LesserOrEqual, .DoubleEqual:
 		return 5
 	}
 	return -1
@@ -430,7 +453,6 @@ parse_block :: proc(p: ^Parser) -> ^Statement_Block {
 }
 
 parse_if :: proc(p: ^Parser) -> ^Statement {
-	advance(p)
 	cond := parse_expression(p)
 	then_block := parse_block(p)
 	else_block: ^Statement_Block = nil
@@ -448,5 +470,35 @@ parse_if :: proc(p: ^Parser) -> ^Statement {
 	stmt.kind = .If
 	stmt.data = stmt_if
 
+	return stmt
+}
+
+parse_for_loop :: proc(p: ^Parser) -> ^Statement {
+	// No condition parsing for now
+
+	stmt := new(Statement)
+	stmt.kind = .For
+	stmt.data = Statement_For {
+		body = parse_block(p),
+	}
+
+	return stmt
+}
+
+parse_break :: proc(p: ^Parser) -> ^Statement {
+	stmt := new(Statement)
+	stmt.kind = .Break
+	stmt.data = Statement_Break{}
+
+	expect(p, .NewLine)
+	return stmt
+}
+
+parse_continue :: proc(p: ^Parser) -> ^Statement {
+	stmt := new(Statement)
+	stmt.kind = .Continue
+	stmt.data = Statement_Continue{}
+
+	expect(p, .NewLine)
 	return stmt
 }

@@ -1,4 +1,4 @@
 test:
-	odin run . -- test4.z
+	odin run . -- test5.z
 	gcc -o calc calc.o
-	./calc
+	sh -c 'time ./calc'
