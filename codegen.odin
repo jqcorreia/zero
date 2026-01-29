@@ -3,24 +3,55 @@ package main
 import "core:fmt"
 import "core:strings"
 
+resolve_var :: proc(name: string) -> ValueRef {
+	local_var, local_var_ok := scope_current().vars[name]
+	if local_var_ok {
+		return local_var
+	} else {
+		global_var, global_var_ok := state.global_scope.vars[name]
+		if global_var_ok {
+			return global_var
+		}
+	}
+	return nil
+}
+
 emit_stmt :: proc(s: ^Statement, ctx: ContextRef, builder: BuilderRef, module: ModuleRef) {
 	#partial switch s.kind {
 	case .Expr:
 		data := s.data.(Statement_Expr)
 		emit_expr(data.expr, ctx, builder)
 	case .Assignment:
-		data := s.data.(Statement_Assignment)
-		ptr := BuildAlloca(builder, Int32Type(), "")
-		BuildStore(builder, emit_expr(data.expr, ctx, builder), ptr)
-		state.vars[data.name] = ptr
-	// state.ret_value = fmt_ptr
+		emit_assigment(s, ctx, builder, module)
 	case .Function:
 		emit_function(s, ctx, builder, module)
 	case .Return:
 		data := s.data.(Statement_Return)
 		BuildRet(builder, emit_expr(data.expr, ctx, builder))
+	case .If:
+		emit_if(s, ctx, builder, module)
 	case:
 		unimplemented(fmt.tprint("Unimplement emit statement", s))
+	}
+}
+
+emit_assigment :: proc(s: ^Statement, ctx: ContextRef, builder: BuilderRef, module: ModuleRef) {
+	data := s.data.(Statement_Assignment)
+	if !scope_top_level() {
+		ptr := BuildAlloca(builder, Int32Type(), "")
+		BuildStore(builder, emit_expr(data.expr, ctx, builder), ptr)
+		scope_current().vars[data.name] = ptr
+	} else {
+		if data.expr.kind == .Int_Literal {
+			ptr := AddGlobal(module, Int32Type(), strings.clone_to_cstring(data.name))
+			SetInitializer(
+				ptr,
+				ConstInt(Int32Type(), u64(data.expr.data.(Expr_Int_Literal).value), false),
+			)
+			state.global_scope.vars[data.name] = ptr
+		} else {
+			panic("Global variables need to be constants")
+		}
 	}
 }
 
@@ -59,17 +90,15 @@ emit_function :: proc(s: ^Statement, ctx: ContextRef, builder: BuilderRef, modul
 	PositionBuilderAtEnd(builder, entry)
 
 	// Allocate vars
-	old_vars := state.vars
-	state.vars = map[string]ValueRef{}
-	{
-		for param_name, i in data.params {
-			param := GetParam(fn, u32(i))
+	scope := Scope{}
+	scope_push(scope)
+	for param_name, i in data.params {
+		param := GetParam(fn, u32(i))
 
-			alloca := BuildAlloca(builder, int32, strings.clone_to_cstring(param_name))
-			BuildStore(builder, param, alloca)
+		alloca := BuildAlloca(builder, int32, strings.clone_to_cstring(param_name))
+		BuildStore(builder, param, alloca)
 
-			state.vars[param_name] = alloca
-		}
+		scope_current().vars[param_name] = alloca
 	}
 
 	for bst in data.body.statements {
@@ -80,16 +109,17 @@ emit_function :: proc(s: ^Statement, ctx: ContextRef, builder: BuilderRef, modul
 	}
 	PositionBuilderAtEnd(builder, old_pos)
 	DumpValue(fn)
-	state.vars = old_vars
+
+	scope_pop()
 }
 
+// This a hacked printf-type emission until we have proper external functions
 emit_print_call :: proc(e: Expr_Call, ctx: ContextRef, builder: BuilderRef) -> ValueRef {
 	fmt_ptr = BuildGlobalStringPtr(builder, "%d\n", "")
 	func := state.funcs[e.callee.data.(Expr_Variable).value]
 	args := []ValueRef{fmt_ptr, emit_expr(e.args[0], ctx, builder)}
 
 	call := BuildCall2(builder, func.ty, func.fn, &args[0], u32(len(args)), "")
-	// call := BuildCall2(builder, func.ty, func.fn, nil, 0, "")
 
 	return call
 }
@@ -98,16 +128,15 @@ emit_call :: proc(e: Expr_Call, ctx: ContextRef, builder: BuilderRef) -> ValueRe
 	fmt_ptr = BuildGlobalStringPtr(builder, "%d\n", "")
 	fn_name := e.callee.data.(Expr_Variable).value
 	func, ok := state.funcs[e.callee.data.(Expr_Variable).value]
+
 	if !ok {
 		panic(fmt.tprintln("Function", fn_name, "not found"))
 	}
+
 	args: [dynamic]ValueRef
 	for a in e.args {
 		append(&args, emit_expr(a, ctx, builder))
 	}
-	// args := []ValueRef{fmt_ptr, emit_expr(e.args[0], ctx, builder)}
-
-	// call := BuildCall2(builder, func.ty, func.fn, &args[0], u32(len(args)), "")
 
 	if len(args) == 0 {
 		return BuildCall2(builder, func.ty, func.fn, nil, 0, "")
@@ -129,7 +158,7 @@ emit_expr :: proc(e: ^Expr, ctx: ContextRef, builder: BuilderRef) -> ValueRef {
 			return emit_call(e.data.(Expr_Call), ctx, builder)
 		}
 	case .Variable:
-		return BuildLoad2(builder, int32, state.vars[e.data.(Expr_Variable).value], "")
+		return BuildLoad2(builder, int32, resolve_var(e.data.(Expr_Variable).value), "")
 	case .Binary:
 		#partial switch e.data.(Expr_Binary).op {
 		case .Plus:
@@ -165,6 +194,10 @@ emit_expr :: proc(e: ^Expr, ctx: ContextRef, builder: BuilderRef) -> ValueRef {
 	return ConstInt(int32, 42, true)
 }
 
+emit_if :: proc(s: ^Statement, ctx: ContextRef, builder: BuilderRef, module: ModuleRef) {
+
+}
+
 generate :: proc(stmts: []^Statement, ctx: ContextRef, module: ModuleRef, builder: BuilderRef) {
 	int32 := Int32TypeInContext(ctx)
 	fn_type := FunctionType(int32, nil, 0, 0)
@@ -178,6 +211,7 @@ generate :: proc(stmts: []^Statement, ctx: ContextRef, module: ModuleRef, builde
 		emit_stmt(stmt, ctx, builder, module)
 	}
 
+	DumpValue(main_f)
 
 	BuildRet(builder, ConstInt(int32, 0, false))
 }

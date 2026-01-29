@@ -1,5 +1,7 @@
+
 fn foo() {
-    print(42)
+    MAX = 10000
+    print(MAX)
 }
 
 fn bar() {

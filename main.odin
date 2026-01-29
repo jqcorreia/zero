@@ -1,5 +1,6 @@
 package main
 
+import "core:container/queue"
 import "core:fmt"
 import "core:os"
 import "core:strings"
@@ -18,14 +19,35 @@ Function :: struct {
 	return_type: string,
 }
 
+Scope :: struct {
+	vars: map[string]ValueRef,
+}
+
 State :: struct {
-	funcs:       map[string]Function,
-	vars:        map[string]ValueRef,
-	ret_value:   ValueRef,
-	line_starts: [dynamic]int,
+	funcs:        map[string]Function,
+	ret_value:    ValueRef,
+	line_starts:  [dynamic]int,
+	scopes:       queue.Queue(Scope),
+	global_scope: Scope,
 }
 
 state := State{}
+
+scope_push :: proc(scope: Scope) {
+	queue.push_front(&state.scopes, Scope{})
+}
+
+scope_pop :: proc() -> Scope {
+	return queue.pop_front(&state.scopes)
+}
+
+scope_current :: proc() -> ^Scope {
+	return queue.front_ptr(&state.scopes)
+}
+
+scope_top_level :: proc() -> bool {
+	return queue.len(state.scopes) == 1
+}
 
 setup_runtime :: proc(ctx: ContextRef, module: ModuleRef, builder: BuilderRef) {
 	// Printf
@@ -49,6 +71,7 @@ setup_runtime :: proc(ctx: ContextRef, module: ModuleRef, builder: BuilderRef) {
 		fn     = printf_fn,
 		params = {"val"},
 	}
+	scope_push({})
 }
 
 token_serialize :: proc(token: Token) -> string {
