@@ -160,25 +160,6 @@ lex :: proc(input: string) -> []Token {
 					},
 				)
 			}
-		case c == '+':
-			append(&tokens, Token{kind = .Plus, lexeme = "+", span = one_char_span(lexer)})
-			lexer.pos += 1
-		case c == '-':
-			fmt.printf("%c\n", lex_peek(&lexer))
-			if lex_peek(&lexer) == '>' {
-				append(
-					&tokens,
-					Token {
-						kind = .RightArrow,
-						lexeme = "->",
-						span = Span{start = lexer.pos, end = lexer.pos + 1},
-					},
-				)
-				lexer.pos += 2
-			} else {
-				append(&tokens, Token{kind = .Minus, lexeme = "-", span = one_char_span(lexer)})
-				lexer.pos += 1
-			}
 		case c == '/':
 			if lexer.input[lexer.pos + 1] == '/' {
 				for lexer.pos < len(lexer.input) && lex_current(&lexer) != '\n' {
@@ -187,6 +168,21 @@ lex :: proc(input: string) -> []Token {
 				}
 			} else {
 				append(&tokens, Token{kind = .Slash, lexeme = "/", span = one_char_span(lexer)})
+				lexer.pos += 1
+			}
+		case c == '+':
+			append(&tokens, Token{kind = .Plus, lexeme = "+", span = one_char_span(lexer)})
+			lexer.pos += 1
+		case c == '-':
+			fmt.printf("%c\n", lex_peek(&lexer))
+			if lex_peek(&lexer) == '>' {
+				append(
+					&tokens,
+					Token{kind = .RightArrow, lexeme = "->", span = two_char_span(lexer)},
+				)
+				lexer.pos += 2
+			} else {
+				append(&tokens, Token{kind = .Minus, lexeme = "-", span = one_char_span(lexer)})
 				lexer.pos += 1
 			}
 		case c == '*':
@@ -208,7 +204,7 @@ lex :: proc(input: string) -> []Token {
 			if lex_peek(&lexer) == '=' {
 				append(
 					&tokens,
-					Token{kind = .DoubleEqual, lexeme = ">", span = one_char_span(lexer)},
+					Token{kind = .DoubleEqual, lexeme = ">", span = two_char_span(lexer)},
 				)
 				lexer.pos += 2
 			} else {
@@ -222,7 +218,7 @@ lex :: proc(input: string) -> []Token {
 			if lex_peek(&lexer) == '=' {
 				append(
 					&tokens,
-					Token{kind = .GreaterOrEqual, lexeme = ">", span = one_char_span(lexer)},
+					Token{kind = .GreaterOrEqual, lexeme = ">", span = two_char_span(lexer)},
 				)
 				lexer.pos += 2
 			} else {
@@ -233,7 +229,7 @@ lex :: proc(input: string) -> []Token {
 			if lex_peek(&lexer) == '=' {
 				append(
 					&tokens,
-					Token{kind = .LesserOrEqual, lexeme = ">", span = one_char_span(lexer)},
+					Token{kind = .LesserOrEqual, lexeme = ">", span = two_char_span(lexer)},
 				)
 				lexer.pos += 2
 			} else {

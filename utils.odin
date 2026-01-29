@@ -84,6 +84,11 @@ one_char_span :: proc(lexer: Lexer) -> Span {
 
 }
 
+two_char_span :: proc(lexer: Lexer) -> Span {
+	return Span{start = lexer.pos, end = lexer.pos + 1}
+
+}
+
 span_to_location :: proc(span: Span) -> (line: int, col: int) {
 	if len(state.line_starts) == 1 {
 		return 1, span.start
