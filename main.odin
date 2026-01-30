@@ -70,7 +70,6 @@ setup_runtime :: proc(ctx: ContextRef, module: ModuleRef, builder: BuilderRef) {
 
 	printf_fn = AddFunction(module, "printf", printf_ty)
 
-	fmt.println("What?!")
 	state.funcs["print"] = Function {
 		name   = "print",
 		ty     = printf_ty,
