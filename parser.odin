@@ -7,92 +7,66 @@ Parser :: struct {
 	pos:    int,
 }
 
-Statement :: struct {
-	kind: Statement_Kind,
-	data: Statement_Data,
-}
-
-Statement_Kind :: enum {
-	Expr,
-	Assignment,
-	Function,
-	Return,
-	Block,
-	If,
-	For,
-	Break,
-	Continue,
-}
-
-Statement_Data :: union {
-	Statement_Expr,
-	Statement_Assignment,
-	Statement_Function,
-	Statement_Return,
-	Statement_Block,
-	Statement_If,
-	Statement_For,
-	Statement_Break,
-	Statement_Continue,
+Ast_Node :: union {
+	Ast_Expr,
+	Ast_Assignment,
+	Ast_Function,
+	Ast_Return,
+	Ast_Block,
+	Ast_If,
+	Ast_For,
+	Ast_Break,
+	Ast_Continue,
 }
 
 
-Statement_Expr :: struct {
+Ast_Expr :: struct {
 	expr: ^Expr,
 }
 
-Statement_Assignment :: struct {
+Ast_Assignment :: struct {
 	name: string,
 	expr: ^Expr,
 }
 
-Statement_Function :: struct {
+Ast_Function :: struct {
 	name:     string,
 	params:   []string,
-	body:     ^Statement_Block,
+	body:     ^Ast_Block,
 	ret_type: string,
 }
 
-Statement_Block :: struct {
-	statements: []^Statement,
+Ast_Block :: struct {
+	statements: []^Ast_Node,
 	terminated: bool,
 }
 
-Statement_Return :: struct {
+Ast_Return :: struct {
 	expr: ^Expr,
 }
 
-Statement_If :: struct {
+Ast_If :: struct {
 	cond:       ^Expr,
-	then_block: ^Statement_Block,
-	else_block: ^Statement_Block, // nil if no else
+	then_block: ^Ast_Block,
+	else_block: ^Ast_Block, // nil if no else
 }
 
-Statement_For :: struct {
-	body: ^Statement_Block,
+Ast_For :: struct {
+	body: ^Ast_Block,
 }
 
-Statement_Break :: struct {}
-Statement_Continue :: struct {}
+Ast_Break :: struct {}
+Ast_Continue :: struct {}
 
-Expr :: struct {
-	kind: Expr_Kind,
-	data: Expr_Data,
-}
 
-Expr_Kind :: enum {
-	Int_Literal,
-	Binary,
-	Variable,
-	Call,
-}
-
-Expr_Data :: union {
+Expr :: union {
 	Expr_Int_Literal,
 	Expr_Binary,
 	Expr_Variable,
 	Expr_Call,
 }
+
+Expr_Data :: union {}
 
 Expr_Int_Literal :: struct {
 	value: i64,
@@ -134,8 +108,8 @@ expect :: proc(p: ^Parser, kind: Token_Kind) -> Token {
 	return advance(p)
 }
 
-parse_program :: proc(p: ^Parser) -> []^Statement {
-	stmts: [dynamic]^Statement
+parse_program :: proc(p: ^Parser) -> []^Ast_Node {
+	stmts: [dynamic]^Ast_Node
 	for {
 		t := current(p)
 		if t.kind == .EOF do break
@@ -153,9 +127,10 @@ parse_program :: proc(p: ^Parser) -> []^Statement {
 	return stmts[:]
 }
 
-parse_statement :: proc(p: ^Parser) -> ^Statement {
+parse_statement :: proc(p: ^Parser) -> ^Ast_Node {
 	t := current(p)
-	stmt: ^Statement
+	stmt := new(Ast_Node)
+
 	switch {
 	case t.kind == .Identifier:
 		switch {
@@ -168,97 +143,77 @@ parse_statement :: proc(p: ^Parser) -> ^Statement {
 			advance(p)
 			expect(p, .Equal)
 
-			// Construct statement
-			s := new(Statement)
-			s.kind = .Assignment
-			s.data = Statement_Assignment {
+			stmt^ = Ast_Assignment {
 				name = name_tok.lexeme,
 				expr = parse_expression(p, 0),
 			}
-
-			stmt = s
 			expect(p, .NewLine) // This should end with newline
+
 		case peek(p).kind == .LParen:
 			// --- Function Call ---
 			expr := parse_expression(p)
-
-			s := new(Statement)
-			s.kind = .Expr
-			s.data = Statement_Expr {
+			stmt^ = Ast_Expr {
 				expr = expr,
 			}
-			stmt = s
 			expect(p, .NewLine)
 		case:
 			unimplemented()
 		}
 	case t.kind == .Func_Keyword:
 		advance(p)
-		stmt = parse_function_decl(p)
+		stmt^ = parse_function_decl(p)^
 	case t.kind == .For_Keyword:
 		advance(p)
-		stmt = parse_for_loop(p)
+		stmt^ = parse_for_loop(p)^
 	case t.kind == .Break_Keyword:
 		advance(p)
-		stmt = parse_break(p)
+		stmt^ = parse_break(p)^
 	case t.kind == .Continue_Keyword:
 		advance(p)
-		stmt = parse_continue(p)
+		stmt^ = parse_continue(p)^
 	case t.kind == .Return_Keyword:
 		// --- Return statment ---
 		advance(p)
 		expr := parse_expression(p, 0)
 		expect(p, .NewLine)
 
-		s := new(Statement)
-		s.kind = .Return
-		s.data = Statement_Return {
+		stmt^ = Ast_Return {
 			expr = expr,
 		}
-		stmt = s
 	case t.kind == .If_Keyword:
 		advance(p)
-		stmt = parse_if(p)
+		stmt^ = parse_if(p)^
 	case:
 		unimplemented(fmt.tprintf("Unexpected token: %s", token_serialize(t)))
 	}
 	return stmt
 }
 
-expr_int_literal :: proc(value: i64) -> ^Expr {
-	expr := new(Expr)
-	expr.kind = .Int_Literal
-	expr.data = Expr_Int_Literal {
-		value = value,
-	}
+expr_int_literal :: proc(value: i64) -> ^Expr_Int_Literal {
+	expr := new(Expr_Int_Literal)
+	expr.value = value
 
 	return expr
 }
-expr_binary :: proc(op: Token_Kind, left: ^Expr, right: ^Expr) -> ^Expr {
-	expr := new(Expr)
 
-	expr.kind = .Binary
-	expr.data = Expr_Binary {
-		op    = op,
-		left  = left,
-		right = right,
-	}
+expr_binary :: proc(op: Token_Kind, left: ^Expr, right: ^Expr) -> ^Expr_Binary {
+	expr := new(Expr_Binary)
+	expr.op = op
+	expr.left = left
+	expr.right = right
+
 	return expr
 }
-expr_ident :: proc(value: string) -> ^Expr {
-	expr := new(Expr)
+expr_ident :: proc(value: string) -> ^Expr_Variable {
+	expr := new(Expr_Variable)
 
-	expr.kind = .Variable
+	expr.value = value
 
-	expr.data = Expr_Variable {
-		value = value,
-	}
 	return expr
-
 }
 
-expr_call :: proc(callee: ^Expr, args: []^Expr) -> ^Expr {
-	func, ok := state.funcs[callee.data.(Expr_Variable).value]
+expr_call :: proc(callee: ^Expr, args: []^Expr) -> ^Expr_Call {
+	func, ok := state.funcs[callee.(Expr_Variable).value]
 	if !ok {
 		panic("function not found")
 	}
@@ -270,12 +225,10 @@ expr_call :: proc(callee: ^Expr, args: []^Expr) -> ^Expr {
 		panic(fmt.tprintf("Extra arguments in call to function '%s'", func.name))
 	}
 
-	expr := new(Expr)
-	expr.kind = .Call
-	expr.data = Expr_Call {
-		callee = callee,
-		args   = args,
-	}
+	expr := new(Expr_Call)
+	expr.callee = callee
+	expr.args = args
+
 	return expr
 }
 
@@ -357,7 +310,7 @@ parse_call_args :: proc(p: ^Parser) -> []^Expr {
 	return args[:]
 }
 
-parse_function_decl :: proc(p: ^Parser) -> ^Statement {
+parse_function_decl :: proc(p: ^Parser) -> ^Ast_Function {
 	func_name := expect(p, .Identifier).value.(string)
 	args := parse_function_decl_params(p)
 	ret_type := parse_function_ret_type(p)
@@ -371,15 +324,13 @@ parse_function_decl :: proc(p: ^Parser) -> ^Statement {
 
 	body := parse_block(p)
 
-	func := new(Statement)
-	func.kind = .Function
+	func := new(Ast_Function)
 
-	func.data = Statement_Function {
-		name     = func_name,
-		params   = args,
-		body     = body,
-		ret_type = ret_type,
-	}
+	func.name = func_name
+	func.params = args
+	func.body = body
+	func.ret_type = ret_type
+
 	return func
 }
 
@@ -427,8 +378,8 @@ parse_function_ret_type :: proc(p: ^Parser) -> string {
 	return ""
 }
 
-parse_block :: proc(p: ^Parser) -> ^Statement_Block {
-	res: [dynamic]^Statement
+parse_block :: proc(p: ^Parser) -> ^Ast_Block {
+	res: [dynamic]^Ast_Node
 
 	expect(p, .LBrace)
 
@@ -445,60 +396,48 @@ parse_block :: proc(p: ^Parser) -> ^Statement_Block {
 		advance(p)
 	}
 
-	sb := new(Statement_Block)
+	sb := new(Ast_Block)
 	sb.statements = res[:]
 
 	return sb
 }
 
-parse_if :: proc(p: ^Parser) -> ^Statement {
+parse_if :: proc(p: ^Parser) -> ^Ast_If {
 	cond := parse_expression(p)
 	then_block := parse_block(p)
-	else_block: ^Statement_Block = nil
+	else_block: ^Ast_Block = nil
 
 	if current(p).kind == .Else_Keyword {
 		advance(p)
 		else_block = parse_block(p)
 	}
 
-	stmt_if: Statement_If = {
-		cond       = cond,
-		then_block = then_block,
-		else_block = else_block,
-	}
+	stmt_if := new(Ast_If)
+	stmt_if.cond = cond
+	stmt_if.then_block = then_block
+	stmt_if.else_block = else_block
 
-	stmt := new(Statement)
-	stmt.kind = .If
-	stmt.data = stmt_if
-
-	return stmt
+	return stmt_if
 }
 
-parse_for_loop :: proc(p: ^Parser) -> ^Statement {
+parse_for_loop :: proc(p: ^Parser) -> ^Ast_For {
 	// No condition parsing for now
 
-	stmt := new(Statement)
-	stmt.kind = .For
-	stmt.data = Statement_For {
-		body = parse_block(p),
-	}
+	stmt := new(Ast_For)
+	stmt.body = parse_block(p)
 
 	return stmt
 }
 
-parse_break :: proc(p: ^Parser) -> ^Statement {
-	stmt := new(Statement)
-	stmt.kind = .Break
-	stmt.data = Statement_Break{}
+parse_break :: proc(p: ^Parser) -> ^Ast_Break {
+	stmt := new(Ast_Break)
 
 	expect(p, .NewLine)
 	return stmt
 }
 
-parse_continue :: proc(p: ^Parser) -> ^Statement {
-	stmt := new(Statement)
-	stmt.kind = .Continue
-	stmt.data = Statement_Continue{}
+parse_continue :: proc(p: ^Parser) -> ^Ast_Continue {
+	stmt := new(Ast_Continue)
 
 	expect(p, .NewLine)
 	return stmt

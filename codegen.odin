@@ -17,30 +17,34 @@ resolve_var :: proc(name: string) -> ValueRef {
 	return nil
 }
 
-emit_stmt :: proc(s: ^Statement, ctx: ContextRef, builder: BuilderRef, module: ModuleRef) {
-	#partial switch s.kind {
-	case .Expr:
-		data := s.data.(Statement_Expr)
-		emit_expr(data.expr, ctx, builder)
-	case .Assignment:
-		emit_assigment(s, ctx, builder, module)
-	case .Function:
-		emit_function(s, ctx, builder, module)
-	case .Return:
-		emit_return(s, ctx, builder, module)
-	case .If:
-		emit_if(s, ctx, builder, module)
-	case .For:
-		emit_for_loop(s, ctx, builder, module)
-	case .Break:
-		emit_break(s, ctx, builder, module)
+emit_stmt :: proc(s: ^Ast_Node, ctx: ContextRef, builder: BuilderRef, module: ModuleRef) {
+	#partial switch &node in s {
+	case Ast_Expr:
+		emit_expr(node.expr, ctx, builder)
+	case Ast_Assignment:
+		emit_assigment(&node, ctx, builder, module)
+	case Ast_Function:
+		emit_function(&node, ctx, builder, module)
+	case Ast_Return:
+		emit_return(&node, ctx, builder, module)
+	case Ast_If:
+		emit_if(&node, ctx, builder, module)
+	case Ast_For:
+		emit_for_loop(&node, ctx, builder, module)
+	case Ast_Break:
+		emit_break(&node, ctx, builder, module)
 	case:
 		unimplemented(fmt.tprint("Unimplement emit statement", s))
 	}
 }
 
-emit_assigment :: proc(s: ^Statement, ctx: ContextRef, builder: BuilderRef, module: ModuleRef) {
-	data := s.data.(Statement_Assignment)
+emit_assigment :: proc(
+	s: ^Ast_Assignment,
+	ctx: ContextRef,
+	builder: BuilderRef,
+	module: ModuleRef,
+) {
+	data := s
 	// Build local variables
 	// If the variable exists, just emit a Store, otherwise emit Alloca + Store
 	if !scope_top_level() {
@@ -54,11 +58,11 @@ emit_assigment :: proc(s: ^Statement, ctx: ContextRef, builder: BuilderRef, modu
 		}
 	} else {
 		// Create global variables, only constant for now
-		if data.expr.kind == .Int_Literal {
+		if _, ok := data.expr.(Expr_Int_Literal); ok {
 			ptr := AddGlobal(module, Int32Type(), strings.clone_to_cstring(data.name))
 			SetInitializer(
 				ptr,
-				ConstInt(Int32Type(), u64(data.expr.data.(Expr_Int_Literal).value), false),
+				ConstInt(Int32Type(), u64(data.expr.(Expr_Int_Literal).value), false),
 			)
 			state.global_scope.vars[data.name] = ptr
 		} else {
@@ -67,11 +71,10 @@ emit_assigment :: proc(s: ^Statement, ctx: ContextRef, builder: BuilderRef, modu
 	}
 }
 
-emit_function :: proc(s: ^Statement, ctx: ContextRef, builder: BuilderRef, module: ModuleRef) {
+emit_function :: proc(s: ^Ast_Function, ctx: ContextRef, builder: BuilderRef, module: ModuleRef) {
 	old_pos := GetInsertBlock(builder)
 
-
-	data := s.data.(Statement_Function)
+	data := s
 	func := &state.funcs[data.name]
 
 	int32 := Int32TypeInContext(ctx)
@@ -124,15 +127,15 @@ emit_function :: proc(s: ^Statement, ctx: ContextRef, builder: BuilderRef, modul
 	scope_pop()
 }
 
-emit_return :: proc(s: ^Statement, ctx: ContextRef, builder: BuilderRef, module: ModuleRef) {
-	data := s.data.(Statement_Return)
+emit_return :: proc(s: ^Ast_Return, ctx: ContextRef, builder: BuilderRef, module: ModuleRef) {
+	data := s
 	BuildRet(builder, emit_expr(data.expr, ctx, builder))
 }
 
 // This a hacked printf-type emission until we have proper external functions
 emit_print_call :: proc(e: Expr_Call, ctx: ContextRef, builder: BuilderRef) -> ValueRef {
 	fmt_ptr = BuildGlobalStringPtr(builder, "%d\n", "")
-	func := state.funcs[e.callee.data.(Expr_Variable).value]
+	func := state.funcs[e.callee.(Expr_Variable).value]
 	args := []ValueRef{fmt_ptr, emit_expr(e.args[0], ctx, builder)}
 
 	call := BuildCall2(builder, func.ty, func.fn, &args[0], u32(len(args)), "")
@@ -142,8 +145,8 @@ emit_print_call :: proc(e: Expr_Call, ctx: ContextRef, builder: BuilderRef) -> V
 
 emit_call :: proc(e: Expr_Call, ctx: ContextRef, builder: BuilderRef) -> ValueRef {
 	fmt_ptr = BuildGlobalStringPtr(builder, "%d\n", "")
-	fn_name := e.callee.data.(Expr_Variable).value
-	func, ok := state.funcs[e.callee.data.(Expr_Variable).value]
+	fn_name := e.callee.(Expr_Variable).value
+	func, ok := state.funcs[e.callee.(Expr_Variable).value]
 
 	if !ok {
 		panic(fmt.tprintln("Function", fn_name, "not found"))
@@ -161,88 +164,88 @@ emit_call :: proc(e: Expr_Call, ctx: ContextRef, builder: BuilderRef) -> ValueRe
 	}
 }
 
-emit_expr :: proc(e: ^Expr, ctx: ContextRef, builder: BuilderRef) -> ValueRef {
+emit_expr :: proc(expr: ^Expr, ctx: ContextRef, builder: BuilderRef) -> ValueRef {
 	int32 := Int32TypeInContext(ctx)
-	#partial switch e.kind {
-	case .Int_Literal:
-		return ConstInt(int32, u64(e.data.(Expr_Int_Literal).value), false)
-	case .Call:
-		data := e.data.(Expr_Call)
-		if data.callee.data.(Expr_Variable).value == "print" {
-			return emit_print_call(e.data.(Expr_Call), ctx, builder)
+	#partial switch e in expr {
+	case Expr_Int_Literal:
+		return ConstInt(int32, u64(e.value), false)
+	case Expr_Call:
+		data := e
+		if data.callee.(Expr_Variable).value == "print" {
+			return emit_print_call(e, ctx, builder)
 		} else {
-			return emit_call(e.data.(Expr_Call), ctx, builder)
+			return emit_call(e, ctx, builder)
 		}
-	case .Variable:
-		return BuildLoad2(builder, int32, resolve_var(e.data.(Expr_Variable).value), "")
-	case .Binary:
-		#partial switch e.data.(Expr_Binary).op {
+	case Expr_Variable:
+		return BuildLoad2(builder, int32, resolve_var(e.value), "")
+	case Expr_Binary:
+		#partial switch e.op {
 		case .Plus:
 			return BuildAdd(
 				builder,
-				emit_expr(e.data.(Expr_Binary).left, ctx, builder),
-				emit_expr(e.data.(Expr_Binary).right, ctx, builder),
+				emit_expr(e.left, ctx, builder),
+				emit_expr(e.right, ctx, builder),
 				"add",
 			)
 		case .Minus:
 			return BuildSub(
 				builder,
-				emit_expr(e.data.(Expr_Binary).left, ctx, builder),
-				emit_expr(e.data.(Expr_Binary).right, ctx, builder),
+				emit_expr(e.left, ctx, builder),
+				emit_expr(e.right, ctx, builder),
 				"sub",
 			)
 		case .Star:
 			return BuildMul(
 				builder,
-				emit_expr(e.data.(Expr_Binary).left, ctx, builder),
-				emit_expr(e.data.(Expr_Binary).right, ctx, builder),
+				emit_expr(e.left, ctx, builder),
+				emit_expr(e.right, ctx, builder),
 				"mul",
 			)
 		case .Slash:
 			return BuildSDiv(
 				builder,
-				emit_expr(e.data.(Expr_Binary).left, ctx, builder),
-				emit_expr(e.data.(Expr_Binary).right, ctx, builder),
+				emit_expr(e.left, ctx, builder),
+				emit_expr(e.right, ctx, builder),
 				"div",
 			)
 		case .DoubleEqual:
 			return BuildICmp(
 				builder,
 				.IntEQ,
-				emit_expr(e.data.(Expr_Binary).left, ctx, builder),
-				emit_expr(e.data.(Expr_Binary).right, ctx, builder),
+				emit_expr(e.left, ctx, builder),
+				emit_expr(e.right, ctx, builder),
 				"gt",
 			)
 		case .Greater:
 			return BuildICmp(
 				builder,
 				.IntUGT,
-				emit_expr(e.data.(Expr_Binary).left, ctx, builder),
-				emit_expr(e.data.(Expr_Binary).right, ctx, builder),
+				emit_expr(e.left, ctx, builder),
+				emit_expr(e.right, ctx, builder),
 				"gt",
 			)
 		case .Lesser:
 			return BuildICmp(
 				builder,
 				.IntULT,
-				emit_expr(e.data.(Expr_Binary).left, ctx, builder),
-				emit_expr(e.data.(Expr_Binary).right, ctx, builder),
+				emit_expr(e.left, ctx, builder),
+				emit_expr(e.right, ctx, builder),
 				"lt",
 			)
 		case .GreaterOrEqual:
 			return BuildICmp(
 				builder,
 				.IntUGE,
-				emit_expr(e.data.(Expr_Binary).left, ctx, builder),
-				emit_expr(e.data.(Expr_Binary).right, ctx, builder),
+				emit_expr(e.left, ctx, builder),
+				emit_expr(e.right, ctx, builder),
 				"gte",
 			)
 		case .LesserOrEqual:
 			return BuildICmp(
 				builder,
 				.IntULE,
-				emit_expr(e.data.(Expr_Binary).left, ctx, builder),
-				emit_expr(e.data.(Expr_Binary).right, ctx, builder),
+				emit_expr(e.left, ctx, builder),
+				emit_expr(e.right, ctx, builder),
 				"lte",
 			)
 		}
@@ -250,22 +253,17 @@ emit_expr :: proc(e: ^Expr, ctx: ContextRef, builder: BuilderRef) -> ValueRef {
 	unreachable()
 }
 
-emit_block :: proc(
-	block: ^Statement_Block,
-	ctx: ContextRef,
-	builder: BuilderRef,
-	module: ModuleRef,
-) {
+emit_block :: proc(block: ^Ast_Block, ctx: ContextRef, builder: BuilderRef, module: ModuleRef) {
 	for bst in block.statements {
 		emit_stmt(bst, ctx, builder, module)
-		if bst.kind == .Return {
+		if _, ok := bst.(Ast_Return); ok {
 			block.terminated = true
 		}
 	}
 }
 
-emit_if :: proc(s: ^Statement, ctx: ContextRef, builder: BuilderRef, module: ModuleRef) {
-	if_stmt := s.data.(Statement_If)
+emit_if :: proc(s: ^Ast_If, ctx: ContextRef, builder: BuilderRef, module: ModuleRef) {
+	if_stmt := s
 	cond_val := emit_expr(if_stmt.cond, ctx, builder)
 
 	cond_bool: ValueRef
@@ -286,7 +284,7 @@ emit_if :: proc(s: ^Statement, ctx: ContextRef, builder: BuilderRef, module: Mod
 	merge_bb := AppendBasicBlock(function, "ifcont")
 
 	else_bb: BasicBlockRef
-	if s.data.(Statement_If).else_block != nil {
+	if if_stmt.else_block != nil {
 		else_bb = AppendBasicBlock(function, "else")
 		BuildCondBr(builder, cond_bool, then_bb, else_bb)
 	} else {
@@ -313,8 +311,8 @@ emit_if :: proc(s: ^Statement, ctx: ContextRef, builder: BuilderRef, module: Mod
 	PositionBuilderAtEnd(builder, merge_bb)
 }
 
-emit_for_loop :: proc(s: ^Statement, ctx: ContextRef, builder: BuilderRef, module: ModuleRef) {
-	for_stmt := s.data.(Statement_For)
+emit_for_loop :: proc(s: ^Ast_For, ctx: ContextRef, builder: BuilderRef, module: ModuleRef) {
+	for_stmt := s
 	function := GetBasicBlockParent(GetInsertBlock(builder))
 
 	loop_bb := AppendBasicBlock(function, "loop")
@@ -333,7 +331,7 @@ emit_for_loop :: proc(s: ^Statement, ctx: ContextRef, builder: BuilderRef, modul
 	PositionBuilderAtEnd(builder, after_bb)
 }
 
-emit_break :: proc(s: ^Statement, ctx: ContextRef, builder: BuilderRef, module: ModuleRef) {
+emit_break :: proc(s: ^Ast_Break, ctx: ContextRef, builder: BuilderRef, module: ModuleRef) {
 	if queue.len(state.loops) == 0 {
 		panic("Breaking outside of a loop")
 	}
@@ -347,7 +345,7 @@ emit_break :: proc(s: ^Statement, ctx: ContextRef, builder: BuilderRef, module: 
 	PositionBuilderAtEnd(builder, dead)
 }
 
-generate :: proc(stmts: []^Statement, ctx: ContextRef, module: ModuleRef, builder: BuilderRef) {
+generate :: proc(stmts: []^Ast_Node, ctx: ContextRef, module: ModuleRef, builder: BuilderRef) {
 	int32 := Int32TypeInContext(ctx)
 	fn_type := FunctionType(int32, nil, 0, 0)
 

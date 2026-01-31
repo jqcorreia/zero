@@ -115,7 +115,7 @@ main :: proc() {
 	expr := os.read_entire_file(filename) or_else panic("No file found")
 	tokens := lex(string(expr))
 
-	// tokens_print(tokens)
+	tokens_print(tokens)
 
 	parser := Parser {
 		tokens = tokens,
