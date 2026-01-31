@@ -66,8 +66,6 @@ Expr :: union {
 	Expr_Call,
 }
 
-Expr_Data :: union {}
-
 Expr_Int_Literal :: struct {
 	value: i64,
 }
@@ -190,31 +188,28 @@ parse_statement :: proc(p: ^Parser) -> ^Ast_Node {
 }
 
 expr_int_literal :: proc(value: i64) -> ^Expr {
-	expr := new(Expr_Int_Literal)
-	expr.value = value
-
 	ret := new(Expr)
-	ret^ = expr^
+	ret^ = Expr_Int_Literal {
+		value = value,
+	}
 	return ret
 }
 
 expr_binary :: proc(op: Token_Kind, left: ^Expr, right: ^Expr) -> ^Expr {
-	expr := new(Expr_Binary)
-	expr.op = op
-	expr.left = left
-	expr.right = right
-
-	ret := new(Expr)
-	ret^ = expr^
-	return ret
+	expr := new(Expr)
+	expr^ = Expr_Binary {
+		op    = op,
+		left  = left,
+		right = right,
+	}
+	return expr
 }
 expr_ident :: proc(value: string) -> ^Expr {
-	expr := new(Expr_Variable)
-
-	expr.value = value
-
 	ret := new(Expr)
-	ret^ = expr^
+	ret^ = Expr_Variable {
+		value = value,
+	}
+
 	return ret
 }
 
@@ -231,12 +226,11 @@ expr_call :: proc(callee: ^Expr, args: []^Expr) -> ^Expr {
 		panic(fmt.tprintf("Extra arguments in call to function '%s'", func.name))
 	}
 
-	expr := new(Expr_Call)
-	expr.callee = callee
-	expr.args = args
-
 	ret := new(Expr)
-	ret^ = expr^
+	ret^ = Expr_Call {
+		callee = callee,
+		args   = args,
+	}
 	return ret
 }
 
