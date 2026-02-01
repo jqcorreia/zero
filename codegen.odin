@@ -100,7 +100,7 @@ emit_function :: proc(s: ^Ast_Function, ctx: ContextRef, builder: BuilderRef, mo
 	func.ty = fn_type
 	func.fn = fn
 
-	SetLinkage(fn, .InternalLinkage)
+	SetLinkage(fn, .ExternalLinkage)
 	entry := AppendBasicBlockInContext(ctx, fn, "")
 	PositionBuilderAtEnd(builder, entry)
 
@@ -134,7 +134,7 @@ emit_return :: proc(s: ^Ast_Return, ctx: ContextRef, builder: BuilderRef, module
 
 // This a hacked printf-type emission until we have proper external functions
 emit_print_call :: proc(e: Expr_Call, ctx: ContextRef, builder: BuilderRef) -> ValueRef {
-	fmt_ptr = BuildGlobalStringPtr(builder, "%d\n", "")
+	fmt_ptr := BuildGlobalStringPtr(builder, "%d\n", "")
 	func := state.funcs[e.callee.(Expr_Variable).value]
 	args := []ValueRef{fmt_ptr, emit_expr(e.args[0], ctx, builder)}
 
@@ -144,7 +144,6 @@ emit_print_call :: proc(e: Expr_Call, ctx: ContextRef, builder: BuilderRef) -> V
 }
 
 emit_call :: proc(e: Expr_Call, ctx: ContextRef, builder: BuilderRef) -> ValueRef {
-	fmt_ptr = BuildGlobalStringPtr(builder, "%d\n", "")
 	fn_name := e.callee.(Expr_Variable).value
 	func, ok := state.funcs[e.callee.(Expr_Variable).value]
 
@@ -346,19 +345,19 @@ emit_break :: proc(s: ^Ast_Break, ctx: ContextRef, builder: BuilderRef, module: 
 }
 
 generate :: proc(stmts: []^Ast_Node, ctx: ContextRef, module: ModuleRef, builder: BuilderRef) {
-	int32 := Int32TypeInContext(ctx)
-	fn_type := FunctionType(int32, nil, 0, 0)
+	// int32 := Int32TypeInContext(ctx)
+	// fn_type := FunctionType(int32, nil, 0, 0)
 
-	main_f := AddFunction(module, "main", fn_type)
+	// main_f := AddFunction(module, "main", fn_type)
 
-	entry := AppendBasicBlockInContext(ctx, main_f, "")
-	PositionBuilderAtEnd(builder, entry)
+	// entry := AppendBasicBlockInContext(ctx, main_f, "")
+	// PositionBuilderAtEnd(builder, entry)
 
 	for stmt in stmts {
 		emit_stmt(stmt, ctx, builder, module)
 	}
 
-	DumpValue(main_f)
+	// DumpValue(main_f)
 
-	BuildRet(builder, ConstInt(int32, 0, false))
+	// BuildRet(builder, ConstInt(int32, 0, false))
 }

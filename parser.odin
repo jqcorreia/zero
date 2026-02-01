@@ -218,17 +218,18 @@ expr_ident :: proc(value: string) -> ^Expr {
 }
 
 expr_call :: proc(callee: ^Expr, args: []^Expr) -> ^Expr {
-	func, ok := state.funcs[callee.(Expr_Variable).value]
-	if !ok {
-		panic("function not found")
-	}
+	//NOTE: do not do this here, move it to semantic checker or type checker
+	// func, ok := state.funcs[callee.(Expr_Variable).value]
+	// if !ok {
+	// 	panic("function not found")
+	// }
 
-	if len(args) < len(func.params) {
-		panic(fmt.tprintf("Missing arguments in call to function '%s'", func.name))
-	}
-	if len(args) > len(func.params) {
-		panic(fmt.tprintf("Extra arguments in call to function '%s'", func.name))
-	}
+	// if len(args) < len(func.params) {
+	// 	panic(fmt.tprintf("Missing arguments in call to function '%s'", func.name))
+	// }
+	// if len(args) > len(func.params) {
+	// 	panic(fmt.tprintf("Extra arguments in call to function '%s'", func.name))
+	// }
 
 	ret := new(Expr)
 	ret^ = Expr_Call {
@@ -357,6 +358,9 @@ parse_function_decl_params :: proc(p: ^Parser) -> []string {
 			arg_name := current(p).lexeme
 			append(&params, arg_name)
 			advance(p)
+			expect(p, .Colon)
+			type_ident := expect(p, .Identifier)
+
 		case .Comma:
 			if peek(p).kind == .RParen {
 				unexpected_token(peek(p))

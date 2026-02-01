@@ -63,7 +63,6 @@ expr_print :: proc(expr: ^Expr, lvl: u32 = 0) {
 		expr_print(e.left, lvl + 1)
 		expr_print(e.right, lvl + 1)
 	case Expr_Call:
-		fmt.println(e)
 		fmt.println("Call ", e.callee.(Expr_Variable).value)
 		for arg in e.args {
 			expr_print(arg, lvl + 1)

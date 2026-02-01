@@ -7,11 +7,6 @@ import "core:strings"
 import "core:sys/posix"
 import "core:time"
 
-printf_fn: ValueRef
-fmt_ptr: ValueRef
-printf_ty: TypeRef
-
-
 Function :: struct {
 	name:        string,
 	params:      []string,
@@ -61,14 +56,14 @@ setup_runtime :: proc(ctx: ContextRef, module: ModuleRef, builder: BuilderRef) {
 	i8 := Int8TypeInContext(ctx)
 	i8p := PointerType(i8, 0)
 
-	printf_ty = FunctionType(
+	printf_ty := FunctionType(
 		i32, // return type
 		&i8p, // first arg: char *
 		1,
 		true, // variadic
 	)
 
-	printf_fn = AddFunction(module, "printf", printf_ty)
+	printf_fn := AddFunction(module, "printf", printf_ty)
 
 	state.funcs["print"] = Function {
 		name   = "print",
