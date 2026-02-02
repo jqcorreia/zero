@@ -9,7 +9,7 @@ resolve_var :: proc(name: string) -> ValueRef {
 	if local_var_ok {
 		return local_var
 	} else {
-		global_var, global_var_ok := state.global_scope.vars[name]
+		global_var, global_var_ok := compiler.global_scope.vars[name]
 		if global_var_ok {
 			return global_var
 		}
@@ -64,7 +64,7 @@ emit_assigment :: proc(
 				ptr,
 				ConstInt(Int32Type(), u64(data.expr.(Expr_Int_Literal).value), false),
 			)
-			state.global_scope.vars[data.name] = ptr
+			compiler.global_scope.vars[data.name] = ptr
 		} else {
 			panic("Global variables need to be constants")
 		}
@@ -75,7 +75,7 @@ emit_function :: proc(s: ^Ast_Function, ctx: ContextRef, builder: BuilderRef, mo
 	old_pos := GetInsertBlock(builder)
 
 	data := s
-	func := &state.funcs[data.name]
+	func := &compiler.funcs[data.name]
 
 	int32 := Int32TypeInContext(ctx)
 	param_types: [dynamic]TypeRef
@@ -135,7 +135,7 @@ emit_return :: proc(s: ^Ast_Return, ctx: ContextRef, builder: BuilderRef, module
 // This a hacked printf-type emission until we have proper external functions
 emit_print_call :: proc(e: Expr_Call, ctx: ContextRef, builder: BuilderRef) -> ValueRef {
 	fmt_ptr := BuildGlobalStringPtr(builder, "%d\n", "")
-	func := state.funcs[e.callee.(Expr_Variable).value]
+	func := compiler.funcs[e.callee.(Expr_Variable).value]
 	args := []ValueRef{fmt_ptr, emit_expr(e.args[0], ctx, builder)}
 
 	call := BuildCall2(builder, func.ty, func.fn, &args[0], u32(len(args)), "")
@@ -145,7 +145,7 @@ emit_print_call :: proc(e: Expr_Call, ctx: ContextRef, builder: BuilderRef) -> V
 
 emit_call :: proc(e: Expr_Call, ctx: ContextRef, builder: BuilderRef) -> ValueRef {
 	fn_name := e.callee.(Expr_Variable).value
-	func, ok := state.funcs[e.callee.(Expr_Variable).value]
+	func, ok := compiler.funcs[e.callee.(Expr_Variable).value]
 
 	if !ok {
 		panic(fmt.tprintln("Function", fn_name, "not found"))
@@ -318,7 +318,7 @@ emit_for_loop :: proc(s: ^Ast_For, ctx: ContextRef, builder: BuilderRef, module:
 	after_bb := AppendBasicBlock(function, "after")
 
 	BuildBr(builder, loop_bb)
-	queue.push_front(&state.loops, Loop{break_block = after_bb})
+	queue.push_front(&compiler.loops, Loop{break_block = after_bb})
 	PositionBuilderAtEnd(builder, loop_bb)
 	emit_block(for_stmt.body, ctx, builder, module)
 
@@ -326,15 +326,15 @@ emit_for_loop :: proc(s: ^Ast_For, ctx: ContextRef, builder: BuilderRef, module:
 		BuildBr(builder, loop_bb)
 	}
 
-	queue.pop_front(&state.loops)
+	queue.pop_front(&compiler.loops)
 	PositionBuilderAtEnd(builder, after_bb)
 }
 
 emit_break :: proc(s: ^Ast_Break, ctx: ContextRef, builder: BuilderRef, module: ModuleRef) {
-	if queue.len(state.loops) == 0 {
+	if queue.len(compiler.loops) == 0 {
 		panic("Breaking outside of a loop")
 	}
-	loop := queue.front(&state.loops)
+	loop := queue.front(&compiler.loops)
 
 	BuildBr(builder, loop.break_block)
 
@@ -344,7 +344,7 @@ emit_break :: proc(s: ^Ast_Break, ctx: ContextRef, builder: BuilderRef, module: 
 	PositionBuilderAtEnd(builder, dead)
 }
 
-generate :: proc(stmts: []^Ast_Node, ctx: ContextRef, module: ModuleRef, builder: BuilderRef) {
+generate :: proc(stmts: []^Ast_Node) {
 	// int32 := Int32TypeInContext(ctx)
 	// fn_type := FunctionType(int32, nil, 0, 0)
 
@@ -352,12 +352,48 @@ generate :: proc(stmts: []^Ast_Node, ctx: ContextRef, module: ModuleRef, builder
 
 	// entry := AppendBasicBlockInContext(ctx, main_f, "")
 	// PositionBuilderAtEnd(builder, entry)
+	ctx := ContextCreate()
+	module := ModuleCreateWithNameInContext("calc", ctx)
+	builder := CreateBuilderInContext(ctx)
+
+	setup_runtime(ctx, module, builder)
 
 	for stmt in stmts {
 		emit_stmt(stmt, ctx, builder, module)
 	}
 
-	// DumpValue(main_f)
+	InitializeX86Target()
+	InitializeX86TargetInfo()
+	InitializeX86TargetMC()
+	InitializeX86AsmPrinter()
 
-	// BuildRet(builder, ConstInt(int32, 0, false))
+	triple := GetDefaultTargetTriple()
+
+	target: TargetRef
+
+	error: cstring
+	if GetTargetFromTriple(triple, &target, &error) > 0 {
+		fmt.println(triple, string(error))
+		return
+	}
+	SetTarget(module, triple)
+
+	fmt.println(target, triple)
+	tm := CreateTargetMachine(
+		target,
+		triple,
+		"generic",
+		"",
+		.CodeGenLevelDefault,
+		.RelocPIC,
+		.CodeModelDefault,
+	)
+
+	SetModuleDataLayout(module, CreateTargetDataLayout(tm))
+	if VerifyModule(module, .AbortProcessAction, &error) > 0 {
+		fmt.println(error)
+	}
+	if TargetMachineEmitToFile(tm, module, "calc.o", .ObjectFile, &error) > 0 {
+		fmt.println(error)
+	}
 }

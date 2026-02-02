@@ -100,7 +100,7 @@ lex :: proc(input: string) -> []Token {
 	}
 
 	// Always a line start at offset 0
-	append(&state.line_starts, 0)
+	append(&compiler.line_starts, 0)
 
 	for {
 		if lexer.pos >= len(lexer.input) {
@@ -118,11 +118,11 @@ lex :: proc(input: string) -> []Token {
 		case is_newline(c):
 			append(&tokens, Token{kind = .NewLine, lexeme = "\n", span = one_char_span(lexer)})
 			lexer.pos += 1
-			append(&state.line_starts, lexer.pos)
+			append(&compiler.line_starts, lexer.pos)
 			// Skip any repeated newlines
 			for lexer.pos < len(lexer.input) && is_newline(lexer.input[lexer.pos]) {
 				lexer.pos += 1
-				append(&state.line_starts, lexer.pos)
+				append(&compiler.line_starts, lexer.pos)
 			}
 		case is_numeric(c):
 			start := lexer.pos

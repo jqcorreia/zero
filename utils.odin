@@ -3,6 +3,24 @@ package main
 import "core:fmt"
 import "core:strings"
 
+token_serialize :: proc(token: Token) -> string {
+	sb := strings.builder_make()
+	line, col := span_to_location(token.span)
+	lexeme := token.lexeme
+	if lexeme == "\n" {
+		lexeme = "\\n"
+	}
+	fmt.sbprintf(&sb, "%s \"%s\", line: %d, col: %d", token.kind, lexeme, line, col)
+
+	return strings.to_string(sb)
+}
+
+tokens_print :: proc(tokens: []Token) {
+	for token in tokens {
+		fmt.println(token_serialize(token))
+	}
+}
+
 expr_print_sb :: proc(expr: ^Expr, lvl: u32 = 0) -> string {
 	sb := strings.builder_make()
 	if expr == nil {
@@ -84,14 +102,14 @@ two_char_span :: proc(lexer: Lexer) -> Span {
 }
 
 span_to_location :: proc(span: Span) -> (line: int, col: int) {
-	if len(state.line_starts) == 1 {
+	if len(compiler.line_starts) == 1 {
 		return 1, span.start
 	}
 	idx := 0
 	start := span.start
 	for {
-		left := state.line_starts[idx]
-		right := state.line_starts[idx + 1]
+		left := compiler.line_starts[idx]
+		right := compiler.line_starts[idx + 1]
 
 		switch {
 		case left <= start && right <= start:

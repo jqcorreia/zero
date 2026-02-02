@@ -224,7 +224,7 @@ expr_ident :: proc(value: string) -> ^Expr {
 
 expr_call :: proc(callee: ^Expr, args: []^Expr) -> ^Expr {
 	//NOTE: do not do this here, move it to semantic checker or type checker
-	// func, ok := state.funcs[callee.(Expr_Variable).value]
+	// func, ok := compiler.funcs[callee.(Expr_Variable).value]
 	// if !ok {
 	// 	panic("function not found")
 	// }
@@ -328,7 +328,7 @@ parse_function_decl :: proc(p: ^Parser) -> ^Ast_Function {
 	ret_type := parse_function_ret_type(p)
 
 	// Initial declaration of a function
-	state.funcs[func_name] = {
+	compiler.funcs[func_name] = {
 		name        = func_name,
 		params      = params,
 		return_type = ret_type,
