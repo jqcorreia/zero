@@ -98,11 +98,7 @@ tokens_print :: proc(tokens: []Token) {
 }
 
 main :: proc() {
-	ctx := ContextCreate()
-	module := ModuleCreateWithNameInContext("calc", ctx)
-	builder := CreateBuilderInContext(ctx)
-
-	setup(ctx, module, builder)
+	setup_native_types()
 
 	// fmt.println(state.funcs)
 	start_time := time.now()
@@ -125,6 +121,12 @@ main :: proc() {
 	for stmt in stmts {
 		statement_print(stmt)
 	}
+
+	ctx := ContextCreate()
+	module := ModuleCreateWithNameInContext("calc", ctx)
+	builder := CreateBuilderInContext(ctx)
+
+	setup(ctx, module, builder)
 
 	generate(stmts, ctx, module, builder)
 
@@ -165,6 +167,10 @@ main :: proc() {
 	// DumpModule(module)
 	fmt.println("--- Compilation done in", time.diff(start_time, time.now()), "---")
 
-	posix.system("cc -o calc calc.o")
-	posix.system("./calc")
+	when ODIN_OS == .Linux {
+		posix.system("cc -o calc calc.o")
+		posix.system("./calc")
+	} else {
+		unimplemented("Only linux is supported for now. :-\\")
+	}
 }
