@@ -9,10 +9,10 @@ import "core:time"
 
 Function :: struct {
 	name:        string,
-	params:      []string,
+	params:      []Param,
 	ty:          TypeRef,
 	fn:          ValueRef,
-	return_type: string,
+	return_type: ^Type,
 }
 
 Scope :: struct {
@@ -25,14 +25,13 @@ Loop :: struct {
 
 State :: struct {
 	funcs:        map[string]Function,
-	ret_value:    ValueRef,
 	line_starts:  [dynamic]int,
 	scopes:       queue.Queue(Scope),
 	global_scope: Scope,
 	loops:        queue.Queue(Loop),
 }
 
-state := State{}
+state: State
 
 scope_push :: proc(scope: Scope) {
 	queue.push_front(&state.scopes, Scope{})
@@ -69,7 +68,7 @@ setup_runtime :: proc(ctx: ContextRef, module: ModuleRef, builder: BuilderRef) {
 		name   = "print",
 		ty     = printf_ty,
 		fn     = printf_fn,
-		params = {"val"},
+		params = {Param{name = "val", type = &Type{kind = .Int32}}},
 	}
 	scope_push({})
 }
@@ -99,7 +98,7 @@ main :: proc() {
 
 	setup_runtime(ctx, module, builder)
 
-	fmt.println(state)
+	fmt.println(state.funcs)
 	start_time := time.now()
 	filename := "test4.z"
 

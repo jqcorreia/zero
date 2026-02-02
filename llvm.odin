@@ -114,9 +114,9 @@ MemoryManagerAllocateDataSectionCallback :: #type proc(
 	Alignment: _c.uint,
 	SectionID: _c.uint,
 	SectionName: cstring,
-	IsReadOnly: Bool,
+	IsReadOnly: LLVMBool,
 ) -> ^u8
-MemoryManagerFinalizeMemoryCallback :: #type proc(Opaque: rawptr, ErrMsg: ^cstring) -> Bool
+MemoryManagerFinalizeMemoryCallback :: #type proc(Opaque: rawptr, ErrMsg: ^cstring) -> LLVMBool
 MemoryManagerDestroyCallback :: #type proc(Opaque: rawptr)
 OrcLLJITBuilderObjectLinkingLayerCreatorFunction :: #type proc(
 	Ctx: rawptr,
@@ -217,7 +217,7 @@ TargetDataRef :: ^OpaqueTargetData
 TargetLibraryInfoRef :: ^OpaqueTargetLibraryInfotData
 TargetMachineRef :: ^OpaqueTargetMachine
 TargetRef :: ^Target
-Bool :: _c.int
+LLVMBool :: _c.int
 MemoryBufferRef :: ^OpaqueMemoryBuffer
 ContextRef :: ^OpaqueContext
 ModuleRef :: ^OpaqueModule
@@ -878,8 +878,8 @@ OpaqueMCJITMemoryManager :: struct {}
 MCJITCompilerOptions :: struct {
 	OptLevel:           _c.uint,
 	CodeModel:          CodeModel,
-	NoFramePointerElim: Bool,
-	EnableFastISel:     Bool,
+	NoFramePointerElim: LLVMBool,
+	EnableFastISel:     LLVMBool,
 	MCJMM:              MCJITMemoryManagerRef,
 }
 
@@ -1056,18 +1056,18 @@ OpaqueBinary :: struct {}
 
 @(default_calling_convention = "c", link_prefix = "LLVM")
 foreign LLVM_C {
-	VerifyModule :: proc(M: ModuleRef, Action: VerifierFailureAction, OutMessage: ^cstring) -> Bool ---
-	VerifyFunction :: proc(Fn: ValueRef, Action: VerifierFailureAction) -> Bool ---
+	VerifyModule :: proc(M: ModuleRef, Action: VerifierFailureAction, OutMessage: ^cstring) -> LLVMBool ---
+	VerifyFunction :: proc(Fn: ValueRef, Action: VerifierFailureAction) -> LLVMBool ---
 	ViewFunctionCFG :: proc(Fn: ValueRef) ---
 	ViewFunctionCFGOnly :: proc(Fn: ValueRef) ---
-	ParseBitcode :: proc(MemBuf: MemoryBufferRef, OutModule: ^ModuleRef, OutMessage: ^cstring) -> Bool ---
-	ParseBitcode2 :: proc(MemBuf: MemoryBufferRef, OutModule: ^ModuleRef) -> Bool ---
-	ParseBitcodeInContext :: proc(ContextRef: ContextRef, MemBuf: MemoryBufferRef, OutModule: ^ModuleRef, OutMessage: ^cstring) -> Bool ---
-	ParseBitcodeInContext2 :: proc(ContextRef: ContextRef, MemBuf: MemoryBufferRef, OutModule: ^ModuleRef) -> Bool ---
-	GetBitcodeModuleInContext :: proc(ContextRef: ContextRef, MemBuf: MemoryBufferRef, OutM: ^ModuleRef, OutMessage: ^cstring) -> Bool ---
-	GetBitcodeModuleInContext2 :: proc(ContextRef: ContextRef, MemBuf: MemoryBufferRef, OutM: ^ModuleRef) -> Bool ---
-	GetBitcodeModule :: proc(MemBuf: MemoryBufferRef, OutM: ^ModuleRef, OutMessage: ^cstring) -> Bool ---
-	GetBitcodeModule2 :: proc(MemBuf: MemoryBufferRef, OutM: ^ModuleRef) -> Bool ---
+	ParseBitcode :: proc(MemBuf: MemoryBufferRef, OutModule: ^ModuleRef, OutMessage: ^cstring) -> LLVMBool ---
+	ParseBitcode2 :: proc(MemBuf: MemoryBufferRef, OutModule: ^ModuleRef) -> LLVMBool ---
+	ParseBitcodeInContext :: proc(ContextRef: ContextRef, MemBuf: MemoryBufferRef, OutModule: ^ModuleRef, OutMessage: ^cstring) -> LLVMBool ---
+	ParseBitcodeInContext2 :: proc(ContextRef: ContextRef, MemBuf: MemoryBufferRef, OutModule: ^ModuleRef) -> LLVMBool ---
+	GetBitcodeModuleInContext :: proc(ContextRef: ContextRef, MemBuf: MemoryBufferRef, OutM: ^ModuleRef, OutMessage: ^cstring) -> LLVMBool ---
+	GetBitcodeModuleInContext2 :: proc(ContextRef: ContextRef, MemBuf: MemoryBufferRef, OutM: ^ModuleRef) -> LLVMBool ---
+	GetBitcodeModule :: proc(MemBuf: MemoryBufferRef, OutM: ^ModuleRef, OutMessage: ^cstring) -> LLVMBool ---
+	GetBitcodeModule2 :: proc(MemBuf: MemoryBufferRef, OutM: ^ModuleRef) -> LLVMBool ---
 	WriteBitcodeToFile :: proc(M: ModuleRef, Path: cstring) -> _c.int ---
 	WriteBitcodeToFD :: proc(M: ModuleRef, FD: _c.int, ShouldClose: _c.int, Unbuffered: _c.int) -> _c.int ---
 	WriteBitcodeToFileHandle :: proc(M: ModuleRef, Handle: _c.int) -> _c.int ---
@@ -1114,8 +1114,8 @@ foreign LLVM_C {
 	ContextGetDiagnosticHandler :: proc(C: ContextRef) -> DiagnosticHandler ---
 	ContextGetDiagnosticContext :: proc(C: ContextRef) -> rawptr ---
 	ContextSetYieldCallback :: proc(C: ContextRef, Callback: YieldCallback, OpaqueHandle: rawptr) ---
-	ContextShouldDiscardValueNames :: proc(C: ContextRef) -> Bool ---
-	ContextSetDiscardValueNames :: proc(C: ContextRef, Discard: Bool) ---
+	ContextShouldDiscardValueNames :: proc(C: ContextRef) -> LLVMBool ---
+	ContextSetDiscardValueNames :: proc(C: ContextRef, Discard: LLVMBool) ---
 	ContextDispose :: proc(C: ContextRef) ---
 	GetDiagInfoDescription :: proc(DI: DiagnosticInfoRef) -> cstring ---
 	GetDiagInfoSeverity :: proc(DI: DiagnosticInfoRef) -> DiagnosticSeverity ---
@@ -1131,9 +1131,9 @@ foreign LLVM_C {
 	CreateStringAttribute :: proc(C: ContextRef, K: cstring, KLength: _c.uint, V: cstring, VLength: _c.uint) -> AttributeRef ---
 	GetStringAttributeKind :: proc(A: AttributeRef, Length: ^_c.uint) -> cstring ---
 	GetStringAttributeValue :: proc(A: AttributeRef, Length: ^_c.uint) -> cstring ---
-	IsEnumAttribute :: proc(A: AttributeRef) -> Bool ---
-	IsStringAttribute :: proc(A: AttributeRef) -> Bool ---
-	IsTypeAttribute :: proc(A: AttributeRef) -> Bool ---
+	IsEnumAttribute :: proc(A: AttributeRef) -> LLVMBool ---
+	IsStringAttribute :: proc(A: AttributeRef) -> LLVMBool ---
+	IsTypeAttribute :: proc(A: AttributeRef) -> LLVMBool ---
 	GetTypeByName2 :: proc(C: ContextRef, Name: cstring) -> TypeRef ---
 	ModuleCreateWithName :: proc(ModuleID: cstring) -> ModuleRef ---
 	ModuleCreateWithNameInContext :: proc(ModuleID: cstring, C: ContextRef) -> ModuleRef ---
@@ -1156,12 +1156,12 @@ foreign LLVM_C {
 	GetModuleFlag :: proc(M: ModuleRef, Key: cstring, KeyLen: _c.size_t) -> MetadataRef ---
 	AddModuleFlag :: proc(M: ModuleRef, Behavior: ModuleFlagBehavior, Key: cstring, KeyLen: _c.size_t, Val: MetadataRef) ---
 	DumpModule :: proc(M: ModuleRef) ---
-	PrintModuleToFile :: proc(M: ModuleRef, Filename: cstring, ErrorMessage: ^cstring) -> Bool ---
+	PrintModuleToFile :: proc(M: ModuleRef, Filename: cstring, ErrorMessage: ^cstring) -> LLVMBool ---
 	PrintModuleToString :: proc(M: ModuleRef) -> cstring ---
 	GetModuleInlineAsm :: proc(M: ModuleRef, Len: ^_c.size_t) -> cstring ---
 	SetModuleInlineAsm2 :: proc(M: ModuleRef, Asm: cstring, Len: _c.size_t) ---
 	AppendModuleInlineAsm :: proc(M: ModuleRef, Asm: cstring, Len: _c.size_t) ---
-	GetInlineAsm :: proc(Ty: TypeRef, AsmString: cstring, AsmStringSize: _c.size_t, Constraints: cstring, ConstraintsSize: _c.size_t, HasSideEffects: Bool, IsAlignStack: Bool, Dialect: InlineAsmDialect, CanThrow: Bool) -> ValueRef ---
+	GetInlineAsm :: proc(Ty: TypeRef, AsmString: cstring, AsmStringSize: _c.size_t, Constraints: cstring, ConstraintsSize: _c.size_t, HasSideEffects: LLVMBool, IsAlignStack: LLVMBool, Dialect: InlineAsmDialect, CanThrow: LLVMBool) -> ValueRef ---
 	GetModuleContext :: proc(M: ModuleRef) -> ContextRef ---
 	GetTypeByName :: proc(M: ModuleRef, Name: cstring) -> TypeRef ---
 	GetFirstNamedMetadata :: proc(M: ModuleRef) -> NamedMDNodeRef ---
@@ -1186,7 +1186,7 @@ foreign LLVM_C {
 	GetPreviousFunction :: proc(Fn: ValueRef) -> ValueRef ---
 	SetModuleInlineAsm :: proc(M: ModuleRef, Asm: cstring) ---
 	GetTypeKind :: proc(Ty: TypeRef) -> TypeKind ---
-	TypeIsSized :: proc(Ty: TypeRef) -> Bool ---
+	TypeIsSized :: proc(Ty: TypeRef) -> LLVMBool ---
 	GetTypeContext :: proc(Ty: TypeRef) -> ContextRef ---
 	DumpType :: proc(Val: TypeRef) ---
 	PrintTypeToString :: proc(Val: TypeRef) -> cstring ---
@@ -1219,22 +1219,22 @@ foreign LLVM_C {
 	X86FP80Type :: proc() -> TypeRef ---
 	FP128Type :: proc() -> TypeRef ---
 	PPCFP128Type :: proc() -> TypeRef ---
-	FunctionType :: proc(ReturnType: TypeRef, ParamTypes: ^TypeRef, ParamCount: _c.uint, IsVarArg: Bool) -> TypeRef ---
-	IsFunctionVarArg :: proc(FunctionTy: TypeRef) -> Bool ---
+	FunctionType :: proc(ReturnType: TypeRef, ParamTypes: ^TypeRef, ParamCount: _c.uint, IsVarArg: LLVMBool) -> TypeRef ---
+	IsFunctionVarArg :: proc(FunctionTy: TypeRef) -> LLVMBool ---
 	GetReturnType :: proc(FunctionTy: TypeRef) -> TypeRef ---
 	CountParamTypes :: proc(FunctionTy: TypeRef) -> _c.uint ---
 	GetParamTypes :: proc(FunctionTy: TypeRef, Dest: ^TypeRef) ---
-	StructTypeInContext :: proc(C: ContextRef, ElementTypes: ^TypeRef, ElementCount: _c.uint, Packed: Bool) -> TypeRef ---
-	StructType :: proc(ElementTypes: ^TypeRef, ElementCount: _c.uint, Packed: Bool) -> TypeRef ---
+	StructTypeInContext :: proc(C: ContextRef, ElementTypes: ^TypeRef, ElementCount: _c.uint, Packed: LLVMBool) -> TypeRef ---
+	StructType :: proc(ElementTypes: ^TypeRef, ElementCount: _c.uint, Packed: LLVMBool) -> TypeRef ---
 	StructCreateNamed :: proc(C: ContextRef, Name: cstring) -> TypeRef ---
 	GetStructName :: proc(Ty: TypeRef) -> cstring ---
-	StructSetBody :: proc(StructTy: TypeRef, ElementTypes: ^TypeRef, ElementCount: _c.uint, Packed: Bool) ---
+	StructSetBody :: proc(StructTy: TypeRef, ElementTypes: ^TypeRef, ElementCount: _c.uint, Packed: LLVMBool) ---
 	CountStructElementTypes :: proc(StructTy: TypeRef) -> _c.uint ---
 	GetStructElementTypes :: proc(StructTy: TypeRef, Dest: ^TypeRef) ---
 	StructGetTypeAtIndex :: proc(StructTy: TypeRef, i: _c.uint) -> TypeRef ---
-	IsPackedStruct :: proc(StructTy: TypeRef) -> Bool ---
-	IsOpaqueStruct :: proc(StructTy: TypeRef) -> Bool ---
-	IsLiteralStruct :: proc(StructTy: TypeRef) -> Bool ---
+	IsPackedStruct :: proc(StructTy: TypeRef) -> LLVMBool ---
+	IsOpaqueStruct :: proc(StructTy: TypeRef) -> LLVMBool ---
+	IsLiteralStruct :: proc(StructTy: TypeRef) -> LLVMBool ---
 	GetElementType :: proc(Ty: TypeRef) -> TypeRef ---
 	GetSubtypes :: proc(Tp: TypeRef, Arr: ^TypeRef) ---
 	GetNumContainedTypes :: proc(Tp: TypeRef) -> _c.uint ---
@@ -1243,7 +1243,7 @@ foreign LLVM_C {
 	GetArrayLength :: proc(ArrayTy: TypeRef) -> _c.uint ---
 	GetArrayLength2 :: proc(ArrayTy: TypeRef) -> u64 ---
 	PointerType :: proc(ElementType: TypeRef, AddressSpace: _c.uint) -> TypeRef ---
-	PointerTypeIsOpaque :: proc(Ty: TypeRef) -> Bool ---
+	PointerTypeIsOpaque :: proc(Ty: TypeRef) -> LLVMBool ---
 	PointerTypeInContext :: proc(C: ContextRef, AddressSpace: _c.uint) -> TypeRef ---
 	GetPointerAddressSpace :: proc(PointerTy: TypeRef) -> _c.uint ---
 	VectorType :: proc(ElementType: TypeRef, ElementCount: _c.uint) -> TypeRef ---
@@ -1267,9 +1267,9 @@ foreign LLVM_C {
 	DumpValue :: proc(Val: ValueRef) ---
 	PrintValueToString :: proc(Val: ValueRef) -> cstring ---
 	ReplaceAllUsesWith :: proc(OldVal: ValueRef, NewVal: ValueRef) ---
-	IsConstant :: proc(Val: ValueRef) -> Bool ---
-	IsUndef :: proc(Val: ValueRef) -> Bool ---
-	IsPoison :: proc(Val: ValueRef) -> Bool ---
+	IsConstant :: proc(Val: ValueRef) -> LLVMBool ---
+	IsUndef :: proc(Val: ValueRef) -> LLVMBool ---
+	IsPoison :: proc(Val: ValueRef) -> LLVMBool ---
 	IsAMDNode :: proc(Val: ValueRef) -> ValueRef ---
 	IsAValueAsMetadata :: proc(Val: ValueRef) -> ValueRef ---
 	IsAMDString :: proc(Val: ValueRef) -> ValueRef ---
@@ -1287,9 +1287,9 @@ foreign LLVM_C {
 	ConstAllOnes :: proc(Ty: TypeRef) -> ValueRef ---
 	GetUndef :: proc(Ty: TypeRef) -> ValueRef ---
 	GetPoison :: proc(Ty: TypeRef) -> ValueRef ---
-	IsNull :: proc(Val: ValueRef) -> Bool ---
+	IsNull :: proc(Val: ValueRef) -> LLVMBool ---
 	ConstPointerNull :: proc(Ty: TypeRef) -> ValueRef ---
-	ConstInt :: proc(IntTy: TypeRef, N: _c.ulonglong, SignExtend: Bool) -> ValueRef ---
+	ConstInt :: proc(IntTy: TypeRef, N: _c.ulonglong, SignExtend: LLVMBool) -> ValueRef ---
 	ConstIntOfArbitraryPrecision :: proc(IntTy: TypeRef, NumWords: _c.uint, Words: ^u64) -> ValueRef ---
 	ConstIntOfString :: proc(IntTy: TypeRef, Text: cstring, Radix: u8) -> ValueRef ---
 	ConstIntOfStringAndSize :: proc(IntTy: TypeRef, Text: cstring, SLen: _c.uint, Radix: u8) -> ValueRef ---
@@ -1298,13 +1298,13 @@ foreign LLVM_C {
 	ConstRealOfStringAndSize :: proc(RealTy: TypeRef, Text: cstring, SLen: _c.uint) -> ValueRef ---
 	ConstIntGetZExtValue :: proc(ConstantVal: ValueRef) -> _c.ulonglong ---
 	ConstIntGetSExtValue :: proc(ConstantVal: ValueRef) -> _c.longlong ---
-	ConstRealGetDouble :: proc(ConstantVal: ValueRef, losesInfo: ^Bool) -> _c.double ---
-	ConstStringInContext :: proc(C: ContextRef, Str: cstring, Length: _c.uint, DontNullTerminate: Bool) -> ValueRef ---
-	ConstString :: proc(Str: cstring, Length: _c.uint, DontNullTerminate: Bool) -> ValueRef ---
-	IsConstantString :: proc(c: ValueRef) -> Bool ---
+	ConstRealGetDouble :: proc(ConstantVal: ValueRef, losesInfo: ^LLVMBool) -> _c.double ---
+	ConstStringInContext :: proc(C: ContextRef, Str: cstring, Length: _c.uint, DontNullTerminate: LLVMBool) -> ValueRef ---
+	ConstString :: proc(Str: cstring, Length: _c.uint, DontNullTerminate: LLVMBool) -> ValueRef ---
+	IsConstantString :: proc(c: ValueRef) -> LLVMBool ---
 	GetAsString :: proc(c: ValueRef, Length: ^_c.size_t) -> cstring ---
-	ConstStructInContext :: proc(C: ContextRef, ConstantVals: ^ValueRef, Count: _c.uint, Packed: Bool) -> ValueRef ---
-	ConstStruct :: proc(ConstantVals: ^ValueRef, Count: _c.uint, Packed: Bool) -> ValueRef ---
+	ConstStructInContext :: proc(C: ContextRef, ConstantVals: ^ValueRef, Count: _c.uint, Packed: LLVMBool) -> ValueRef ---
+	ConstStruct :: proc(ConstantVals: ^ValueRef, Count: _c.uint, Packed: LLVMBool) -> ValueRef ---
 	ConstArray :: proc(ElementTy: TypeRef, ConstantVals: ^ValueRef, Length: _c.uint) -> ValueRef ---
 	ConstArray2 :: proc(ElementTy: TypeRef, ConstantVals: ^ValueRef, Length: u64) -> ValueRef ---
 	ConstNamedStruct :: proc(StructTy: TypeRef, ConstantVals: ^ValueRef, Count: _c.uint) -> ValueRef ---
@@ -1353,15 +1353,15 @@ foreign LLVM_C {
 	ConstSExtOrBitCast :: proc(ConstantVal: ValueRef, ToType: TypeRef) -> ValueRef ---
 	ConstTruncOrBitCast :: proc(ConstantVal: ValueRef, ToType: TypeRef) -> ValueRef ---
 	ConstPointerCast :: proc(ConstantVal: ValueRef, ToType: TypeRef) -> ValueRef ---
-	ConstIntCast :: proc(ConstantVal: ValueRef, ToType: TypeRef, isSigned: Bool) -> ValueRef ---
+	ConstIntCast :: proc(ConstantVal: ValueRef, ToType: TypeRef, isSigned: LLVMBool) -> ValueRef ---
 	ConstFPCast :: proc(ConstantVal: ValueRef, ToType: TypeRef) -> ValueRef ---
 	ConstExtractElement :: proc(VectorConstant: ValueRef, IndexConstant: ValueRef) -> ValueRef ---
 	ConstInsertElement :: proc(VectorConstant: ValueRef, ElementValueConstant: ValueRef, IndexConstant: ValueRef) -> ValueRef ---
 	ConstShuffleVector :: proc(VectorAConstant: ValueRef, VectorBConstant: ValueRef, MaskConstant: ValueRef) -> ValueRef ---
 	BlockAddress :: proc(F: ValueRef, BB: BasicBlockRef) -> ValueRef ---
-	ConstInlineAsm :: proc(Ty: TypeRef, AsmString: cstring, Constraints: cstring, HasSideEffects: Bool, IsAlignStack: Bool) -> ValueRef ---
+	ConstInlineAsm :: proc(Ty: TypeRef, AsmString: cstring, Constraints: cstring, HasSideEffects: LLVMBool, IsAlignStack: LLVMBool) -> ValueRef ---
 	GetGlobalParent :: proc(Global: ValueRef) -> ModuleRef ---
-	IsDeclaration :: proc(Global: ValueRef) -> Bool ---
+	IsDeclaration :: proc(Global: ValueRef) -> LLVMBool ---
 	GetLinkage :: proc(Global: ValueRef) -> Linkage ---
 	SetLinkage :: proc(Global: ValueRef, Linkage: Linkage) ---
 	GetSection :: proc(Global: ValueRef) -> cstring ---
@@ -1373,8 +1373,8 @@ foreign LLVM_C {
 	GetUnnamedAddress :: proc(Global: ValueRef) -> UnnamedAddr ---
 	SetUnnamedAddress :: proc(Global: ValueRef, UnnamedAddr: UnnamedAddr) ---
 	GlobalGetValueType :: proc(Global: ValueRef) -> TypeRef ---
-	HasUnnamedAddr :: proc(Global: ValueRef) -> Bool ---
-	SetUnnamedAddr :: proc(Global: ValueRef, HasUnnamedAddr: Bool) ---
+	HasUnnamedAddr :: proc(Global: ValueRef) -> LLVMBool ---
+	SetUnnamedAddr :: proc(Global: ValueRef, HasUnnamedAddr: LLVMBool) ---
 	GetAlignment :: proc(V: ValueRef) -> _c.uint ---
 	SetAlignment :: proc(V: ValueRef, Bytes: _c.uint) ---
 	GlobalSetMetadata :: proc(Global: ValueRef, Kind: _c.uint, MD: MetadataRef) ---
@@ -1394,14 +1394,14 @@ foreign LLVM_C {
 	DeleteGlobal :: proc(GlobalVar: ValueRef) ---
 	GetInitializer :: proc(GlobalVar: ValueRef) -> ValueRef ---
 	SetInitializer :: proc(GlobalVar: ValueRef, ConstantVal: ValueRef) ---
-	IsThreadLocal :: proc(GlobalVar: ValueRef) -> Bool ---
-	SetThreadLocal :: proc(GlobalVar: ValueRef, IsThreadLocal: Bool) ---
-	IsGlobalConstant :: proc(GlobalVar: ValueRef) -> Bool ---
-	SetGlobalConstant :: proc(GlobalVar: ValueRef, IsConstant: Bool) ---
+	IsThreadLocal :: proc(GlobalVar: ValueRef) -> LLVMBool ---
+	SetThreadLocal :: proc(GlobalVar: ValueRef, IsThreadLocal: LLVMBool) ---
+	IsGlobalConstant :: proc(GlobalVar: ValueRef) -> LLVMBool ---
+	SetGlobalConstant :: proc(GlobalVar: ValueRef, IsConstant: LLVMBool) ---
 	GetThreadLocalMode :: proc(GlobalVar: ValueRef) -> ThreadLocalMode ---
 	SetThreadLocalMode :: proc(GlobalVar: ValueRef, Mode: ThreadLocalMode) ---
-	IsExternallyInitialized :: proc(GlobalVar: ValueRef) -> Bool ---
-	SetExternallyInitialized :: proc(GlobalVar: ValueRef, IsExtInit: Bool) ---
+	IsExternallyInitialized :: proc(GlobalVar: ValueRef) -> LLVMBool ---
+	SetExternallyInitialized :: proc(GlobalVar: ValueRef, IsExtInit: LLVMBool) ---
 	AddAlias2 :: proc(M: ModuleRef, ValueTy: TypeRef, AddrSpace: _c.uint, Aliasee: ValueRef, Name: cstring) -> ValueRef ---
 	GetNamedGlobalAlias :: proc(M: ModuleRef, Name: cstring, NameLen: _c.size_t) -> ValueRef ---
 	GetFirstGlobalAlias :: proc(M: ModuleRef) -> ValueRef ---
@@ -1411,7 +1411,7 @@ foreign LLVM_C {
 	AliasGetAliasee :: proc(Alias: ValueRef) -> ValueRef ---
 	AliasSetAliasee :: proc(Alias: ValueRef, Aliasee: ValueRef) ---
 	DeleteFunction :: proc(Fn: ValueRef) ---
-	HasPersonalityFn :: proc(Fn: ValueRef) -> Bool ---
+	HasPersonalityFn :: proc(Fn: ValueRef) -> LLVMBool ---
 	GetPersonalityFn :: proc(Fn: ValueRef) -> ValueRef ---
 	SetPersonalityFn :: proc(Fn: ValueRef, PersonalityFn: ValueRef) ---
 	LookupIntrinsicID :: proc(Name: cstring, NameLen: _c.size_t) -> _c.uint ---
@@ -1421,7 +1421,7 @@ foreign LLVM_C {
 	IntrinsicGetName :: proc(ID: _c.uint, NameLength: ^_c.size_t) -> cstring ---
 	IntrinsicCopyOverloadedName :: proc(ID: _c.uint, ParamTypes: ^TypeRef, ParamCount: _c.size_t, NameLength: ^_c.size_t) -> cstring ---
 	IntrinsicCopyOverloadedName2 :: proc(Mod: ModuleRef, ID: _c.uint, ParamTypes: ^TypeRef, ParamCount: _c.size_t, NameLength: ^_c.size_t) -> cstring ---
-	IntrinsicIsOverloaded :: proc(ID: _c.uint) -> Bool ---
+	IntrinsicIsOverloaded :: proc(ID: _c.uint) -> LLVMBool ---
 	GetFunctionCallConv :: proc(Fn: ValueRef) -> _c.uint ---
 	SetFunctionCallConv :: proc(Fn: ValueRef, CC: _c.uint) ---
 	GetGC :: proc(Fn: ValueRef) -> cstring ---
@@ -1466,7 +1466,7 @@ foreign LLVM_C {
 	MDNodeInContext :: proc(C: ContextRef, Vals: ^ValueRef, Count: _c.uint) -> ValueRef ---
 	MDNode :: proc(Vals: ^ValueRef, Count: _c.uint) -> ValueRef ---
 	BasicBlockAsValue :: proc(BB: BasicBlockRef) -> ValueRef ---
-	ValueIsBasicBlock :: proc(Val: ValueRef) -> Bool ---
+	ValueIsBasicBlock :: proc(Val: ValueRef) -> LLVMBool ---
 	ValueAsBasicBlock :: proc(Val: ValueRef) -> BasicBlockRef ---
 	GetBasicBlockName :: proc(BB: BasicBlockRef) -> cstring ---
 	GetBasicBlockParent :: proc(BB: BasicBlockRef) -> ValueRef ---
@@ -1519,8 +1519,8 @@ foreign LLVM_C {
 	RemoveCallSiteStringAttribute :: proc(C: ValueRef, Idx: _c.uint, K: cstring, KLen: _c.uint) ---
 	GetCalledFunctionType :: proc(C: ValueRef) -> TypeRef ---
 	GetCalledValue :: proc(Instr: ValueRef) -> ValueRef ---
-	IsTailCall :: proc(CallInst: ValueRef) -> Bool ---
-	SetTailCall :: proc(CallInst: ValueRef, IsTailCall: Bool) ---
+	IsTailCall :: proc(CallInst: ValueRef) -> LLVMBool ---
+	SetTailCall :: proc(CallInst: ValueRef, IsTailCall: LLVMBool) ---
 	GetNormalDest :: proc(InvokeInst: ValueRef) -> BasicBlockRef ---
 	GetUnwindDest :: proc(InvokeInst: ValueRef) -> BasicBlockRef ---
 	SetNormalDest :: proc(InvokeInst: ValueRef, B: BasicBlockRef) ---
@@ -1528,13 +1528,13 @@ foreign LLVM_C {
 	GetNumSuccessors :: proc(Term: ValueRef) -> _c.uint ---
 	GetSuccessor :: proc(Term: ValueRef, i: _c.uint) -> BasicBlockRef ---
 	SetSuccessor :: proc(Term: ValueRef, i: _c.uint, block: BasicBlockRef) ---
-	IsConditional :: proc(Branch: ValueRef) -> Bool ---
+	IsConditional :: proc(Branch: ValueRef) -> LLVMBool ---
 	GetCondition :: proc(Branch: ValueRef) -> ValueRef ---
 	SetCondition :: proc(Branch: ValueRef, Cond: ValueRef) ---
 	GetSwitchDefaultDest :: proc(SwitchInstr: ValueRef) -> BasicBlockRef ---
 	GetAllocatedType :: proc(Alloca: ValueRef) -> TypeRef ---
-	IsInBounds :: proc(GEP: ValueRef) -> Bool ---
-	SetIsInBounds :: proc(GEP: ValueRef, InBounds: Bool) ---
+	IsInBounds :: proc(GEP: ValueRef) -> LLVMBool ---
+	SetIsInBounds :: proc(GEP: ValueRef, InBounds: LLVMBool) ---
 	GetGEPSourceElementType :: proc(GEP: ValueRef) -> TypeRef ---
 	AddIncoming :: proc(PhiNode: ValueRef, IncomingValues: ^ValueRef, IncomingBlocks: ^BasicBlockRef, Count: _c.uint) ---
 	CountIncoming :: proc(PhiNode: ValueRef) -> _c.uint ---
@@ -1581,8 +1581,8 @@ foreign LLVM_C {
 	GetNumClauses :: proc(LandingPad: ValueRef) -> _c.uint ---
 	GetClause :: proc(LandingPad: ValueRef, Idx: _c.uint) -> ValueRef ---
 	AddClause :: proc(LandingPad: ValueRef, ClauseVal: ValueRef) ---
-	IsCleanup :: proc(LandingPad: ValueRef) -> Bool ---
-	SetCleanup :: proc(LandingPad: ValueRef, Val: Bool) ---
+	IsCleanup :: proc(LandingPad: ValueRef) -> LLVMBool ---
+	SetCleanup :: proc(LandingPad: ValueRef, Val: LLVMBool) ---
 	AddHandler :: proc(CatchSwitch: ValueRef, Dest: BasicBlockRef) ---
 	GetNumHandlers :: proc(CatchSwitch: ValueRef) -> _c.uint ---
 	GetHandlers :: proc(CatchSwitch: ValueRef, Handlers: ^BasicBlockRef) ---
@@ -1622,12 +1622,12 @@ foreign LLVM_C {
 	BuildNUWNeg :: proc(B: BuilderRef, V: ValueRef, Name: cstring) -> ValueRef ---
 	BuildFNeg :: proc(unamed0: BuilderRef, V: ValueRef, Name: cstring) -> ValueRef ---
 	BuildNot :: proc(unamed0: BuilderRef, V: ValueRef, Name: cstring) -> ValueRef ---
-	GetNUW :: proc(ArithInst: ValueRef) -> Bool ---
-	SetNUW :: proc(ArithInst: ValueRef, HasNUW: Bool) ---
-	GetNSW :: proc(ArithInst: ValueRef) -> Bool ---
-	SetNSW :: proc(ArithInst: ValueRef, HasNSW: Bool) ---
-	GetExact :: proc(DivOrShrInst: ValueRef) -> Bool ---
-	SetExact :: proc(DivOrShrInst: ValueRef, IsExact: Bool) ---
+	GetNUW :: proc(ArithInst: ValueRef) -> LLVMBool ---
+	SetNUW :: proc(ArithInst: ValueRef, HasNUW: LLVMBool) ---
+	GetNSW :: proc(ArithInst: ValueRef) -> LLVMBool ---
+	SetNSW :: proc(ArithInst: ValueRef, HasNSW: LLVMBool) ---
+	GetExact :: proc(DivOrShrInst: ValueRef) -> LLVMBool ---
+	SetExact :: proc(DivOrShrInst: ValueRef, IsExact: LLVMBool) ---
 	BuildMalloc :: proc(unamed0: BuilderRef, Ty: TypeRef, Name: cstring) -> ValueRef ---
 	BuildArrayMalloc :: proc(unamed0: BuilderRef, Ty: TypeRef, Val: ValueRef, Name: cstring) -> ValueRef ---
 	BuildMemSet :: proc(B: BuilderRef, Ptr: ValueRef, Val: ValueRef, Len: ValueRef, Align: _c.uint) -> ValueRef ---
@@ -1643,10 +1643,10 @@ foreign LLVM_C {
 	BuildStructGEP2 :: proc(B: BuilderRef, Ty: TypeRef, Pointer: ValueRef, Idx: _c.uint, Name: cstring) -> ValueRef ---
 	BuildGlobalString :: proc(B: BuilderRef, Str: cstring, Name: cstring) -> ValueRef ---
 	BuildGlobalStringPtr :: proc(B: BuilderRef, Str: cstring, Name: cstring) -> ValueRef ---
-	GetVolatile :: proc(MemoryAccessInst: ValueRef) -> Bool ---
-	SetVolatile :: proc(MemoryAccessInst: ValueRef, IsVolatile: Bool) ---
-	GetWeak :: proc(CmpXchgInst: ValueRef) -> Bool ---
-	SetWeak :: proc(CmpXchgInst: ValueRef, IsWeak: Bool) ---
+	GetVolatile :: proc(MemoryAccessInst: ValueRef) -> LLVMBool ---
+	SetVolatile :: proc(MemoryAccessInst: ValueRef, IsVolatile: LLVMBool) ---
+	GetWeak :: proc(CmpXchgInst: ValueRef) -> LLVMBool ---
+	SetWeak :: proc(CmpXchgInst: ValueRef, IsWeak: LLVMBool) ---
 	GetOrdering :: proc(MemoryAccessInst: ValueRef) -> AtomicOrdering ---
 	SetOrdering :: proc(MemoryAccessInst: ValueRef, Ordering: AtomicOrdering) ---
 	GetAtomicRMWBinOp :: proc(AtomicRMWInst: ValueRef) -> AtomicRMWBinOp ---
@@ -1669,10 +1669,10 @@ foreign LLVM_C {
 	BuildTruncOrBitCast :: proc(unamed0: BuilderRef, Val: ValueRef, DestTy: TypeRef, Name: cstring) -> ValueRef ---
 	BuildCast :: proc(B: BuilderRef, Op: Opcode, Val: ValueRef, DestTy: TypeRef, Name: cstring) -> ValueRef ---
 	BuildPointerCast :: proc(unamed0: BuilderRef, Val: ValueRef, DestTy: TypeRef, Name: cstring) -> ValueRef ---
-	BuildIntCast2 :: proc(unamed0: BuilderRef, Val: ValueRef, DestTy: TypeRef, IsSigned: Bool, Name: cstring) -> ValueRef ---
+	BuildIntCast2 :: proc(unamed0: BuilderRef, Val: ValueRef, DestTy: TypeRef, IsSigned: LLVMBool, Name: cstring) -> ValueRef ---
 	BuildFPCast :: proc(unamed0: BuilderRef, Val: ValueRef, DestTy: TypeRef, Name: cstring) -> ValueRef ---
 	BuildIntCast :: proc(unamed0: BuilderRef, Val: ValueRef, DestTy: TypeRef, Name: cstring) -> ValueRef ---
-	GetCastOpcode :: proc(Src: ValueRef, SrcIsSigned: Bool, DestTy: TypeRef, DestIsSigned: Bool) -> Opcode ---
+	GetCastOpcode :: proc(Src: ValueRef, SrcIsSigned: LLVMBool, DestTy: TypeRef, DestIsSigned: LLVMBool) -> Opcode ---
 	BuildICmp :: proc(unamed0: BuilderRef, Op: IntPredicate, LHS: ValueRef, RHS: ValueRef, Name: cstring) -> ValueRef ---
 	BuildFCmp :: proc(unamed0: BuilderRef, Op: RealPredicate, LHS: ValueRef, RHS: ValueRef, Name: cstring) -> ValueRef ---
 	BuildPhi :: proc(unamed0: BuilderRef, Ty: TypeRef, Name: cstring) -> ValueRef ---
@@ -1688,23 +1688,23 @@ foreign LLVM_C {
 	BuildIsNull :: proc(unamed0: BuilderRef, Val: ValueRef, Name: cstring) -> ValueRef ---
 	BuildIsNotNull :: proc(unamed0: BuilderRef, Val: ValueRef, Name: cstring) -> ValueRef ---
 	BuildPtrDiff2 :: proc(unamed0: BuilderRef, ElemTy: TypeRef, LHS: ValueRef, RHS: ValueRef, Name: cstring) -> ValueRef ---
-	BuildFence :: proc(B: BuilderRef, ordering: AtomicOrdering, singleThread: Bool, Name: cstring) -> ValueRef ---
-	BuildAtomicRMW :: proc(B: BuilderRef, op: AtomicRMWBinOp, PTR: ValueRef, Val: ValueRef, ordering: AtomicOrdering, singleThread: Bool) -> ValueRef ---
-	BuildAtomicCmpXchg :: proc(B: BuilderRef, Ptr: ValueRef, Cmp: ValueRef, New: ValueRef, SuccessOrdering: AtomicOrdering, FailureOrdering: AtomicOrdering, SingleThread: Bool) -> ValueRef ---
+	BuildFence :: proc(B: BuilderRef, ordering: AtomicOrdering, singleThread: LLVMBool, Name: cstring) -> ValueRef ---
+	BuildAtomicRMW :: proc(B: BuilderRef, op: AtomicRMWBinOp, PTR: ValueRef, Val: ValueRef, ordering: AtomicOrdering, singleThread: LLVMBool) -> ValueRef ---
+	BuildAtomicCmpXchg :: proc(B: BuilderRef, Ptr: ValueRef, Cmp: ValueRef, New: ValueRef, SuccessOrdering: AtomicOrdering, FailureOrdering: AtomicOrdering, SingleThread: LLVMBool) -> ValueRef ---
 	GetNumMaskElements :: proc(ShuffleVectorInst: ValueRef) -> _c.uint ---
 	GetUndefMaskElem :: proc() -> _c.int ---
 	GetMaskValue :: proc(ShuffleVectorInst: ValueRef, Elt: _c.uint) -> _c.int ---
-	IsAtomicSingleThread :: proc(AtomicInst: ValueRef) -> Bool ---
-	SetAtomicSingleThread :: proc(AtomicInst: ValueRef, SingleThread: Bool) ---
+	IsAtomicSingleThread :: proc(AtomicInst: ValueRef) -> LLVMBool ---
+	SetAtomicSingleThread :: proc(AtomicInst: ValueRef, SingleThread: LLVMBool) ---
 	GetCmpXchgSuccessOrdering :: proc(CmpXchgInst: ValueRef) -> AtomicOrdering ---
 	SetCmpXchgSuccessOrdering :: proc(CmpXchgInst: ValueRef, Ordering: AtomicOrdering) ---
 	GetCmpXchgFailureOrdering :: proc(CmpXchgInst: ValueRef) -> AtomicOrdering ---
 	SetCmpXchgFailureOrdering :: proc(CmpXchgInst: ValueRef, Ordering: AtomicOrdering) ---
 	CreateModuleProviderForExistingModule :: proc(M: ModuleRef) -> ModuleProviderRef ---
 	DisposeModuleProvider :: proc(M: ModuleProviderRef) ---
-	CreateMemoryBufferWithContentsOfFile :: proc(Path: cstring, OutMemBuf: ^MemoryBufferRef, OutMessage: ^cstring) -> Bool ---
-	CreateMemoryBufferWithSTDIN :: proc(OutMemBuf: ^MemoryBufferRef, OutMessage: ^cstring) -> Bool ---
-	CreateMemoryBufferWithMemoryRange :: proc(InputData: cstring, InputDataLength: _c.size_t, BufferName: cstring, RequiresNullTerminator: Bool) -> MemoryBufferRef ---
+	CreateMemoryBufferWithContentsOfFile :: proc(Path: cstring, OutMemBuf: ^MemoryBufferRef, OutMessage: ^cstring) -> LLVMBool ---
+	CreateMemoryBufferWithSTDIN :: proc(OutMemBuf: ^MemoryBufferRef, OutMessage: ^cstring) -> LLVMBool ---
+	CreateMemoryBufferWithMemoryRange :: proc(InputData: cstring, InputDataLength: _c.size_t, BufferName: cstring, RequiresNullTerminator: LLVMBool) -> MemoryBufferRef ---
 	CreateMemoryBufferWithMemoryRangeCopy :: proc(InputData: cstring, InputDataLength: _c.size_t, BufferName: cstring) -> MemoryBufferRef ---
 	GetBufferStart :: proc(MemBuf: MemoryBufferRef) -> cstring ---
 	GetBufferSize :: proc(MemBuf: MemoryBufferRef) -> _c.size_t ---
@@ -1712,27 +1712,27 @@ foreign LLVM_C {
 	CreatePassManager :: proc() -> PassManagerRef ---
 	CreateFunctionPassManagerForModule :: proc(M: ModuleRef) -> PassManagerRef ---
 	CreateFunctionPassManager :: proc(MP: ModuleProviderRef) -> PassManagerRef ---
-	RunPassManager :: proc(PM: PassManagerRef, M: ModuleRef) -> Bool ---
-	InitializeFunctionPassManager :: proc(FPM: PassManagerRef) -> Bool ---
-	RunFunctionPassManager :: proc(FPM: PassManagerRef, F: ValueRef) -> Bool ---
-	FinalizeFunctionPassManager :: proc(FPM: PassManagerRef) -> Bool ---
+	RunPassManager :: proc(PM: PassManagerRef, M: ModuleRef) -> LLVMBool ---
+	InitializeFunctionPassManager :: proc(FPM: PassManagerRef) -> LLVMBool ---
+	RunFunctionPassManager :: proc(FPM: PassManagerRef, F: ValueRef) -> LLVMBool ---
+	FinalizeFunctionPassManager :: proc(FPM: PassManagerRef) -> LLVMBool ---
 	DisposePassManager :: proc(PM: PassManagerRef) ---
-	StartMultithreaded :: proc() -> Bool ---
+	StartMultithreaded :: proc() -> LLVMBool ---
 	StopMultithreaded :: proc() ---
-	IsMultithreaded :: proc() -> Bool ---
+	IsMultithreaded :: proc() -> LLVMBool ---
 	DebugMetadataVersion :: proc() -> _c.uint ---
 	GetModuleDebugMetadataVersion :: proc(Module: ModuleRef) -> _c.uint ---
-	StripModuleDebugInfo :: proc(Module: ModuleRef) -> Bool ---
+	StripModuleDebugInfo :: proc(Module: ModuleRef) -> LLVMBool ---
 	CreateDIBuilderDisallowUnresolved :: proc(M: ModuleRef) -> DIBuilderRef ---
 	CreateDIBuilder :: proc(M: ModuleRef) -> DIBuilderRef ---
 	DisposeDIBuilder :: proc(Builder: DIBuilderRef) ---
 	DIBuilderFinalize :: proc(Builder: DIBuilderRef) ---
 	DIBuilderFinalizeSubprogram :: proc(Builder: DIBuilderRef, Subprogram: MetadataRef) ---
-	DIBuilderCreateCompileUnit :: proc(Builder: DIBuilderRef, Lang: DWARFSourceLanguage, FileRef: MetadataRef, Producer: cstring, ProducerLen: _c.size_t, isOptimized: Bool, Flags: cstring, FlagsLen: _c.size_t, RuntimeVer: _c.uint, SplitName: cstring, SplitNameLen: _c.size_t, Kind: DWARFEmissionKind, DWOId: _c.uint, SplitDebugInlining: Bool, DebugInfoForProfiling: Bool, SysRoot: cstring, SysRootLen: _c.size_t, SDK: cstring, SDKLen: _c.size_t) -> MetadataRef ---
+	DIBuilderCreateCompileUnit :: proc(Builder: DIBuilderRef, Lang: DWARFSourceLanguage, FileRef: MetadataRef, Producer: cstring, ProducerLen: _c.size_t, isOptimized: LLVMBool, Flags: cstring, FlagsLen: _c.size_t, RuntimeVer: _c.uint, SplitName: cstring, SplitNameLen: _c.size_t, Kind: DWARFEmissionKind, DWOId: _c.uint, SplitDebugInlining: LLVMBool, DebugInfoForProfiling: LLVMBool, SysRoot: cstring, SysRootLen: _c.size_t, SDK: cstring, SDKLen: _c.size_t) -> MetadataRef ---
 	DIBuilderCreateFile :: proc(Builder: DIBuilderRef, Filename: cstring, FilenameLen: _c.size_t, Directory: cstring, DirectoryLen: _c.size_t) -> MetadataRef ---
 	DIBuilderCreateModule :: proc(Builder: DIBuilderRef, ParentScope: MetadataRef, Name: cstring, NameLen: _c.size_t, ConfigMacros: cstring, ConfigMacrosLen: _c.size_t, IncludePath: cstring, IncludePathLen: _c.size_t, APINotesFile: cstring, APINotesFileLen: _c.size_t) -> MetadataRef ---
-	DIBuilderCreateNameSpace :: proc(Builder: DIBuilderRef, ParentScope: MetadataRef, Name: cstring, NameLen: _c.size_t, ExportSymbols: Bool) -> MetadataRef ---
-	DIBuilderCreateFunction :: proc(Builder: DIBuilderRef, Scope: MetadataRef, Name: cstring, NameLen: _c.size_t, LinkageName: cstring, LinkageNameLen: _c.size_t, File: MetadataRef, LineNo: _c.uint, Ty: MetadataRef, IsLocalToUnit: Bool, IsDefinition: Bool, ScopeLine: _c.uint, Flags: DIFlags, IsOptimized: Bool) -> MetadataRef ---
+	DIBuilderCreateNameSpace :: proc(Builder: DIBuilderRef, ParentScope: MetadataRef, Name: cstring, NameLen: _c.size_t, ExportSymbols: LLVMBool) -> MetadataRef ---
+	DIBuilderCreateFunction :: proc(Builder: DIBuilderRef, Scope: MetadataRef, Name: cstring, NameLen: _c.size_t, LinkageName: cstring, LinkageNameLen: _c.size_t, File: MetadataRef, LineNo: _c.uint, Ty: MetadataRef, IsLocalToUnit: LLVMBool, IsDefinition: LLVMBool, ScopeLine: _c.uint, Flags: DIFlags, IsOptimized: LLVMBool) -> MetadataRef ---
 	DIBuilderCreateLexicalBlock :: proc(Builder: DIBuilderRef, Scope: MetadataRef, File: MetadataRef, Line: _c.uint, Column: _c.uint) -> MetadataRef ---
 	DIBuilderCreateLexicalBlockFile :: proc(Builder: DIBuilderRef, Scope: MetadataRef, File: MetadataRef, Discriminator: _c.uint) -> MetadataRef ---
 	DIBuilderCreateImportedModuleFromNamespace :: proc(Builder: DIBuilderRef, Scope: MetadataRef, NS: MetadataRef, File: MetadataRef, Line: _c.uint) -> MetadataRef ---
@@ -1752,7 +1752,7 @@ foreign LLVM_C {
 	DIBuilderCreateSubroutineType :: proc(Builder: DIBuilderRef, File: MetadataRef, ParameterTypes: ^MetadataRef, NumParameterTypes: _c.uint, Flags: DIFlags) -> MetadataRef ---
 	DIBuilderCreateMacro :: proc(Builder: DIBuilderRef, ParentMacroFile: MetadataRef, Line: _c.uint, RecordType: DWARFMacinfoRecordType, Name: cstring, NameLen: _c.size_t, Value: cstring, ValueLen: _c.size_t) -> MetadataRef ---
 	DIBuilderCreateTempMacroFile :: proc(Builder: DIBuilderRef, ParentMacroFile: MetadataRef, Line: _c.uint, File: MetadataRef) -> MetadataRef ---
-	DIBuilderCreateEnumerator :: proc(Builder: DIBuilderRef, Name: cstring, NameLen: _c.size_t, Value: i64, IsUnsigned: Bool) -> MetadataRef ---
+	DIBuilderCreateEnumerator :: proc(Builder: DIBuilderRef, Name: cstring, NameLen: _c.size_t, Value: i64, IsUnsigned: LLVMBool) -> MetadataRef ---
 	DIBuilderCreateEnumerationType :: proc(Builder: DIBuilderRef, Scope: MetadataRef, Name: cstring, NameLen: _c.size_t, File: MetadataRef, LineNumber: _c.uint, SizeInBits: u64, AlignInBits: u32, Elements: ^MetadataRef, NumElements: _c.uint, ClassTy: MetadataRef) -> MetadataRef ---
 	DIBuilderCreateUnionType :: proc(Builder: DIBuilderRef, Scope: MetadataRef, Name: cstring, NameLen: _c.size_t, File: MetadataRef, LineNumber: _c.uint, SizeInBits: u64, AlignInBits: u32, Flags: DIFlags, Elements: ^MetadataRef, NumElements: _c.uint, RunTimeLang: _c.uint, UniqueId: cstring, UniqueIdLen: _c.size_t) -> MetadataRef ---
 	DIBuilderCreateArrayType :: proc(Builder: DIBuilderRef, Size: u64, AlignInBits: u32, Ty: MetadataRef, Subscripts: ^MetadataRef, NumSubscripts: _c.uint) -> MetadataRef ---
@@ -1787,7 +1787,7 @@ foreign LLVM_C {
 	DIBuilderGetOrCreateArray :: proc(Builder: DIBuilderRef, Data: ^MetadataRef, NumElements: _c.size_t) -> MetadataRef ---
 	DIBuilderCreateExpression :: proc(Builder: DIBuilderRef, Addr: ^u64, Length: _c.size_t) -> MetadataRef ---
 	DIBuilderCreateConstantValueExpression :: proc(Builder: DIBuilderRef, Value: u64) -> MetadataRef ---
-	DIBuilderCreateGlobalVariableExpression :: proc(Builder: DIBuilderRef, Scope: MetadataRef, Name: cstring, NameLen: _c.size_t, Linkage: cstring, LinkLen: _c.size_t, File: MetadataRef, LineNo: _c.uint, Ty: MetadataRef, LocalToUnit: Bool, Expr: MetadataRef, Decl: MetadataRef, AlignInBits: u32) -> MetadataRef ---
+	DIBuilderCreateGlobalVariableExpression :: proc(Builder: DIBuilderRef, Scope: MetadataRef, Name: cstring, NameLen: _c.size_t, Linkage: cstring, LinkLen: _c.size_t, File: MetadataRef, LineNo: _c.uint, Ty: MetadataRef, LocalToUnit: LLVMBool, Expr: MetadataRef, Decl: MetadataRef, AlignInBits: u32) -> MetadataRef ---
 	GetDINodeTag :: proc(MD: MetadataRef) -> u16 ---
 	DIGlobalVariableExpressionGetVariable :: proc(GVE: MetadataRef) -> MetadataRef ---
 	DIGlobalVariableExpressionGetExpression :: proc(GVE: MetadataRef) -> MetadataRef ---
@@ -1797,13 +1797,13 @@ foreign LLVM_C {
 	TemporaryMDNode :: proc(Ctx: ContextRef, Data: ^MetadataRef, NumElements: _c.size_t) -> MetadataRef ---
 	DisposeTemporaryMDNode :: proc(TempNode: MetadataRef) ---
 	MetadataReplaceAllUsesWith :: proc(TempTargetMetadata: MetadataRef, Replacement: MetadataRef) ---
-	DIBuilderCreateTempGlobalVariableFwdDecl :: proc(Builder: DIBuilderRef, Scope: MetadataRef, Name: cstring, NameLen: _c.size_t, Linkage: cstring, LnkLen: _c.size_t, File: MetadataRef, LineNo: _c.uint, Ty: MetadataRef, LocalToUnit: Bool, Decl: MetadataRef, AlignInBits: u32) -> MetadataRef ---
+	DIBuilderCreateTempGlobalVariableFwdDecl :: proc(Builder: DIBuilderRef, Scope: MetadataRef, Name: cstring, NameLen: _c.size_t, Linkage: cstring, LnkLen: _c.size_t, File: MetadataRef, LineNo: _c.uint, Ty: MetadataRef, LocalToUnit: LLVMBool, Decl: MetadataRef, AlignInBits: u32) -> MetadataRef ---
 	DIBuilderInsertDeclareBefore :: proc(Builder: DIBuilderRef, Storage: ValueRef, VarInfo: MetadataRef, Expr: MetadataRef, DebugLoc: MetadataRef, Instr: ValueRef) -> ValueRef ---
 	DIBuilderInsertDeclareAtEnd :: proc(Builder: DIBuilderRef, Storage: ValueRef, VarInfo: MetadataRef, Expr: MetadataRef, DebugLoc: MetadataRef, Block: BasicBlockRef) -> ValueRef ---
 	DIBuilderInsertDbgValueBefore :: proc(Builder: DIBuilderRef, Val: ValueRef, VarInfo: MetadataRef, Expr: MetadataRef, DebugLoc: MetadataRef, Instr: ValueRef) -> ValueRef ---
 	DIBuilderInsertDbgValueAtEnd :: proc(Builder: DIBuilderRef, Val: ValueRef, VarInfo: MetadataRef, Expr: MetadataRef, DebugLoc: MetadataRef, Block: BasicBlockRef) -> ValueRef ---
-	DIBuilderCreateAutoVariable :: proc(Builder: DIBuilderRef, Scope: MetadataRef, Name: cstring, NameLen: _c.size_t, File: MetadataRef, LineNo: _c.uint, Ty: MetadataRef, AlwaysPreserve: Bool, Flags: DIFlags, AlignInBits: u32) -> MetadataRef ---
-	DIBuilderCreateParameterVariable :: proc(Builder: DIBuilderRef, Scope: MetadataRef, Name: cstring, NameLen: _c.size_t, ArgNo: _c.uint, File: MetadataRef, LineNo: _c.uint, Ty: MetadataRef, AlwaysPreserve: Bool, Flags: DIFlags) -> MetadataRef ---
+	DIBuilderCreateAutoVariable :: proc(Builder: DIBuilderRef, Scope: MetadataRef, Name: cstring, NameLen: _c.size_t, File: MetadataRef, LineNo: _c.uint, Ty: MetadataRef, AlwaysPreserve: LLVMBool, Flags: DIFlags, AlignInBits: u32) -> MetadataRef ---
+	DIBuilderCreateParameterVariable :: proc(Builder: DIBuilderRef, Scope: MetadataRef, Name: cstring, NameLen: _c.size_t, ArgNo: _c.uint, File: MetadataRef, LineNo: _c.uint, Ty: MetadataRef, AlwaysPreserve: LLVMBool, Flags: DIFlags) -> MetadataRef ---
 	GetSubprogram :: proc(Func: ValueRef) -> MetadataRef ---
 	SetSubprogram :: proc(Func: ValueRef, SP: MetadataRef) ---
 	DISubprogramGetLine :: proc(Subprogram: MetadataRef) -> _c.uint ---
@@ -1827,19 +1827,19 @@ foreign LLVM_C {
 	EnablePrettyStackTrace :: proc() ---
 	LinkInMCJIT :: proc() ---
 	LinkInInterpreter :: proc() ---
-	CreateGenericValueOfInt :: proc(Ty: TypeRef, N: _c.ulonglong, IsSigned: Bool) -> GenericValueRef ---
+	CreateGenericValueOfInt :: proc(Ty: TypeRef, N: _c.ulonglong, IsSigned: LLVMBool) -> GenericValueRef ---
 	CreateGenericValueOfPointer :: proc(P: rawptr) -> GenericValueRef ---
 	CreateGenericValueOfFloat :: proc(Ty: TypeRef, N: _c.double) -> GenericValueRef ---
 	GenericValueIntWidth :: proc(GenValRef: GenericValueRef) -> _c.uint ---
-	GenericValueToInt :: proc(GenVal: GenericValueRef, IsSigned: Bool) -> _c.ulonglong ---
+	GenericValueToInt :: proc(GenVal: GenericValueRef, IsSigned: LLVMBool) -> _c.ulonglong ---
 	GenericValueToPointer :: proc(GenVal: GenericValueRef) -> rawptr ---
 	GenericValueToFloat :: proc(TyRef: TypeRef, GenVal: GenericValueRef) -> _c.double ---
 	DisposeGenericValue :: proc(GenVal: GenericValueRef) ---
-	CreateExecutionEngineForModule :: proc(OutEE: ^ExecutionEngineRef, M: ModuleRef, OutError: ^cstring) -> Bool ---
-	CreateInterpreterForModule :: proc(OutInterp: ^ExecutionEngineRef, M: ModuleRef, OutError: ^cstring) -> Bool ---
-	CreateJITCompilerForModule :: proc(OutJIT: ^ExecutionEngineRef, M: ModuleRef, OptLevel: _c.uint, OutError: ^cstring) -> Bool ---
+	CreateExecutionEngineForModule :: proc(OutEE: ^ExecutionEngineRef, M: ModuleRef, OutError: ^cstring) -> LLVMBool ---
+	CreateInterpreterForModule :: proc(OutInterp: ^ExecutionEngineRef, M: ModuleRef, OutError: ^cstring) -> LLVMBool ---
+	CreateJITCompilerForModule :: proc(OutJIT: ^ExecutionEngineRef, M: ModuleRef, OptLevel: _c.uint, OutError: ^cstring) -> LLVMBool ---
 	InitializeMCJITCompilerOptions :: proc(Options: ^MCJITCompilerOptions, SizeOfOptions: _c.size_t) ---
-	CreateMCJITCompilerForModule :: proc(OutJIT: ^ExecutionEngineRef, M: ModuleRef, Options: ^MCJITCompilerOptions, SizeOfOptions: _c.size_t, OutError: ^cstring) -> Bool ---
+	CreateMCJITCompilerForModule :: proc(OutJIT: ^ExecutionEngineRef, M: ModuleRef, Options: ^MCJITCompilerOptions, SizeOfOptions: _c.size_t, OutError: ^cstring) -> LLVMBool ---
 	DisposeExecutionEngine :: proc(EE: ExecutionEngineRef) ---
 	RunStaticConstructors :: proc(EE: ExecutionEngineRef) ---
 	RunStaticDestructors :: proc(EE: ExecutionEngineRef) ---
@@ -1847,8 +1847,8 @@ foreign LLVM_C {
 	RunFunction :: proc(EE: ExecutionEngineRef, F: ValueRef, NumArgs: _c.uint, Args: ^GenericValueRef) -> GenericValueRef ---
 	FreeMachineCodeForFunction :: proc(EE: ExecutionEngineRef, F: ValueRef) ---
 	AddModule :: proc(EE: ExecutionEngineRef, M: ModuleRef) ---
-	RemoveModule :: proc(EE: ExecutionEngineRef, M: ModuleRef, OutMod: ^ModuleRef, OutError: ^cstring) -> Bool ---
-	FindFunction :: proc(EE: ExecutionEngineRef, Name: cstring, OutFn: ^ValueRef) -> Bool ---
+	RemoveModule :: proc(EE: ExecutionEngineRef, M: ModuleRef, OutMod: ^ModuleRef, OutError: ^cstring) -> LLVMBool ---
+	FindFunction :: proc(EE: ExecutionEngineRef, Name: cstring, OutFn: ^ValueRef) -> LLVMBool ---
 	RecompileAndRelinkFunction :: proc(EE: ExecutionEngineRef, Fn: ValueRef) -> rawptr ---
 	GetExecutionEngineTargetData :: proc(EE: ExecutionEngineRef) -> TargetDataRef ---
 	GetExecutionEngineTargetMachine :: proc(EE: ExecutionEngineRef) -> TargetMachineRef ---
@@ -1856,15 +1856,15 @@ foreign LLVM_C {
 	GetPointerToGlobal :: proc(EE: ExecutionEngineRef, Global: ValueRef) -> rawptr ---
 	GetGlobalValueAddress :: proc(EE: ExecutionEngineRef, Name: cstring) -> u64 ---
 	GetFunctionAddress :: proc(EE: ExecutionEngineRef, Name: cstring) -> u64 ---
-	ExecutionEngineGetErrMsg :: proc(EE: ExecutionEngineRef, OutError: ^cstring) -> Bool ---
+	ExecutionEngineGetErrMsg :: proc(EE: ExecutionEngineRef, OutError: ^cstring) -> LLVMBool ---
 	CreateSimpleMCJITMemoryManager :: proc(Opaque: rawptr, AllocateCodeSection: MemoryManagerAllocateCodeSectionCallback, AllocateDataSection: MemoryManagerAllocateDataSectionCallback, FinalizeMemory: MemoryManagerFinalizeMemoryCallback, Destroy: MemoryManagerDestroyCallback) -> MCJITMemoryManagerRef ---
 	DisposeMCJITMemoryManager :: proc(MM: MCJITMemoryManagerRef) ---
 	CreateGDBRegistrationListener :: proc() -> JITEventListenerRef ---
 	CreateIntelJITEventListener :: proc() -> JITEventListenerRef ---
 	CreateOProfileJITEventListener :: proc() -> JITEventListenerRef ---
 	CreatePerfJITEventListener :: proc() -> JITEventListenerRef ---
-	ParseIRInContext :: proc(ContextRef: ContextRef, MemBuf: MemoryBufferRef, OutM: ^ModuleRef, OutMessage: ^cstring) -> Bool ---
-	LinkModules2 :: proc(Dest: ModuleRef, Src: ModuleRef) -> Bool ---
+	ParseIRInContext :: proc(ContextRef: ContextRef, MemBuf: MemoryBufferRef, OutM: ^ModuleRef, OutMessage: ^cstring) -> LLVMBool ---
+	LinkModules2 :: proc(Dest: ModuleRef, Src: ModuleRef) -> LLVMBool ---
 	OrcCreateLLJITBuilder :: proc() -> OrcLLJITBuilderRef ---
 	OrcDisposeLLJITBuilder :: proc(Builder: OrcLLJITBuilderRef) ---
 	OrcLLJITBuilderSetJITTargetMachineBuilder :: proc(Builder: OrcLLJITBuilderRef, JTMB: OrcJITTargetMachineBuilderRef) ---
@@ -2120,9 +2120,9 @@ foreign LLVM_C {
 	BinaryGetType :: proc(BR: BinaryRef) -> BinaryType ---
 	MachOUniversalBinaryCopyObjectForArch :: proc(BR: BinaryRef, Arch: cstring, ArchLen: _c.size_t, ErrorMessage: ^cstring) -> BinaryRef ---
 	ObjectFileCopySectionIterator :: proc(BR: BinaryRef) -> SectionIteratorRef ---
-	ObjectFileIsSectionIteratorAtEnd :: proc(BR: BinaryRef, SI: SectionIteratorRef) -> Bool ---
+	ObjectFileIsSectionIteratorAtEnd :: proc(BR: BinaryRef, SI: SectionIteratorRef) -> LLVMBool ---
 	ObjectFileCopySymbolIterator :: proc(BR: BinaryRef) -> SymbolIteratorRef ---
-	ObjectFileIsSymbolIteratorAtEnd :: proc(BR: BinaryRef, SI: SymbolIteratorRef) -> Bool ---
+	ObjectFileIsSymbolIteratorAtEnd :: proc(BR: BinaryRef, SI: SymbolIteratorRef) -> LLVMBool ---
 	DisposeSectionIterator :: proc(SI: SectionIteratorRef) ---
 	MoveToNextSection :: proc(SI: SectionIteratorRef) ---
 	MoveToContainingSection :: proc(Sect: SectionIteratorRef, Sym: SymbolIteratorRef) ---
@@ -2132,10 +2132,10 @@ foreign LLVM_C {
 	GetSectionSize :: proc(SI: SectionIteratorRef) -> u64 ---
 	GetSectionContents :: proc(SI: SectionIteratorRef) -> cstring ---
 	GetSectionAddress :: proc(SI: SectionIteratorRef) -> u64 ---
-	GetSectionContainsSymbol :: proc(SI: SectionIteratorRef, Sym: SymbolIteratorRef) -> Bool ---
+	GetSectionContainsSymbol :: proc(SI: SectionIteratorRef, Sym: SymbolIteratorRef) -> LLVMBool ---
 	GetRelocations :: proc(Section: SectionIteratorRef) -> RelocationIteratorRef ---
 	DisposeRelocationIterator :: proc(RI: RelocationIteratorRef) ---
-	IsRelocationIteratorAtEnd :: proc(Section: SectionIteratorRef, RI: RelocationIteratorRef) -> Bool ---
+	IsRelocationIteratorAtEnd :: proc(Section: SectionIteratorRef, RI: RelocationIteratorRef) -> LLVMBool ---
 	MoveToNextRelocation :: proc(RI: RelocationIteratorRef) ---
 	GetSymbolName :: proc(SI: SymbolIteratorRef) -> cstring ---
 	GetSymbolAddress :: proc(SI: SymbolIteratorRef) -> u64 ---
@@ -2148,9 +2148,9 @@ foreign LLVM_C {
 	CreateObjectFile :: proc(MemBuf: MemoryBufferRef) -> ObjectFileRef ---
 	DisposeObjectFile :: proc(ObjectFile: ObjectFileRef) ---
 	GetSections :: proc(ObjectFile: ObjectFileRef) -> SectionIteratorRef ---
-	IsSectionIteratorAtEnd :: proc(ObjectFile: ObjectFileRef, SI: SectionIteratorRef) -> Bool ---
+	IsSectionIteratorAtEnd :: proc(ObjectFile: ObjectFileRef, SI: SectionIteratorRef) -> LLVMBool ---
 	GetSymbols :: proc(ObjectFile: ObjectFileRef) -> SymbolIteratorRef ---
-	IsSymbolIteratorAtEnd :: proc(ObjectFile: ObjectFileRef, SI: SymbolIteratorRef) -> Bool ---
+	IsSymbolIteratorAtEnd :: proc(ObjectFile: ObjectFileRef, SI: SymbolIteratorRef) -> LLVMBool ---
 	OrcExecutionSessionSetErrorReporter :: proc(ES: OrcExecutionSessionRef, ReportError: OrcErrorReporterFunction, Ctx: rawptr) ---
 	OrcExecutionSessionGetSymbolStringPool :: proc(ES: OrcExecutionSessionRef) -> OrcSymbolStringPoolRef ---
 	OrcSymbolStringPoolClearDeadEntries :: proc(SSP: OrcSymbolStringPoolRef) ---
@@ -2245,23 +2245,23 @@ foreign LLVM_C {
 	RemarkParserCreateYAML :: proc(Buf: rawptr, Size: u64) -> RemarkParserRef ---
 	RemarkParserCreateBitstream :: proc(Buf: rawptr, Size: u64) -> RemarkParserRef ---
 	RemarkParserGetNext :: proc(Parser: RemarkParserRef) -> RemarkEntryRef ---
-	RemarkParserHasError :: proc(Parser: RemarkParserRef) -> Bool ---
+	RemarkParserHasError :: proc(Parser: RemarkParserRef) -> LLVMBool ---
 	RemarkParserGetErrorMessage :: proc(Parser: RemarkParserRef) -> cstring ---
 	RemarkParserDispose :: proc(Parser: RemarkParserRef) ---
 	RemarkVersion :: proc() -> u32 ---
-	LoadLibraryPermanently :: proc(Filename: cstring) -> Bool ---
+	LoadLibraryPermanently :: proc(Filename: cstring) -> LLVMBool ---
 	ParseCommandLineOptions :: proc(argc: _c.int, argv: ^cstring, Overview: cstring) ---
 	SearchForAddressOfSymbol :: proc(symbolName: cstring) -> rawptr ---
 	AddSymbol :: proc(symbolName: cstring, symbolValue: rawptr) ---
 	InitializeAllDisassemblers :: proc() ---
-	InitializeNativeTarget :: proc() -> Bool ---
-	InitializeNativeAsmParser :: proc() -> Bool ---
-	InitializeNativeAsmPrinter :: proc() -> Bool ---
-	InitializeNativeDisassembler :: proc() -> Bool ---
-	InitializeX86Target :: proc() -> Bool ---
-	InitializeX86AsmPrinter :: proc() -> Bool ---
-	InitializeX86TargetInfo :: proc() -> Bool ---
-	InitializeX86TargetMC :: proc() -> Bool ---
+	InitializeNativeTarget :: proc() -> LLVMBool ---
+	InitializeNativeAsmParser :: proc() -> LLVMBool ---
+	InitializeNativeAsmPrinter :: proc() -> LLVMBool ---
+	InitializeNativeDisassembler :: proc() -> LLVMBool ---
+	InitializeX86Target :: proc() -> LLVMBool ---
+	InitializeX86AsmPrinter :: proc() -> LLVMBool ---
+	InitializeX86TargetInfo :: proc() -> LLVMBool ---
+	InitializeX86TargetMC :: proc() -> LLVMBool ---
 	GetModuleDataLayout :: proc(M: ModuleRef) -> TargetDataRef ---
 	SetModuleDataLayout :: proc(M: ModuleRef, DL: TargetDataRef) ---
 	CreateTargetData :: proc(StringRep: cstring) -> TargetDataRef ---
@@ -2287,12 +2287,12 @@ foreign LLVM_C {
 	GetFirstTarget :: proc() -> TargetRef ---
 	GetNextTarget :: proc(T: TargetRef) -> TargetRef ---
 	GetTargetFromName :: proc(Name: cstring) -> TargetRef ---
-	GetTargetFromTriple :: proc(Triple: cstring, T: ^TargetRef, ErrorMessage: ^cstring) -> Bool ---
+	GetTargetFromTriple :: proc(Triple: cstring, T: ^TargetRef, ErrorMessage: ^cstring) -> LLVMBool ---
 	GetTargetName :: proc(T: TargetRef) -> cstring ---
 	GetTargetDescription :: proc(T: TargetRef) -> cstring ---
-	TargetHasJIT :: proc(T: TargetRef) -> Bool ---
-	TargetHasTargetMachine :: proc(T: TargetRef) -> Bool ---
-	TargetHasAsmBackend :: proc(T: TargetRef) -> Bool ---
+	TargetHasJIT :: proc(T: TargetRef) -> LLVMBool ---
+	TargetHasTargetMachine :: proc(T: TargetRef) -> LLVMBool ---
+	TargetHasAsmBackend :: proc(T: TargetRef) -> LLVMBool ---
 	CreateTargetMachine :: proc(T: TargetRef, Triple: cstring, CPU: cstring, Features: cstring, Level: CodeGenOptLevel, Reloc: RelocMode, CodeModel: CodeModel) -> TargetMachineRef ---
 	DisposeTargetMachine :: proc(T: TargetMachineRef) ---
 	GetTargetMachineTarget :: proc(T: TargetMachineRef) -> TargetRef ---
@@ -2300,9 +2300,9 @@ foreign LLVM_C {
 	GetTargetMachineCPU :: proc(T: TargetMachineRef) -> cstring ---
 	GetTargetMachineFeatureString :: proc(T: TargetMachineRef) -> cstring ---
 	CreateTargetDataLayout :: proc(T: TargetMachineRef) -> TargetDataRef ---
-	SetTargetMachineAsmVerbosity :: proc(T: TargetMachineRef, VerboseAsm: Bool) ---
-	TargetMachineEmitToFile :: proc(T: TargetMachineRef, M: ModuleRef, Filename: cstring, codegen: CodeGenFileType, ErrorMessage: ^cstring) -> Bool ---
-	TargetMachineEmitToMemoryBuffer :: proc(T: TargetMachineRef, M: ModuleRef, codegen: CodeGenFileType, ErrorMessage: ^cstring, OutMemBuf: ^MemoryBufferRef) -> Bool ---
+	SetTargetMachineAsmVerbosity :: proc(T: TargetMachineRef, VerboseAsm: LLVMBool) ---
+	TargetMachineEmitToFile :: proc(T: TargetMachineRef, M: ModuleRef, Filename: cstring, codegen: CodeGenFileType, ErrorMessage: ^cstring) -> LLVMBool ---
+	TargetMachineEmitToMemoryBuffer :: proc(T: TargetMachineRef, M: ModuleRef, codegen: CodeGenFileType, ErrorMessage: ^cstring, OutMemBuf: ^MemoryBufferRef) -> LLVMBool ---
 	GetDefaultTargetTriple :: proc() -> cstring ---
 	NormalizeTargetTriple :: proc(triple: cstring) -> cstring ---
 	GetHostCPUName :: proc() -> cstring ---

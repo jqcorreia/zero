@@ -32,11 +32,16 @@ Ast_Assignment :: struct {
 	expr: ^Expr,
 }
 
+Param :: struct {
+	name: string,
+	type: ^Type,
+}
+
 Ast_Function :: struct {
 	name:     string,
-	params:   []string,
+	params:   []Param,
 	body:     ^Ast_Block,
-	ret_type: string,
+	ret_type: ^Type,
 }
 
 Ast_Block :: struct {
@@ -319,13 +324,13 @@ parse_call_args :: proc(p: ^Parser) -> []^Expr {
 
 parse_function_decl :: proc(p: ^Parser) -> ^Ast_Function {
 	func_name := expect(p, .Identifier).value.(string)
-	args := parse_function_decl_params(p)
+	params := parse_function_decl_params(p)
 	ret_type := parse_function_ret_type(p)
 
 	// Initial declaration of a function
 	state.funcs[func_name] = {
 		name        = func_name,
-		params      = args,
+		params      = params,
 		return_type = ret_type,
 	}
 
@@ -334,15 +339,15 @@ parse_function_decl :: proc(p: ^Parser) -> ^Ast_Function {
 	func := new(Ast_Function)
 
 	func.name = func_name
-	func.params = args
+	func.params = params
 	func.body = body
 	func.ret_type = ret_type
 
 	return func
 }
 
-parse_function_decl_params :: proc(p: ^Parser) -> []string {
-	params: [dynamic]string
+parse_function_decl_params :: proc(p: ^Parser) -> []Param {
+	params: [dynamic]Param
 	done := false
 	expect(p, .LParen)
 	for !done {
@@ -355,11 +360,14 @@ parse_function_decl_params :: proc(p: ^Parser) -> []string {
 
 		#partial switch current(p).kind {
 		case .Identifier:
-			arg_name := current(p).lexeme
-			append(&params, arg_name)
+			param_name := current(p).lexeme
+			fmt.println("--------", param_name)
 			advance(p)
 			expect(p, .Colon)
 			type_ident := expect(p, .Identifier)
+			type := new(Type)
+			type.kind = ident_to_native_type_kind(type_ident.value.(string))
+			append(&params, Param{name = param_name, type = type})
 
 		case .Comma:
 			if peek(p).kind == .RParen {
@@ -377,15 +385,19 @@ parse_function_decl_params :: proc(p: ^Parser) -> []string {
 	return params[:]
 }
 
-parse_function_ret_type :: proc(p: ^Parser) -> string {
+parse_function_ret_type :: proc(p: ^Parser) -> ^Type {
 	if current(p).kind == .RightArrow {
 		advance(p)
-		type := expect(p, .Identifier)
+		type_token := expect(p, .Identifier)
 
-		return type.value.(string)
+		type_kind := ident_to_native_type_kind(type_token.value.(string))
+
+		type := new(Type)
+		type.kind = type_kind
+		return type
 	}
 
-	return ""
+	return nil
 }
 
 parse_block :: proc(p: ^Parser) -> ^Ast_Block {

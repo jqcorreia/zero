@@ -81,7 +81,7 @@ emit_function :: proc(s: ^Ast_Function, ctx: ContextRef, builder: BuilderRef, mo
 	param_types: [dynamic]TypeRef
 
 	fn_type: TypeRef
-	ret_type_ref := func.return_type == "" ? VoidTypeInContext(ctx) : Int32TypeInContext(ctx)
+	ret_type_ref := func.return_type == nil ? VoidTypeInContext(ctx) : Int32TypeInContext(ctx)
 
 	if len(func.params) > 0 {
 		for _ in data.params {
@@ -107,18 +107,18 @@ emit_function :: proc(s: ^Ast_Function, ctx: ContextRef, builder: BuilderRef, mo
 	// Allocate vars
 	scope := Scope{}
 	scope_push(scope)
-	for param_name, i in data.params {
+	for ast_param, i in data.params {
 		param := GetParam(fn, u32(i))
 
-		alloca := BuildAlloca(builder, int32, strings.clone_to_cstring(param_name))
+		alloca := BuildAlloca(builder, int32, strings.clone_to_cstring(ast_param.name))
 		BuildStore(builder, param, alloca)
 
-		scope_current().vars[param_name] = alloca
+		scope_current().vars[ast_param.name] = alloca
 	}
 
 	emit_block(data.body, ctx, builder, module)
 
-	if func.return_type == "" {
+	if func.return_type == nil {
 		BuildRetVoid(builder)
 	}
 	PositionBuilderAtEnd(builder, old_pos)
