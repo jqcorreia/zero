@@ -3,6 +3,10 @@ package main
 import "core:container/queue"
 import "core:fmt"
 
+Checker :: struct {
+	loops: queue.Queue(Loop),
+}
+
 check_stmt :: proc(s: ^Ast_Node) {
 	#partial switch &node in s.node {
 	case Ast_Expr:
@@ -32,6 +36,7 @@ check_assigment :: proc(s: ^Ast_Assignment) {
 }
 
 check_function :: proc(s: ^Ast_Function) {
+	check_block(s.body)
 }
 
 check_return :: proc(s: ^Ast_Return) {
@@ -44,23 +49,32 @@ check_expr :: proc(expr: ^Expr) {
 }
 
 check_block :: proc(block: ^Ast_Block) {
+	for node in block.statements {
+		check_stmt(node)
+	}
 }
 
 check_if :: proc(s: ^Ast_If) {
+	check_block(s.then_block)
+	if s.else_block != nil {
+		check_block(s.else_block)
+	}
 }
 
 check_for_loop :: proc(s: ^Ast_For) {
+	check_block(s.body)
 }
 
 
 check_break :: proc(s: ^Ast_Break) {
-	if queue.len(compiler.loops) == 0 {
-		panic("Break statement outside of loop")
-	}
+	// if queue.len(compiler.loops) == 0 {
+	// 	panic("Break statement outside of loop")
+	// }
 }
 
 check :: proc(nodes: []^Ast_Node) {
 	for node in nodes {
+		fmt.println("#########", node)
 		check_stmt(node)
 	}
 }

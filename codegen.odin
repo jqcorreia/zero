@@ -118,7 +118,7 @@ emit_function :: proc(s: ^Ast_Function, ctx: ContextRef, builder: BuilderRef, mo
 
 	emit_block(data.body, ctx, builder, module)
 
-	if func.return_type == nil {
+	if s.ret_type == nil {
 		BuildRetVoid(builder)
 	}
 	PositionBuilderAtEnd(builder, old_pos)
