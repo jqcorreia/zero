@@ -33,6 +33,9 @@ main :: proc() {
 		}
 	}
 
+	// Semantic and type checker
+	check(stmts)
+
 	// Code generation
 	generate(stmts)
 

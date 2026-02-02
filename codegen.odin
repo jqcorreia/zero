@@ -176,7 +176,11 @@ emit_expr :: proc(expr: ^Expr, ctx: ContextRef, builder: BuilderRef) -> ValueRef
 			return emit_call(e, ctx, builder)
 		}
 	case Expr_Variable:
-		return BuildLoad2(builder, int32, resolve_var(e.value), "")
+		var := resolve_var(e.value)
+		if var == nil {
+			panic(fmt.tprintf("Variable '%s' is not declared", e.value))
+		}
+		return BuildLoad2(builder, int32, var, "")
 	case Expr_Binary:
 		#partial switch e.op {
 		case .Plus:

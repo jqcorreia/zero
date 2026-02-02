@@ -18,3 +18,22 @@ Type_Kind :: enum {
 	Int32,
 	Bool,
 }
+
+type_check_ast :: proc(node: ^Ast_Node) {
+
+}
+
+type_check_expr :: proc(expr: ^Expr) -> ^Type {
+	#partial switch e in expr {
+	case Expr_Binary:
+		left := type_check_expr(e.left)
+		right := type_check_expr(e.right)
+
+		if left != right {
+			panic("Different types in binary operation")
+		}
+	case Expr_Int_Literal:
+		return e.type
+	}
+	return nil
+}

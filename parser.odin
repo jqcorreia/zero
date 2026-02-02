@@ -74,8 +74,13 @@ Expr :: union {
 	Expr_Call,
 }
 
+Expr_Base :: struct {
+	type: ^Type,
+}
+
 Expr_Int_Literal :: struct {
-	value: i64,
+	using base: Expr_Base,
+	value:      i64,
 }
 
 Expr_Binary :: struct {
@@ -213,6 +218,7 @@ expr_binary :: proc(op: Token_Kind, left: ^Expr, right: ^Expr) -> ^Expr {
 	}
 	return expr
 }
+
 expr_ident :: proc(value: string) -> ^Expr {
 	ret := new(Expr)
 	ret^ = Expr_Variable {
