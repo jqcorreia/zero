@@ -132,7 +132,7 @@ emit_return :: proc(s: ^Ast_Return, ctx: ContextRef, builder: BuilderRef, module
 	BuildRet(builder, emit_expr(data.expr, ctx, builder))
 }
 
-// This a hacked printf-type emission until we have proper external functions
+// This a hacked printf-type emission until we have proper external functions and string support
 emit_print_call :: proc(e: Expr_Call, ctx: ContextRef, builder: BuilderRef) -> ValueRef {
 	fmt_ptr := BuildGlobalStringPtr(builder, "%d\n", "")
 	func := compiler.funcs[e.callee.(Expr_Variable).value]
@@ -344,6 +344,31 @@ emit_break :: proc(s: ^Ast_Break, ctx: ContextRef, builder: BuilderRef, module: 
 	PositionBuilderAtEnd(builder, dead)
 }
 
+// This function mainly setup a print() function that will be linked to libc printf() with a only s
+// Calls to this will be exceptionally emited in emit_print_call() for now 
+setup_runtime :: proc(ctx: ContextRef, module: ModuleRef, builder: BuilderRef) {
+	// Printf
+	i32 := Int32TypeInContext(ctx)
+	i8 := Int8TypeInContext(ctx)
+	i8p := PointerType(i8, 0)
+
+	printf_ty := FunctionType(
+		i32, // return type
+		&i8p, // first arg: char *
+		1,
+		true, // variadic
+	)
+
+	printf_fn := AddFunction(module, "printf", printf_ty)
+
+	compiler.funcs["print"] = Function {
+		name   = "print",
+		ty     = printf_ty,
+		fn     = printf_fn,
+		params = {Param{name = "val", type = &Type{kind = .Int32}}},
+	}
+}
+
 generate :: proc(stmts: []^Ast_Node) {
 	// int32 := Int32TypeInContext(ctx)
 	// fn_type := FunctionType(int32, nil, 0, 0)
@@ -352,6 +377,7 @@ generate :: proc(stmts: []^Ast_Node) {
 
 	// entry := AppendBasicBlockInContext(ctx, main_f, "")
 	// PositionBuilderAtEnd(builder, entry)
+
 	ctx := ContextCreate()
 	module := ModuleCreateWithNameInContext("calc", ctx)
 	builder := CreateBuilderInContext(ctx)

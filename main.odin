@@ -5,29 +5,6 @@ import "core:os"
 import "core:sys/posix"
 import "core:time"
 
-setup_runtime :: proc(ctx: ContextRef, module: ModuleRef, builder: BuilderRef) {
-	// Printf
-	i32 := Int32TypeInContext(ctx)
-	i8 := Int8TypeInContext(ctx)
-	i8p := PointerType(i8, 0)
-
-	printf_ty := FunctionType(
-		i32, // return type
-		&i8p, // first arg: char *
-		1,
-		true, // variadic
-	)
-
-	printf_fn := AddFunction(module, "printf", printf_ty)
-
-	compiler.funcs["print"] = Function {
-		name   = "print",
-		ty     = printf_ty,
-		fn     = printf_fn,
-		params = {Param{name = "val", type = &Type{kind = .Int32}}},
-	}
-}
-
 main :: proc() {
 	compiler_init()
 
