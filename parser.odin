@@ -361,12 +361,10 @@ parse_function_decl_params :: proc(p: ^Parser) -> []Param {
 		#partial switch current(p).kind {
 		case .Identifier:
 			param_name := current(p).lexeme
-			fmt.println("--------", param_name)
 			advance(p)
 			expect(p, .Colon)
 			type_ident := expect(p, .Identifier)
-			type := new(Type)
-			type.kind = ident_to_native_type_kind(type_ident.value.(string))
+			type := ident_to_type(type_ident.value.(string))
 			append(&params, Param{name = param_name, type = type})
 
 		case .Comma:
@@ -390,10 +388,8 @@ parse_function_ret_type :: proc(p: ^Parser) -> ^Type {
 		advance(p)
 		type_token := expect(p, .Identifier)
 
-		type_kind := ident_to_native_type_kind(type_token.value.(string))
+		type := ident_to_type(type_token.value.(string))
 
-		type := new(Type)
-		type.kind = type_kind
 		return type
 	}
 

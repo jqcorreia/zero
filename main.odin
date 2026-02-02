@@ -29,6 +29,7 @@ State :: struct {
 	scopes:       queue.Queue(Scope),
 	global_scope: Scope,
 	loops:        queue.Queue(Loop),
+	types:        map[string]^Type,
 }
 
 state: State
@@ -47,6 +48,11 @@ scope_current :: proc() -> ^Scope {
 
 scope_top_level :: proc() -> bool {
 	return queue.len(state.scopes) == 1
+}
+
+setup :: proc(ctx: ContextRef, module: ModuleRef, builder: BuilderRef) {
+	setup_runtime(ctx, module, builder)
+	setup_native_types()
 }
 
 setup_runtime :: proc(ctx: ContextRef, module: ModuleRef, builder: BuilderRef) {
@@ -96,9 +102,9 @@ main :: proc() {
 	module := ModuleCreateWithNameInContext("calc", ctx)
 	builder := CreateBuilderInContext(ctx)
 
-	setup_runtime(ctx, module, builder)
+	setup(ctx, module, builder)
 
-	fmt.println(state.funcs)
+	// fmt.println(state.funcs)
 	start_time := time.now()
 	filename := "test4.z"
 
@@ -118,9 +124,6 @@ main :: proc() {
 	stmts := parse_program(&parser)
 	for stmt in stmts {
 		statement_print(stmt)
-		// fmt.println(stmt)
-		// e := stmt.data.(Statement_Assignment).expr
-		// expr_print(e)
 	}
 
 	generate(stmts, ctx, module, builder)

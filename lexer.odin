@@ -64,7 +64,7 @@ is_numeric :: proc(c: byte) -> bool {
 }
 
 is_alphanumeric :: proc(c: byte) -> bool {
-	return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')
+	return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_'
 }
 
 is_whitespace :: proc(c: byte) -> bool {
