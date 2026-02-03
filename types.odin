@@ -34,6 +34,9 @@ type_check_expr :: proc(expr: ^Expr, span: Span) -> ^Type {
 		return e.type
 	case Expr_Variable:
 		return scope_current().vars[e.value].type
+	case Expr_Call:
+		func := compiler.funcs[e.callee.(Expr_Variable).value]
+		return func.ret_type
 	}
 	return nil
 }

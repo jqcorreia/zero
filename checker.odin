@@ -31,13 +31,12 @@ check_stmt :: proc(s: ^Ast_Node) {
 }
 
 check_assigment :: proc(s: ^Ast_Assignment, span: Span) {
-	fmt.println("$$$$$$$$$ check assignment", span_to_location(span), scope_current())
 	if v, ok := scope_current().vars[s.name]; ok {
 		expr_type := type_check_expr(s.expr, span)
 		fmt.println(s.name, expr_type, v.type)
 
 		if v.type != expr_type {
-			error_span(span, "Cannot assign %v to %v", expr_type, v.type)
+			error_span(span, "Cannot assign %v to %v", expr_type.kind, v.type.kind)
 		}
 	} else {
 		var := Scope_Var {
@@ -50,7 +49,6 @@ check_assigment :: proc(s: ^Ast_Assignment, span: Span) {
 
 check_function :: proc(s: ^Ast_Function, span: Span) {
 	scope := Scope{}
-	fmt.println("!!!!!!!!!!!!!!!", s.params, s.name, span_to_location(span))
 
 	for param in s.params {
 		scope.vars[param.name] = Scope_Var {
@@ -94,13 +92,12 @@ check_for_loop :: proc(s: ^Ast_For, span: Span) {
 
 check_break :: proc(s: ^Ast_Break, span: Span) {
 	if queue.len(checker.loops) == 0 {
-		panic("Break statement outside of loop")
+		error_span(span, "Break statement outside of loop")
 	}
 }
 
 check :: proc(nodes: []^Ast_Node) {
 	for node in nodes {
-		fmt.println("#########", node)
 		check_stmt(node)
 	}
 }
