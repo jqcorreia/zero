@@ -58,6 +58,7 @@ check_function :: proc(s: ^Ast_Function, span: Span) {
 		}
 	}
 	scope_push(scope)
+	fmt.println(scope_current())
 	check_block(s.body, span)
 	scope_pop()
 }

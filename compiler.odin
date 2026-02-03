@@ -3,7 +3,7 @@ package main
 import "core:container/queue"
 
 Compiler :: struct {
-	current_filepath: string,
+	current_filepath: string, // Unused for now
 	funcs:            map[string]^Ast_Function,
 	line_starts:      [dynamic]int,
 	scopes:           queue.Queue(Scope),
@@ -63,7 +63,7 @@ setup_native_types :: proc(compiler: ^Compiler) {
 }
 
 scope_push :: proc(scope: Scope) {
-	queue.push_front(&compiler.scopes, Scope{})
+	queue.push_front(&compiler.scopes, scope)
 }
 
 scope_pop :: proc() -> Scope {
