@@ -358,7 +358,8 @@ emit_break :: proc(s: ^Ast_Break, ctx: ContextRef, builder: BuilderRef, module: 
 
 // This function mainly setup a print() function that will be linked to libc printf() with a only s
 // Calls to this will be exceptionally emited in emit_print_call() for now
-setup_runtime :: proc(ctx: ContextRef, module: ModuleRef, builder: BuilderRef) {
+// Also do some house keeping before running codegen
+setup_codegen :: proc(ctx: ContextRef, module: ModuleRef, builder: BuilderRef) {
 	// Printf
 	i32 := Int32TypeInContext(ctx)
 	i8 := Int8TypeInContext(ctx)
@@ -380,6 +381,12 @@ setup_runtime :: proc(ctx: ContextRef, module: ModuleRef, builder: BuilderRef) {
 	// ast.params = {Param{name = "val", type = &Type{kind = .Int32}}}
 
 	compiler.funcs["print"] = ast_function
+
+	// Clear compiler scopes in order to have a fresh start when generating
+	// NOTE: I'm not sure that having this is needed in the codegen phase
+	// if is is then it should be a separate thing from the one used in the checker
+	queue.clear(&compiler.scopes)
+	scope_push(Scope{})
 }
 
 generate :: proc(stmts: []^Ast_Node) {
@@ -395,7 +402,7 @@ generate :: proc(stmts: []^Ast_Node) {
 	module := ModuleCreateWithNameInContext("calc", ctx)
 	builder := CreateBuilderInContext(ctx)
 
-	setup_runtime(ctx, module, builder)
+	setup_codegen(ctx, module, builder)
 
 	for stmt in stmts {
 		emit_stmt(stmt, ctx, builder, module)

@@ -32,6 +32,8 @@ type_check_expr :: proc(expr: ^Expr, span: Span) -> ^Type {
 		}
 	case Expr_Int_Literal:
 		return e.type
+	case Expr_Variable:
+		return scope_current().vars[e.value].type
 	}
 	return nil
 }
