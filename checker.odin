@@ -31,21 +31,21 @@ check_stmt :: proc(s: ^Ast_Node) {
 }
 
 check_assigment :: proc(s: ^Ast_Assignment, span: Span) {
-	fmt.println("$$$$$$$$$ check assignment")
-	if v, ok := scope_current().vars[s.name]; ok {
-		expr_type := type_check_expr(s.expr)
-		fmt.println(s.name, expr_type, v.type)
+	// fmt.println("$$$$$$$$$ check assignment")
+	// if v, ok := scope_current().vars[s.name]; ok {
+	// 	expr_type := type_check_expr(s.expr)
+	// 	fmt.println(s.name, expr_type, v.type)
 
-		if v.type != expr_type {
-			error_span(span, "Cannot assign %v to %v", expr_type, v.type)
-		}
-	} else {
-		var := Scope_Var {
-			type = type_check_expr(s.expr),
-		}
+	// 	if v.type != expr_type {
+	// 		error_span(span, "Cannot assign %v to %v", expr_type, v.type)
+	// 	}
+	// } else {
+	// 	var := Scope_Var {
+	// 		type = type_check_expr(s.expr),
+	// 	}
 
-		scope_current().vars[s.name] = var
-	}
+	// 	scope_current().vars[s.name] = var
+	// }
 }
 
 check_function :: proc(s: ^Ast_Function, span: Span) {

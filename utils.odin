@@ -32,8 +32,8 @@ error_token :: proc(token: Token, format: string, args: ..any) {
 
 error_span :: proc(span: Span, format: string, args: ..any) {
 	row, col := span_to_location(span)
+	loc := fmt.tprintf("%s:%d:%d", "filename", row, col)
 	msg := fmt.tprintf(format, ..args)
-	loc := fmt.tprintf("%s:%d:%d", "filename", col, row)
 	error := fmt.tprintf("%s: %s", loc, msg)
 
 	append(&compiler.errors, Compiler_Error{span = span, message = error})

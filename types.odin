@@ -19,11 +19,11 @@ Type_Kind :: enum {
 	Bool,
 }
 
-type_check_expr :: proc(expr: ^Expr) -> ^Type {
+type_check_expr :: proc(expr: ^Expr, span: Span) -> ^Type {
 	#partial switch e in expr {
 	case Expr_Binary:
-		left := type_check_expr(e.left)
-		right := type_check_expr(e.right)
+		left := type_check_expr(e.left, span)
+		right := type_check_expr(e.right, span)
 
 		if left != right {
 			return nil
