@@ -1,7 +1,43 @@
 package main
 
 import "core:fmt"
+import "core:os"
 import "core:strings"
+
+fatal_span :: proc(span: Span, format: string, args: ..any) {
+	_, col := span_to_location(span)
+	msg := fmt.printf(format, ..args)
+	loc := fmt.tprintf("%s:%d:%d: %s", "filename", col)
+	fmt.printf("%s: %s", loc, msg)
+	os.exit(1)
+}
+
+fatal_token :: proc(token: Token, format: string, args: ..any) {
+	span := token.span
+	_, col := span_to_location(span)
+	msg := fmt.printf(format, ..args)
+	loc := fmt.tprintf("%s:%d:%d: %s", "filename", col)
+	fmt.printf("%s: %s", loc, msg)
+	os.exit(1)
+}
+
+error_token :: proc(token: Token, format: string, args: ..any) {
+	span := token.span
+	_, col := span_to_location(span)
+	msg := fmt.printf(format, ..args)
+	loc := fmt.tprintf("%s:%d:%d: %s", "filename", col)
+	fmt.printf("%s: %s", loc, msg)
+	os.exit(1)
+}
+
+error_span :: proc(span: Span, format: string, args: ..any) {
+	row, col := span_to_location(span)
+	msg := fmt.tprintf(format, ..args)
+	loc := fmt.tprintf("%s:%d:%d", "filename", col, row)
+	error := fmt.tprintf("%s: %s", loc, msg)
+
+	append(&compiler.errors, Compiler_Error{span = span, message = error})
+}
 
 token_serialize :: proc(token: Token) -> string {
 	sb := strings.builder_make()

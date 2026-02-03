@@ -39,6 +39,14 @@ main :: proc() {
 	// Code generation
 	generate(stmts)
 
+	if len(compiler.errors) > 0 {
+		fmt.println("Compilation failed:")
+		for error in compiler.errors {
+			fmt.println(error.message)
+		}
+		os.exit(1)
+	}
+
 	// DumpModule(module)
 	fmt.println("--- Compilation done in", time.diff(start_time, time.now()), "---")
 
@@ -49,4 +57,6 @@ main :: proc() {
 	} else {
 		unimplemented("Only linux is supported for now. :-\\")
 	}
+
+	os.exit(0)
 }

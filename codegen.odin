@@ -7,11 +7,11 @@ import "core:strings"
 resolve_var :: proc(name: string) -> ValueRef {
 	local_var, local_var_ok := scope_current().vars[name]
 	if local_var_ok {
-		return local_var
+		return local_var.ref
 	} else {
 		global_var, global_var_ok := compiler.global_scope.vars[name]
 		if global_var_ok {
-			return global_var
+			return global_var.ref
 		}
 	}
 	return nil
@@ -48,13 +48,15 @@ emit_assigment :: proc(
 	// Build local variables
 	// If the variable exists, just emit a Store, otherwise emit Alloca + Store
 	if !scope_top_level() {
-		ptr, exists := scope_current().vars[data.name]
+		var, exists := scope_current().vars[data.name]
+		ptr := var.ref
 		if exists {
 			BuildStore(builder, emit_expr(data.expr, ctx, builder), ptr)
 		} else {
 			ptr = BuildAlloca(builder, Int32Type(), "")
 			BuildStore(builder, emit_expr(data.expr, ctx, builder), ptr)
-			scope_current().vars[data.name] = ptr
+			var.ref = ptr
+			scope_current().vars[data.name] = var
 		}
 	} else {
 		// Create global variables, only constant for now
@@ -64,7 +66,9 @@ emit_assigment :: proc(
 				ptr,
 				ConstInt(Int32Type(), u64(data.expr.(Expr_Int_Literal).value), false),
 			)
-			compiler.global_scope.vars[data.name] = ptr
+			compiler.global_scope.vars[data.name] = Scope_Var {
+				ref = ptr,
+			}
 		} else {
 			panic("Global variables need to be constants")
 		}
@@ -75,15 +79,14 @@ emit_function :: proc(s: ^Ast_Function, ctx: ContextRef, builder: BuilderRef, mo
 	old_pos := GetInsertBlock(builder)
 
 	data := s
-	func := &compiler.funcs[data.name]
 
 	int32 := Int32TypeInContext(ctx)
 	param_types: [dynamic]TypeRef
 
 	fn_type: TypeRef
-	ret_type_ref := func.return_type == nil ? VoidTypeInContext(ctx) : Int32TypeInContext(ctx)
+	ret_type_ref := s.ret_type == nil ? VoidTypeInContext(ctx) : Int32TypeInContext(ctx)
 
-	if len(func.params) > 0 {
+	if len(s.params) > 0 {
 		for _ in data.params {
 			append(&param_types, int32)
 		}
@@ -97,8 +100,11 @@ emit_function :: proc(s: ^Ast_Function, ctx: ContextRef, builder: BuilderRef, mo
 	fn := AddFunction(module, strings.clone_to_cstring(data.name), fn_type)
 	// By now the function must exist in state
 	// Complete the information with TypeRef and ValueRef
-	func.ty = fn_type
-	func.fn = fn
+	s.ty = fn_type
+	s.fn = fn
+
+	// Store function Ast node for further reference in calls
+	compiler.funcs[s.name] = s
 
 	SetLinkage(fn, .ExternalLinkage)
 	entry := AppendBasicBlockInContext(ctx, fn, "")
@@ -113,7 +119,9 @@ emit_function :: proc(s: ^Ast_Function, ctx: ContextRef, builder: BuilderRef, mo
 		alloca := BuildAlloca(builder, int32, strings.clone_to_cstring(ast_param.name))
 		BuildStore(builder, param, alloca)
 
-		scope_current().vars[ast_param.name] = alloca
+		scope_current().vars[ast_param.name] = Scope_Var {
+			ref = alloca,
+		}
 	}
 
 	emit_block(data.body, ctx, builder, module)
@@ -349,7 +357,7 @@ emit_break :: proc(s: ^Ast_Break, ctx: ContextRef, builder: BuilderRef, module: 
 }
 
 // This function mainly setup a print() function that will be linked to libc printf() with a only s
-// Calls to this will be exceptionally emited in emit_print_call() for now 
+// Calls to this will be exceptionally emited in emit_print_call() for now
 setup_runtime :: proc(ctx: ContextRef, module: ModuleRef, builder: BuilderRef) {
 	// Printf
 	i32 := Int32TypeInContext(ctx)
@@ -365,12 +373,13 @@ setup_runtime :: proc(ctx: ContextRef, module: ModuleRef, builder: BuilderRef) {
 
 	printf_fn := AddFunction(module, "printf", printf_ty)
 
-	compiler.funcs["print"] = Function {
-		name   = "print",
-		ty     = printf_ty,
-		fn     = printf_fn,
-		params = {Param{name = "val", type = &Type{kind = .Int32}}},
-	}
+	ast_function := new(Ast_Function)
+	ast_function.name = "print"
+	ast_function.ty = printf_ty
+	ast_function.fn = printf_fn
+	// ast.params = {Param{name = "val", type = &Type{kind = .Int32}}}
+
+	compiler.funcs["print"] = ast_function
 }
 
 generate :: proc(stmts: []^Ast_Node) {

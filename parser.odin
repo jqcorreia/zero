@@ -42,6 +42,8 @@ Ast_Function :: struct {
 	params:   []Param,
 	body:     ^Ast_Block,
 	ret_type: ^Type,
+	ty:       TypeRef,
+	fn:       ValueRef,
 }
 
 Ast_Block :: struct {
@@ -114,7 +116,7 @@ advance :: proc(p: ^Parser) -> Token {
 
 expect :: proc(p: ^Parser, kind: Token_Kind) -> Token {
 	if current(p).kind != kind {
-		panic(fmt.tprintf("Expected %v, got %v", kind, current(p).kind))
+		fatal_token(current(p), "Expected %v, got %v", kind, current(p).kind)
 	}
 	return advance(p)
 }
@@ -140,6 +142,9 @@ parse_program :: proc(p: ^Parser) -> []^Ast_Node {
 
 parse_statement :: proc(p: ^Parser) -> ^Ast_Node {
 	t := current(p)
+	span := Span {
+		start = t.span.start,
+	}
 	ast_node := new(Ast_Node)
 	stmt := &ast_node.node
 
@@ -198,6 +203,8 @@ parse_statement :: proc(p: ^Parser) -> ^Ast_Node {
 	case:
 		unimplemented(fmt.tprintf("Unexpected token: %s", token_serialize(t)))
 	}
+	span.end = current(p).span.end
+	ast_node.span = span
 	return ast_node
 }
 
@@ -205,6 +212,7 @@ expr_int_literal :: proc(value: i64) -> ^Expr {
 	ret := new(Expr)
 	ret^ = Expr_Int_Literal {
 		value = value,
+		type  = ident_to_type("i32"),
 	}
 	return ret
 }
@@ -332,13 +340,6 @@ parse_function_decl :: proc(p: ^Parser) -> ^Ast_Function {
 	func_name := expect(p, .Identifier).value.(string)
 	params := parse_function_decl_params(p)
 	ret_type := parse_function_ret_type(p)
-
-	// Initial declaration of a function
-	compiler.funcs[func_name] = {
-		name        = func_name,
-		params      = params,
-		return_type = ret_type,
-	}
 
 	body := parse_block(p)
 

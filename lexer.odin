@@ -2,8 +2,6 @@
 
 package main
 
-import "core:fmt"
-
 Token_Kind :: enum {
 	NewLine,
 	LParen,
@@ -245,7 +243,7 @@ lex :: proc(input: string) -> []Token {
 				lexer.pos += 1
 			}
 		case:
-			unimplemented(fmt.tprintf("Token not recongnized: %c", c))
+			fatal_span(Span{start = lexer.pos}, "Unrecognized token %c", c)
 		}
 	}
 	return tokens[:]

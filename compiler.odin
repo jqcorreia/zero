@@ -3,24 +3,30 @@ package main
 import "core:container/queue"
 
 Compiler :: struct {
-	funcs:        map[string]Function,
-	line_starts:  [dynamic]int,
-	scopes:       queue.Queue(Scope),
-	global_scope: Scope,
-	loops:        queue.Queue(Loop),
-	types:        map[string]^Type,
+	current_filepath: string,
+	funcs:            map[string]^Ast_Function,
+	line_starts:      [dynamic]int,
+	scopes:           queue.Queue(Scope),
+	global_scope:     Scope,
+	loops:            queue.Queue(Loop),
+	types:            map[string]^Type,
+	errors:           [dynamic]Compiler_Error,
 }
 
-Function :: struct {
-	name:        string,
-	params:      []Param,
-	ty:          TypeRef,
-	fn:          ValueRef,
-	return_type: ^Type,
+Compiler_Error :: struct {
+	file:    string,
+	span:    Span,
+	message: string,
 }
 
 Scope :: struct {
-	vars: map[string]ValueRef,
+	vars: map[string]Scope_Var,
+}
+
+Scope_Var :: struct {
+	type_name: string,
+	type:      ^Type,
+	ref:       ValueRef,
 }
 
 Loop :: struct {
