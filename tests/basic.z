@@ -27,6 +27,7 @@ fn func() -> i32 {
 
 // Different parameter types and return values
 fn param_test(x: u8, y: u8) -> u8 {
+    x = 100
     return x + y
 }
 
