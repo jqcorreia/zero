@@ -9,7 +9,7 @@ main :: proc() {
 	compiler_init()
 
 	start_time := time.now()
-	filename := "test4.z"
+	filename := "tests/basic.z"
 
 	if len(os.args) > 1 {
 		filename = os.args[1]
