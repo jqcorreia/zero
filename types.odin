@@ -12,6 +12,7 @@ Type :: struct {
 }
 
 Type_Kind :: enum {
+	Undefined,
 	U8,
 	Int8,
 	Int16,

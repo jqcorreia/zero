@@ -4,17 +4,18 @@ import "core:container/queue"
 import "core:fmt"
 import "core:strings"
 
-resolve_var :: proc(name: string) -> ValueRef {
+//NOTE(quadrado): Replace this with a generic scope one and that does proper scope climbing
+resolve_var_1 :: proc(name: string) -> Scope_Var {
 	local_var, local_var_ok := scope_current().vars[name]
 	if local_var_ok {
-		return local_var.ref
+		return local_var
 	} else {
 		global_var, global_var_ok := compiler.global_scope.vars[name]
 		if global_var_ok {
-			return global_var.ref
+			return global_var
 		}
 	}
-	return nil
+	return Scope_Var{}
 }
 
 emit_stmt :: proc(s: ^Ast_Node, ctx: ContextRef, builder: BuilderRef, module: ModuleRef) {
@@ -184,7 +185,7 @@ emit_expr :: proc(expr: ^Expr, ctx: ContextRef, builder: BuilderRef) -> ValueRef
 			return emit_call(e, ctx, builder)
 		}
 	case Expr_Variable:
-		var := resolve_var(e.value)
+		var := resolve_var_1(e.value).ref
 		if var == nil {
 			panic(fmt.tprintf("Variable '%s' is not declared", e.value))
 		}

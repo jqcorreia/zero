@@ -19,6 +19,8 @@ Compiler_Error :: struct {
 	message: string,
 }
 
+Scopes :: queue.Queue(Scope)
+
 Scope :: struct {
 	vars: map[string]Scope_Var,
 }

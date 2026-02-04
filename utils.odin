@@ -1,5 +1,6 @@
 package main
 
+import "core:container/queue"
 import "core:fmt"
 import "core:os"
 import "core:strings"
@@ -154,4 +155,16 @@ span_to_location :: proc(span: Span) -> (line: int, col: int) {
 			return idx + 1, start - left + 1
 		}
 	}
+}
+
+resolve_var :: proc(scopes: ^Scopes, name: string) -> Scope_Var {
+	for i in queue.len(scopes^) - 1 ..= 0 {
+		scope := queue.get(scopes, i)
+		var, ok := scope.vars[name]
+		if ok {
+			return var
+		}
+	}
+
+	return Scope_Var{}
 }
