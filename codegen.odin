@@ -409,6 +409,9 @@ generate :: proc(stmts: []^Ast_Node) {
 		emit_stmt(stmt, ctx, builder, module)
 	}
 
+	when ODIN_DEBUG {
+		DumpModule(module)
+	}
 	InitializeX86Target()
 	InitializeX86TargetInfo()
 	InitializeX86TargetMC()

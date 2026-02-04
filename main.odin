@@ -50,7 +50,6 @@ main :: proc() {
 	}
 
 	if ODIN_DEBUG {
-		DumpModule(module)
 		fmt.println("--- Compilation done in", time.diff(start_time, time.now()), "---")
 	}
 
