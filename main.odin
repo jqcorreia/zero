@@ -5,6 +5,7 @@ import "core:os"
 import "core:sys/posix"
 import "core:time"
 
+
 main :: proc() {
 	compiler_init()
 
@@ -48,8 +49,10 @@ main :: proc() {
 		os.exit(1)
 	}
 
-	// DumpModule(module)
-	fmt.println("--- Compilation done in", time.diff(start_time, time.now()), "---")
+	if ODIN_DEBUG {
+		DumpModule(module)
+		fmt.println("--- Compilation done in", time.diff(start_time, time.now()), "---")
+	}
 
 	// Link and run
 	when ODIN_OS == .Linux {

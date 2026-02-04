@@ -412,7 +412,6 @@ parse_block :: proc(p: ^Parser) -> ^Ast_Block {
 
 	for current(p).kind != .RBrace {
 		stmt := parse_statement(p)
-		statement_print(stmt)
 		append(&res, stmt)
 	}
 	advance(p)

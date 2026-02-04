@@ -131,7 +131,7 @@ emit_function :: proc(s: ^Ast_Function, ctx: ContextRef, builder: BuilderRef, mo
 		BuildRetVoid(builder)
 	}
 	PositionBuilderAtEnd(builder, old_pos)
-	DumpValue(fn)
+	// DumpValue(fn)
 
 	scope_pop()
 }
@@ -425,7 +425,6 @@ generate :: proc(stmts: []^Ast_Node) {
 	}
 	SetTarget(module, triple)
 
-	fmt.println(target, triple)
 	tm := CreateTargetMachine(
 		target,
 		triple,
