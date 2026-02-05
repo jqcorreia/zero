@@ -2,6 +2,8 @@
 
 package main
 
+import "core:fmt"
+
 Token_Kind :: enum {
 	NewLine,
 	LParen,
@@ -167,6 +169,9 @@ lex :: proc(input: string) -> []Token {
 			}
 		case c == '/':
 			if lexer.input[lexer.pos + 1] == '/' {
+				// This will keep NOT consume the final newline as it needs to be emitted
+				// in the next iteration of this loop.
+				// NOTE(quadrado): This is a code smell that should be fixed.
 				for lexer.pos < len(lexer.input) && lex_current(&lexer) != '\n' {
 					lexer.pos += 1
 				}
@@ -243,7 +248,7 @@ lex :: proc(input: string) -> []Token {
 				lexer.pos += 1
 			}
 		case:
-			fatal_span(Span{start = lexer.pos}, "Unrecognized token %c", c)
+			fatal_span(Span{start = lexer.pos}, "Unrecognized character %c", c)
 		}
 	}
 	return tokens[:]

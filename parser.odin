@@ -408,9 +408,14 @@ parse_block :: proc(p: ^Parser) -> ^Ast_Block {
 
 	expect(p, .LBrace)
 
-	if current(p).kind == .NewLine do advance(p)
 
 	for current(p).kind != .RBrace {
+		// Ignore empty lines
+		if current(p).kind == .NewLine {
+			advance(p)
+			continue
+		}
+
 		stmt := parse_statement(p)
 		append(&res, stmt)
 	}

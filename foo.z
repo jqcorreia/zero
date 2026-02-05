@@ -1,0 +1,7 @@
+// comment
+fn main() {
+    // other comment // sdfhsdf
+    // print(10) // cenas 
+
+    print(100)
+}
