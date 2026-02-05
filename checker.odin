@@ -62,6 +62,9 @@ check_function :: proc(c: ^Checker, s: ^Ast_Function, span: Span) {
 }
 
 check_return :: proc(c: ^Checker, s: ^Ast_Return, span: Span) {
+	if queue.len(c.scopes) == 0 {
+		error_span(span, "Calling 'return' outside of function.")
+	}
 }
 
 check_call :: proc(c: ^Checker, e: Expr_Call, span: Span) {

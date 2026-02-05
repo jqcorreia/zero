@@ -38,9 +38,7 @@ main :: proc() {
 	checker := Checker{}
 	check(&checker, stmts)
 
-	// Code generation
-	generate(stmts)
-
+	// Compilation errors should appear before codegen phase
 	if len(compiler.errors) > 0 {
 		fmt.println("Compilation failed:")
 		for error in compiler.errors {
@@ -48,6 +46,9 @@ main :: proc() {
 		}
 		os.exit(1)
 	}
+
+	// Code generation
+	generate(stmts)
 
 	if ODIN_DEBUG {
 		fmt.println("--- Compilation done in", time.diff(start_time, time.now()), "---")

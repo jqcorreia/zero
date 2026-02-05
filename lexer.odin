@@ -2,8 +2,6 @@
 
 package main
 
-import "core:fmt"
-
 Token_Kind :: enum {
 	NewLine,
 	LParen,
