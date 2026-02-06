@@ -33,7 +33,7 @@ check_assigment :: proc(c: ^Checker, s: ^Ast_Assignment, span: Span) {
 	var := resolve_var(&c.scopes, s.name)
 	if var.ref != nil {
 		expr_type := type_check_expr(s.expr, span)
-		fmt.println(s.name, expr_type, var.type)
+		// fmt.println(s.name, expr_type, var.type)
 
 		if var.type != expr_type {
 			error_span(span, "Cannot assign %v to %v", expr_type.kind, var.type.kind)
@@ -68,6 +68,7 @@ check_return :: proc(c: ^Checker, s: ^Ast_Return, span: Span) {
 }
 
 check_call :: proc(c: ^Checker, e: Expr_Call, span: Span) {
+
 }
 
 check_expr :: proc(c: ^Checker, expr: ^Expr, span: Span) {
