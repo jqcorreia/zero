@@ -9,7 +9,7 @@ fn fib(n: i32) -> i32 {
     return 0
 }
 
-// Basic loop, variable utation and break statement
+// Basic loop, variable mutation and break statement
 fn func() -> i32 {
     a = 1
 
