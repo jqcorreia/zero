@@ -1,3 +1,7 @@
+fn bar(a: u32, b: u8) {
+    c = a + b // This should err
+}
+
 // comment
 fn main() {
     // other comment // sdfhsdf

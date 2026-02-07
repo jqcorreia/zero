@@ -139,8 +139,9 @@ span_to_location :: proc(span: Span) -> (line: int, col: int) {
 	}
 	idx := 0
 	start := span.start
-	for {
-		left := compiler.line_starts[idx]
+	left := compiler.line_starts[idx]
+	for idx < len(compiler.line_starts) - 1 {
+		left = compiler.line_starts[idx]
 		right := compiler.line_starts[idx + 1]
 
 		switch {
@@ -150,6 +151,7 @@ span_to_location :: proc(span: Span) -> (line: int, col: int) {
 			return idx + 1, start - left + 1
 		}
 	}
+	return compiler.line_starts[len(compiler.line_starts) - 1] + 1, start - left + 1
 }
 
 resolve_var :: proc(scopes: ^Scopes, name: string) -> Scope_Var {
