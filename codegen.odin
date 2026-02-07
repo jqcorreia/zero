@@ -344,9 +344,6 @@ emit_for_loop :: proc(s: ^Ast_For, ctx: ContextRef, builder: BuilderRef, module:
 }
 
 emit_break :: proc(s: ^Ast_Break, ctx: ContextRef, builder: BuilderRef, module: ModuleRef) {
-	if queue.len(compiler.loops) == 0 {
-		panic("Breaking outside of a loop")
-	}
 	loop := queue.front(&compiler.loops)
 
 	BuildBr(builder, loop.break_block)

@@ -7,6 +7,8 @@ Parser :: struct {
 	pos:    int,
 }
 
+Ast_Module :: []^Ast_Node
+
 Ast_Node :: struct {
 	node: union {
 		Ast_Expr,
@@ -237,19 +239,6 @@ expr_ident :: proc(value: string) -> ^Expr {
 }
 
 expr_call :: proc(callee: ^Expr, args: []^Expr) -> ^Expr {
-	//NOTE: do not do this here, move it to semantic checker or type checker
-	// func, ok := compiler.funcs[callee.(Expr_Variable).value]
-	// if !ok {
-	// 	panic("function not found")
-	// }
-
-	// if len(args) < len(func.params) {
-	// 	panic(fmt.tprintf("Missing arguments in call to function '%s'", func.name))
-	// }
-	// if len(args) > len(func.params) {
-	// 	panic(fmt.tprintf("Extra arguments in call to function '%s'", func.name))
-	// }
-
 	ret := new(Expr)
 	ret^ = Expr_Call {
 		callee = callee,

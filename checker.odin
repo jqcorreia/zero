@@ -101,6 +101,16 @@ check_break :: proc(c: ^Checker, s: ^Ast_Break, span: Span) {
 }
 
 check :: proc(c: ^Checker, nodes: []^Ast_Node) {
+	// flat := flatten_ast(nodes)
+	// symbols := create_symbol_table(nodes)
+
+	// when ODIN_DEBUG {
+	// 	fmt.println(symbols)
+	// }
+	// for f in flat {
+	// 	fmt.println(f.node)
+	// }
+
 	for node in nodes {
 		check_stmt(c, node)
 	}
