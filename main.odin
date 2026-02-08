@@ -1,23 +1,32 @@
 package main
 
+import "core:flags"
 import "core:fmt"
 import "core:os"
 import "core:sys/posix"
 import "core:time"
 
+Options :: struct {
+	command: string `args:"pos=0,required"`,
+	file:    os.Handle `args:"pos=1,required,file=r,required"`,
+}
 
 main :: proc() {
+	opt: Options
+
+	flags.parse_or_exit(&opt, os.args, .Unix)
+
 	compiler_init()
 
 	start_time := time.now()
-	filename := "tests/basic.z"
+	// filename := "tests/basic.z"
 
-	if len(os.args) > 1 {
-		filename = os.args[1]
-	}
+	// if len(os.args) > 1 {
+	// 	filename = os.args[1]
+	// }
 
 	// Lex
-	expr := os.read_entire_file(filename) or_else panic("No file found")
+	expr := os.read_entire_file(opt.file) or_else panic("No file found")
 	tokens := lex(string(expr))
 	if ODIN_DEBUG {
 		tokens_print(tokens)
@@ -38,6 +47,9 @@ main :: proc() {
 	checker := Checker{}
 	check(&checker, stmts)
 
+	if opt.command == "check" {
+		os.exit(0)
+	}
 	// Compilation errors should appear before codegen phase
 	if len(compiler.errors) > 0 {
 		fmt.println("Compilation failed:")
@@ -56,8 +68,15 @@ main :: proc() {
 
 	// Link and run
 	when ODIN_OS == .Linux {
-		posix.system("cc -o calc calc.o")
-		posix.system("./calc")
+		if opt.command == "build" {
+			posix.system("cc -o calc calc.o")
+			os.exit(0)
+		}
+		if opt.command == "run" {
+			posix.system("cc -o calc calc.o")
+			posix.system("./calc")
+			os.exit(0)
+		}
 	} else {
 		unimplemented("Only linux is supported for now. :-\\")
 	}
