@@ -35,17 +35,19 @@ Ast_Assignment :: struct {
 }
 
 Param :: struct {
-	name: string,
-	type: ^Type,
+	name:       string,
+	type_ident: string,
+	type:       ^Type,
 }
 
 Ast_Function :: struct {
-	name:     string,
-	params:   []Param,
-	body:     ^Ast_Block,
-	ret_type: ^Type,
-	ty:       TypeRef,
-	fn:       ValueRef,
+	name:           string,
+	params:         []Param,
+	body:           ^Ast_Block,
+	ret_type:       ^Type,
+	ret_type_ident: string,
+	ty:             TypeRef,
+	fn:             ValueRef,
 }
 
 Ast_Block :: struct {
@@ -360,8 +362,7 @@ parse_function_decl_params :: proc(p: ^Parser) -> []Param {
 			advance(p)
 			expect(p, .Colon)
 			type_ident := expect(p, .Identifier)
-			type := ident_to_type(type_ident.value.(string))
-			append(&params, Param{name = param_name, type = type})
+			append(&params, Param{name = param_name, type_ident = type_ident.lexeme})
 
 		case .Comma:
 			if peek(p).kind == .RParen {
@@ -385,6 +386,7 @@ parse_function_ret_type :: proc(p: ^Parser) -> ^Type {
 		type_token := expect(p, .Identifier)
 
 		type := ident_to_type(type_token.value.(string))
+		fmt.println(type)
 
 		return type
 	}

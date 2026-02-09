@@ -1,10 +1,13 @@
 package main
 
-import "core:fmt"
+import "core:container/queue"
 
 Symbol :: struct {
-	name: string,
-	kind: Symbol_Kind,
+	name:  string,
+	kind:  Symbol_Kind,
+	type:  ^Type, // your type system
+	decl:  ^Ast_Node, // pointer back to the declaration
+	scope: ^Symbol_Scope,
 }
 
 Symbol_Kind :: enum {
@@ -14,6 +17,46 @@ Symbol_Kind :: enum {
 
 Symbol_Table :: map[string]Symbol
 
+
+Symbol_Scope :: struct {
+	kind:     ScopeKind,
+	symbols:  Symbol_Table,
+	function: ^Symbol,
+}
+
+ScopeKind :: enum {
+	Global,
+	Function,
+	Block,
+	Loop,
+}
+
+Symbol_Scopes :: queue.Queue(Symbol_Scope)
+
+ss_push :: proc(scopes: ^Symbol_Scopes, scope: Symbol_Scope) {
+	queue.push_front(scopes, scope)
+}
+
+ss_pop :: proc(scopes: ^Symbol_Scopes) -> Symbol_Scope {
+	scope := queue.pop_front(scopes)
+	return scope
+}
+
+ss_cur :: proc(scopes: ^Symbol_Scopes) -> ^Symbol_Scope {
+	return queue.front_ptr(scopes)
+}
+
+resolv_var :: proc(scopes: ^Symbol_Scopes, name: string) -> ^Symbol {
+	for i in queue.len(scopes^) - 1 ..= 0 {
+		scope := queue.get(scopes, i)
+		var, ok := &scope.symbols[name]
+		if ok {
+			return var
+		}
+	}
+
+	return nil
+}
 
 flatten_ast :: proc(nodes: []^Ast_Node) -> []^Ast_Node {
 	res: [dynamic]^Ast_Node

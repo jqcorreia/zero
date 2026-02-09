@@ -47,9 +47,6 @@ main :: proc() {
 	checker := Checker{}
 	check(&checker, stmts)
 
-	if opt.command == "check" {
-		os.exit(0)
-	}
 	// Compilation errors should appear before codegen phase
 	if len(compiler.errors) > 0 {
 		fmt.println("Compilation failed:")
@@ -57,6 +54,9 @@ main :: proc() {
 			fmt.println(error.message)
 		}
 		os.exit(1)
+	}
+	if opt.command == "check" {
+		os.exit(0)
 	}
 
 	// Code generation

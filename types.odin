@@ -17,6 +17,7 @@ Type_Kind :: enum {
 	Int8,
 	Int16,
 	Int32,
+	Uint32,
 	Bool,
 }
 

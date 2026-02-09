@@ -1,5 +1,6 @@
-fn bar(a: u32, b: u8) {
+fn bar(a: u32, b: u8) -> u32 {
     c = a + b // This should err
+    return a
 }
 
 // comment

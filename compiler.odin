@@ -59,6 +59,10 @@ setup_native_types :: proc(compiler: ^Compiler) {
 	i32_t.kind = .Int32
 	compiler.types["i32"] = i32_t
 
+	u32_t := new(Type)
+	u32_t.kind = .Uint32
+	compiler.types["u32"] = u32_t
+
 	bool_t := new(Type)
 	bool_t.kind = .Bool
 	compiler.types["bool"] = bool_t

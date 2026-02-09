@@ -4,8 +4,7 @@ import "core:container/queue"
 import "core:fmt"
 
 Checker :: struct {
-	loops:  queue.Queue(Loop),
-	scopes: Scopes,
+	scopes: Symbol_Scopes,
 }
 
 check_stmt :: proc(c: ^Checker, s: ^Ast_Node) {
@@ -30,35 +29,47 @@ check_stmt :: proc(c: ^Checker, s: ^Ast_Node) {
 }
 
 check_assigment :: proc(c: ^Checker, s: ^Ast_Assignment, span: Span) {
-	var := resolve_var(&c.scopes, s.name)
-	if var.ref != nil {
-		expr_type := type_check_expr(s.expr, span)
-		// fmt.println(s.name, expr_type, var.type)
+	var := resolv_var(&c.scopes, s.name)
+	if var != nil {
+		expr_type := check_expr(c, s.expr, span)
 
 		if var.type != expr_type {
 			error_span(span, "Cannot assign %v to %v", expr_type.kind, var.type.kind)
 		}
 	} else {
-		new_var := Scope_Var {
-			type = type_check_expr(s.expr, span),
+		new_var := Symbol {
+			type = check_expr(c, s.expr, span),
 		}
 
-		scope := queue.front_ptr(&c.scopes)
-		scope.vars[s.name] = new_var
+		scope := ss_cur(&c.scopes)
+		scope.symbols[s.name] = new_var
 	}
 }
 
 check_function :: proc(c: ^Checker, s: ^Ast_Function, span: Span) {
-	scope := Scope{}
+	symbol := new(Symbol)
+	symbol.name = s.name
+	symbol.kind = .Function
+	symbol.type = ident_to_type(s.ret_type_ident)
+	symbol.scope = ss_cur(&c.scopes)
 
-	for param in s.params {
-		scope.vars[param.name] = Scope_Var {
+	scope := Symbol_Scope {
+		kind     = .Function,
+		function = symbol,
+	}
+
+	for &param in s.params {
+		param.type = ident_to_type(param.type_ident)
+		scope.symbols[param.name] = Symbol {
+			name = param.name,
+			kind = .Variable,
 			type = param.type,
 		}
 	}
-	queue.push_front(&c.scopes, scope)
+
+	ss_push(&c.scopes, scope)
 	check_block(c, s.body, span)
-	queue.pop_front(&c.scopes)
+	ss_pop(&c.scopes)
 }
 
 check_return :: proc(c: ^Checker, s: ^Ast_Return, span: Span) {
@@ -71,7 +82,26 @@ check_call :: proc(c: ^Checker, e: Expr_Call, span: Span) {
 
 }
 
-check_expr :: proc(c: ^Checker, expr: ^Expr, span: Span) {
+check_expr :: proc(c: ^Checker, expr: ^Expr, span: Span) -> ^Type {
+	#partial switch e in expr {
+	case Expr_Binary:
+		left := check_expr(c, e.left, span)
+		right := check_expr(c, e.right, span)
+
+		if left != right {
+			return nil
+		} else {
+			return left
+		}
+	case Expr_Int_Literal:
+		return e.type
+	case Expr_Variable:
+		return ss_cur(&c.scopes).symbols[e.value].type
+	case Expr_Call:
+		func := compiler.funcs[e.callee.(Expr_Variable).value]
+		return func.ret_type
+	}
+	return nil
 }
 
 check_block :: proc(c: ^Checker, block: ^Ast_Block, span: Span) {
@@ -88,14 +118,26 @@ check_if :: proc(c: ^Checker, s: ^Ast_If, span: Span) {
 }
 
 check_for_loop :: proc(c: ^Checker, s: ^Ast_For, span: Span) {
-	queue.push_front(&c.loops, Loop{})
+	scope := Symbol_Scope {
+		kind = .Loop,
+	}
+	ss_push(&c.scopes, scope)
 	check_block(c, s.body, span)
-	queue.pop_front(&c.loops)
+	ss_pop(&c.scopes)
 }
 
-
 check_break :: proc(c: ^Checker, s: ^Ast_Break, span: Span) {
-	if queue.len(c.loops) == 0 {
+	inside_loop := false
+
+	for i in queue.len(c.scopes) - 1 ..= 0 {
+		scope := queue.get(&c.scopes, i)
+		if scope.kind == .Loop {
+			inside_loop = true
+			break
+		}
+	}
+
+	if !inside_loop {
 		error_span(span, "Break statement outside of loop")
 	}
 }
@@ -111,6 +153,7 @@ check :: proc(c: ^Checker, nodes: []^Ast_Node) {
 	// 	fmt.println(f.node)
 	// }
 
+	ss_push(&c.scopes, Symbol_Scope{kind = .Global})
 	for node in nodes {
 		check_stmt(c, node)
 	}
