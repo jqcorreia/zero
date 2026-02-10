@@ -32,7 +32,6 @@ check_assigment :: proc(c: ^Checker, s: ^Ast_Assignment, span: Span) {
 	var := resolv_var(&c.scopes, s.name)
 	if var != nil {
 		expr_type := check_expr(c, s.expr, span)
-
 		if var.type != expr_type {
 			error_span(span, "Cannot assign %v to %v", expr_type.kind, var.type.kind)
 		}
@@ -89,6 +88,13 @@ check_expr :: proc(c: ^Checker, expr: ^Expr, span: Span) -> ^Type {
 		right := check_expr(c, e.right, span)
 
 		if left != right {
+			error_span(
+				span,
+				"Operation '%s' cannot be done on different types: %s vs %s",
+				e.op,
+				left.kind,
+				right.kind,
+			)
 			return nil
 		} else {
 			return left
@@ -98,7 +104,12 @@ check_expr :: proc(c: ^Checker, expr: ^Expr, span: Span) -> ^Type {
 	case Expr_Variable:
 		return ss_cur(&c.scopes).symbols[e.value].type
 	case Expr_Call:
-		func := compiler.funcs[e.callee.(Expr_Variable).value]
+		func_name := e.callee.(Expr_Variable).value
+		func, ok := compiler.funcs[func_name]
+		if !ok {
+			error_span(span, "Function '%s' not found", func_name)
+			return nil
+		}
 		return func.ret_type
 	}
 	return nil
@@ -155,6 +166,11 @@ check :: proc(c: ^Checker, nodes: []^Ast_Node) {
 
 	ss_push(&c.scopes, Symbol_Scope{kind = .Global})
 	for node in nodes {
-		check_stmt(c, node)
+		bind_scopes(c, node)
 	}
+
+	// ss_push(&c.scopes, Symbol_Scope{kind = .Global})
+	// for node in nodes {
+	// 	check_stmt(c, node)
+	// }
 }

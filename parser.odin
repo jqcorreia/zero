@@ -10,7 +10,7 @@ Parser :: struct {
 Ast_Module :: []^Ast_Node
 
 Ast_Node :: struct {
-	node: union {
+	node:  union {
 		Ast_Expr,
 		Ast_Assignment,
 		Ast_Function,
@@ -21,7 +21,8 @@ Ast_Node :: struct {
 		Ast_Break,
 		Ast_Continue,
 	},
-	span: Span,
+	span:  Span,
+	scope: ^Symbol_Scope,
 }
 
 

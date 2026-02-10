@@ -1,6 +1,7 @@
 package main
 
 import "core:container/queue"
+import "core:fmt"
 
 Symbol :: struct {
 	name:  string,
@@ -22,6 +23,7 @@ Symbol_Scope :: struct {
 	kind:     ScopeKind,
 	symbols:  Symbol_Table,
 	function: ^Symbol,
+	parent:   ^Symbol_Scope,
 }
 
 ScopeKind :: enum {
@@ -58,81 +60,62 @@ resolv_var :: proc(scopes: ^Symbol_Scopes, name: string) -> ^Symbol {
 	return nil
 }
 
-flatten_ast :: proc(nodes: []^Ast_Node) -> []^Ast_Node {
-	res: [dynamic]^Ast_Node
-	for node in nodes {
-		#partial switch n in node.node {
-		case Ast_Block:
-			for inner_node in flatten_ast(n.statements) {
-				append(&res, inner_node)
-			}
-		case Ast_Function:
-			for inner_node in flatten_ast(n.body.statements) {
-				append(&res, inner_node)
-			}
-		case Ast_For:
-			for inner_node in flatten_ast(n.body.statements) {
-				append(&res, inner_node)
-			}
-		case Ast_If:
-			for inner_node in flatten_ast(n.then_block.statements) {
-				append(&res, inner_node)
-			}
-			for inner_node in flatten_ast(n.else_block.statements) {
-				append(&res, inner_node)
-			}
-		}
-		append(&res, node)
-	}
+bind_scopes :: proc(c: ^Checker, s: ^Ast_Node) {
+	#partial switch &node in s.node {
+	case Ast_Expr:
+		s.scope = ss_cur(&c.scopes)
+	case Ast_Assignment:
+		s.scope = ss_cur(&c.scopes)
+	case Ast_Function:
+		cur_scope := ss_cur(&c.scopes)
+		symbol := new(Symbol)
+		symbol.name = node.name
+		symbol.kind = .Function
+		symbol.type = ident_to_type(node.ret_type_ident)
+		symbol.scope = cur_scope
 
-	return res[:]
+		scope := Symbol_Scope {
+			kind     = .Function,
+			function = symbol,
+			parent   = cur_scope,
+		}
+
+		ss_push(&c.scopes, scope)
+		get_block_symbols(c, node.body)
+		ss_pop(&c.scopes)
+	case Ast_Return:
+		s.scope = ss_cur(&c.scopes)
+	case Ast_If:
+		cur_scope := ss_cur(&c.scopes)
+		scope := Symbol_Scope {
+			kind   = .Block,
+			parent = cur_scope,
+		}
+
+		ss_push(&c.scopes, scope)
+		get_block_symbols(c, node.then_block)
+		if node.else_block != nil {
+			get_block_symbols(c, node.else_block)
+		}
+		ss_pop(&c.scopes)
+	case Ast_For:
+		cur_scope := ss_cur(&c.scopes)
+		scope := Symbol_Scope {
+			kind   = .Loop,
+			parent = cur_scope,
+		}
+
+		ss_push(&c.scopes, scope)
+		get_block_symbols(c, node.body)
+		ss_pop(&c.scopes)
+	case Ast_Break:
+		s.scope = ss_cur(&c.scopes)
+		check_break(c, &node, s.span)
+	case:
+		unimplemented(fmt.tprint("Unimplement emit statement", s))
+	}
 }
 
-// create_symbol_table :: proc(c: ^Checker, nodes: Ast_Module) {
-// 	for node in nodes {
-// 		#partial switch n in node.node {
-// 		case Ast_Block:
-// 			for inner_node in flatten_ast(n.statements) {
-// 				append(&res, inner_node)
-// 			}
-// 		case Ast_Function:
-// 			for inner_node in flatten_ast(n.body.statements) {
-// 				append(&res, inner_node)
-// 			}
-// 		case Ast_For:
-// 			for inner_node in flatten_ast(n.body.statements) {
-// 				append(&res, inner_node)
-// 			}
-// 		case Ast_If:
-// 			for inner_node in flatten_ast(n.then_block.statements) {
-// 				append(&res, inner_node)
-// 			}
-// 			for inner_node in flatten_ast(n.else_block.statements) {
-// 				append(&res, inner_node)
-// 			}
-// 		}
-// 		append(&res, node)
-// 	}
+get_block_symbols :: proc(c: ^Checker, s: ^Ast_Block) {
 
-// }
-
-get_symbols :: proc(ast: ^Ast_Node) -> []Symbol {
-	syms: [dynamic]Symbol
-
-	#partial switch e in ast.node {
-	case Ast_Assignment:
-		sym: Symbol = {
-			name = e.name,
-			kind = .Variable,
-		}
-		append(&syms, sym)
-	case Ast_Function:
-		sym: Symbol = {
-			name = e.name,
-			kind = .Function,
-		}
-		append(&syms, sym)
-	}
-
-	return syms[:]
 }

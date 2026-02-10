@@ -1,12 +1,9 @@
+fn main() {
+    bar()
+}
+
 fn bar(a: u32, b: u8) -> u32 {
     c = a + b // This should err
     return a
 }
 
-// comment
-fn main() {
-    // other comment // sdfhsdf
-    // print(10) // cenas 
-
-    print(100)
-}
