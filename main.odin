@@ -49,7 +49,7 @@ main :: proc() {
 
 	// Compilation errors should appear before codegen phase
 	if len(compiler.errors) > 0 {
-		fmt.println("Compilation failed:")
+		fmt.printf("Compilation failed with %d errors:\n", len(compiler.errors))
 		for error in compiler.errors {
 			fmt.println(error.message)
 		}

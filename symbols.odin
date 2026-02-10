@@ -14,6 +14,7 @@ Symbol :: struct {
 Symbol_Kind :: enum {
 	Variable,
 	Function,
+	Type,
 }
 
 Symbol_Table :: map[string]Symbol
@@ -60,14 +61,73 @@ resolv_var :: proc(scopes: ^Symbol_Scopes, name: string) -> ^Symbol {
 	return nil
 }
 
+create_global_scope :: proc() -> Symbol_Scope {
+	scope := Symbol_Scope {
+		kind = .Global,
+	}
+
+	u8_t := new(Type)
+	u8_t.kind = .U8
+	scope.symbols["u8"] = Symbol {
+		type = u8_t,
+		kind = .Type,
+	}
+
+	i8_t := new(Type)
+	i8_t.kind = .Int8
+	scope.symbols["i8"] = Symbol {
+		type = i8_t,
+		kind = .Type,
+	}
+
+	i16_t := new(Type)
+	i16_t.kind = .Int16
+	scope.symbols["i16"] = Symbol {
+		type = i16_t,
+		kind = .Type,
+	}
+
+	i32_t := new(Type)
+	i32_t.kind = .Int32
+	scope.symbols["i32"] = Symbol {
+		type = i32_t,
+		kind = .Type,
+	}
+
+	u32_t := new(Type)
+	u32_t.kind = .Uint32
+	scope.symbols["u32"] = Symbol {
+		type = u32_t,
+		kind = .Type,
+	}
+
+	bool_t := new(Type)
+	bool_t.kind = .Bool
+	scope.symbols["bool"] = Symbol {
+		type = bool_t,
+		kind = .Type,
+	}
+
+	return scope
+}
+
 bind_scopes :: proc(c: ^Checker, s: ^Ast_Node) {
+	cur_scope := ss_cur(&c.scopes)
+	s.scope = cur_scope
 	#partial switch &node in s.node {
-	case Ast_Expr:
-		s.scope = ss_cur(&c.scopes)
 	case Ast_Assignment:
-		s.scope = ss_cur(&c.scopes)
+		// For now use resolv_var inside to check if var already exists.
+		// TODO(quadrado): if in the future we implement let or := then we change here
+		// Add the the symbol table if not existing
+		if resolv_var(&c.scopes, node.name) == nil {
+			symbol := new(Symbol)
+			symbol.name = node.name
+			symbol.kind = .Variable
+			symbol.scope = cur_scope
+			cur_scope.symbols[node.name] = symbol^
+		}
+
 	case Ast_Function:
-		cur_scope := ss_cur(&c.scopes)
 		symbol := new(Symbol)
 		symbol.name = node.name
 		symbol.kind = .Function
@@ -79,14 +139,12 @@ bind_scopes :: proc(c: ^Checker, s: ^Ast_Node) {
 			function = symbol,
 			parent   = cur_scope,
 		}
+		scope.symbols[node.name] = symbol^
 
 		ss_push(&c.scopes, scope)
 		get_block_symbols(c, node.body)
 		ss_pop(&c.scopes)
-	case Ast_Return:
-		s.scope = ss_cur(&c.scopes)
 	case Ast_If:
-		cur_scope := ss_cur(&c.scopes)
 		scope := Symbol_Scope {
 			kind   = .Block,
 			parent = cur_scope,
@@ -99,7 +157,6 @@ bind_scopes :: proc(c: ^Checker, s: ^Ast_Node) {
 		}
 		ss_pop(&c.scopes)
 	case Ast_For:
-		cur_scope := ss_cur(&c.scopes)
 		scope := Symbol_Scope {
 			kind   = .Loop,
 			parent = cur_scope,
@@ -108,14 +165,11 @@ bind_scopes :: proc(c: ^Checker, s: ^Ast_Node) {
 		ss_push(&c.scopes, scope)
 		get_block_symbols(c, node.body)
 		ss_pop(&c.scopes)
-	case Ast_Break:
-		s.scope = ss_cur(&c.scopes)
-		check_break(c, &node, s.span)
-	case:
-		unimplemented(fmt.tprint("Unimplement emit statement", s))
 	}
 }
 
 get_block_symbols :: proc(c: ^Checker, s: ^Ast_Block) {
-
+	for node in s.statements {
+		bind_scopes(c, node)
+	}
 }

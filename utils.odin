@@ -84,15 +84,26 @@ statement_print :: proc(s: ^Ast_Node, lvl: u32 = 0) {
 	}
 	#partial switch node in s.node {
 	case Ast_Assignment:
-		fmt.println("Assignment ", node.name)
+		fmt.println("Assignment ", node.name, s.scope)
 		expr_print(node.expr, lvl + 1)
+	case Ast_Return:
+		fmt.println("Return ")
+		expr_print(node.expr, lvl + 1)
+	case Ast_Break:
+		fmt.println("Break")
 	case Ast_Expr:
 		expr_print(node.expr, lvl + 1)
 	case Ast_Function:
-		fmt.println("Function", node.name, node.params)
+		fmt.print("Function", node.name, " ")
+		for p in node.params {
+			fmt.printf("%s: %s ", p.name, p.type_ident)
+		}
+		fmt.println(s.scope)
 		for st in node.body.statements {
 			statement_print(st, lvl + 1)
 		}
+	case:
+		fmt.println(node)
 	}
 }
 
@@ -117,8 +128,18 @@ expr_print :: proc(expr: ^Expr, lvl: u32 = 0) {
 		for arg in e.args {
 			expr_print(arg, lvl + 1)
 		}
+	case:
+		fmt.println(e)
 	}
 }
+
+scope_print :: proc(current_scope: ^Symbol_Scope) {
+	for scope := current_scope; scope.parent != nil; scope = scope.parent {
+		fmt.println("Scope", scope)
+	}
+}
+
+
 unexpected_token :: proc(token: Token) {
 	unimplemented(fmt.tprintf("Unexpected token: %s", token.lexeme))
 }

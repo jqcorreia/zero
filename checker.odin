@@ -10,9 +10,9 @@ Checker :: struct {
 check_stmt :: proc(c: ^Checker, s: ^Ast_Node) {
 	#partial switch &node in s.node {
 	case Ast_Expr:
-		check_expr(c, node.expr, s.span)
+		check_expr(c, node.expr, s.span, s.scope)
 	case Ast_Assignment:
-		check_assigment(c, &node, s.span)
+		check_assigment(c, s, s.span)
 	case Ast_Function:
 		check_function(c, &node, s.span)
 	case Ast_Return:
@@ -28,20 +28,28 @@ check_stmt :: proc(c: ^Checker, s: ^Ast_Node) {
 	}
 }
 
-check_assigment :: proc(c: ^Checker, s: ^Ast_Assignment, span: Span) {
-	var := resolv_var(&c.scopes, s.name)
-	if var != nil {
-		expr_type := check_expr(c, s.expr, span)
+check_resolv_symbol :: proc(current_scope: ^Symbol_Scope, name: string) -> (Symbol, bool) {
+	for scope := current_scope; scope.parent != nil; scope = scope.parent {
+		if sym, ok := scope.symbols[name]; ok {
+			return sym, true
+		}
+	}
+	return Symbol{}, false
+}
+
+check_assigment :: proc(c: ^Checker, s: ^Ast_Node, span: Span) {
+	assign := s.node.(Ast_Assignment)
+	var, ok := check_resolv_symbol(s.scope, s.node.(Ast_Assignment).name)
+	if ok {
+		expr_type := check_expr(c, assign.expr, span, s.scope)
 		if var.type != expr_type {
 			error_span(span, "Cannot assign %v to %v", expr_type.kind, var.type.kind)
 		}
 	} else {
 		new_var := Symbol {
-			type = check_expr(c, s.expr, span),
+			type = check_expr(c, assign.expr, span, s.scope),
 		}
-
-		scope := ss_cur(&c.scopes)
-		scope.symbols[s.name] = new_var
+		_ = new_var
 	}
 }
 
@@ -65,10 +73,7 @@ check_function :: proc(c: ^Checker, s: ^Ast_Function, span: Span) {
 			type = param.type,
 		}
 	}
-
-	ss_push(&c.scopes, scope)
 	check_block(c, s.body, span)
-	ss_pop(&c.scopes)
 }
 
 check_return :: proc(c: ^Checker, s: ^Ast_Return, span: Span) {
@@ -81,11 +86,11 @@ check_call :: proc(c: ^Checker, e: Expr_Call, span: Span) {
 
 }
 
-check_expr :: proc(c: ^Checker, expr: ^Expr, span: Span) -> ^Type {
+check_expr :: proc(c: ^Checker, expr: ^Expr, span: Span, scope: ^Symbol_Scope) -> ^Type {
 	#partial switch e in expr {
 	case Expr_Binary:
-		left := check_expr(c, e.left, span)
-		right := check_expr(c, e.right, span)
+		left := check_expr(c, e.left, span, scope)
+		right := check_expr(c, e.right, span, scope)
 
 		if left != right {
 			error_span(
@@ -105,12 +110,13 @@ check_expr :: proc(c: ^Checker, expr: ^Expr, span: Span) -> ^Type {
 		return ss_cur(&c.scopes).symbols[e.value].type
 	case Expr_Call:
 		func_name := e.callee.(Expr_Variable).value
-		func, ok := compiler.funcs[func_name]
+		sym, ok := check_resolv_symbol(scope, func_name)
+		fmt.println(sym)
 		if !ok {
 			error_span(span, "Function '%s' not found", func_name)
 			return nil
 		}
-		return func.ret_type
+		return sym.type
 	}
 	return nil
 }
@@ -129,12 +135,7 @@ check_if :: proc(c: ^Checker, s: ^Ast_If, span: Span) {
 }
 
 check_for_loop :: proc(c: ^Checker, s: ^Ast_For, span: Span) {
-	scope := Symbol_Scope {
-		kind = .Loop,
-	}
-	ss_push(&c.scopes, scope)
 	check_block(c, s.body, span)
-	ss_pop(&c.scopes)
 }
 
 check_break :: proc(c: ^Checker, s: ^Ast_Break, span: Span) {
@@ -154,23 +155,17 @@ check_break :: proc(c: ^Checker, s: ^Ast_Break, span: Span) {
 }
 
 check :: proc(c: ^Checker, nodes: []^Ast_Node) {
-	// flat := flatten_ast(nodes)
-	// symbols := create_symbol_table(nodes)
-
-	// when ODIN_DEBUG {
-	// 	fmt.println(symbols)
-	// }
-	// for f in flat {
-	// 	fmt.println(f.node)
-	// }
-
-	ss_push(&c.scopes, Symbol_Scope{kind = .Global})
+	ss_push(&c.scopes, create_global_scope())
 	for node in nodes {
 		bind_scopes(c, node)
 	}
 
+	for node in nodes {
+		statement_print(node)
+	}
+
 	// ss_push(&c.scopes, Symbol_Scope{kind = .Global})
-	// for node in nodes {
-	// 	check_stmt(c, node)
-	// }
+	for node in nodes {
+		check_stmt(c, node)
+	}
 }
