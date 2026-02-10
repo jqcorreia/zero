@@ -7,6 +7,11 @@ ident_to_type :: proc(ident: string) -> ^Type {
 	return compiler.types[ident]
 }
 
+ident_to_type_in_scope :: proc(node: ^Ast_Node, ident: string) -> ^Type {
+
+	return nil
+}
+
 Type :: struct {
 	kind: Type_Kind,
 }

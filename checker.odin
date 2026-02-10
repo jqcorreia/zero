@@ -7,14 +7,23 @@ Checker :: struct {
 	scopes: Symbol_Scopes,
 }
 
+check_resolv_symbol :: proc(current_scope: ^Symbol_Scope, name: string) -> (Symbol, bool) {
+	for scope := current_scope; scope.parent != nil; scope = scope.parent {
+		if sym, ok := scope.symbols[name]; ok {
+			return sym, true
+		}
+	}
+	return Symbol{}, false
+}
+
 check_stmt :: proc(c: ^Checker, s: ^Ast_Node) {
 	#partial switch &node in s.node {
 	case Ast_Expr:
 		check_expr(c, node.expr, s.span, s.scope)
 	case Ast_Assignment:
-		check_assigment(c, s, s.span)
+		check_assigment(c, &node, s.span, s.scope)
 	case Ast_Function:
-		check_function(c, &node, s.span)
+		check_function(c, &node, s.span, s.scope)
 	case Ast_Return:
 		check_return(c, &node, s.span)
 	case Ast_If:
@@ -28,32 +37,23 @@ check_stmt :: proc(c: ^Checker, s: ^Ast_Node) {
 	}
 }
 
-check_resolv_symbol :: proc(current_scope: ^Symbol_Scope, name: string) -> (Symbol, bool) {
-	for scope := current_scope; scope.parent != nil; scope = scope.parent {
-		if sym, ok := scope.symbols[name]; ok {
-			return sym, true
-		}
-	}
-	return Symbol{}, false
-}
 
-check_assigment :: proc(c: ^Checker, s: ^Ast_Node, span: Span) {
-	assign := s.node.(Ast_Assignment)
-	var, ok := check_resolv_symbol(s.scope, s.node.(Ast_Assignment).name)
+check_assigment :: proc(c: ^Checker, s: ^Ast_Assignment, span: Span, scope: ^Symbol_Scope) {
+	var, ok := check_resolv_symbol(scope, s.name)
 	if ok {
-		expr_type := check_expr(c, assign.expr, span, s.scope)
+		expr_type := check_expr(c, s.expr, span, scope)
 		if var.type != expr_type {
 			error_span(span, "Cannot assign %v to %v", expr_type.kind, var.type.kind)
 		}
 	} else {
 		new_var := Symbol {
-			type = check_expr(c, assign.expr, span, s.scope),
+			type = check_expr(c, s.expr, span, scope),
 		}
 		_ = new_var
 	}
 }
 
-check_function :: proc(c: ^Checker, s: ^Ast_Function, span: Span) {
+check_function :: proc(c: ^Checker, s: ^Ast_Function, span: Span, scope: ^Symbol_Scope) {
 	symbol := new(Symbol)
 	symbol.name = s.name
 	symbol.kind = .Function
