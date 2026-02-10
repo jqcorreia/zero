@@ -10,9 +10,9 @@ Checker :: struct {
 check_stmt :: proc(c: ^Checker, s: ^Ast_Node) {
 	#partial switch &node in s.node {
 	case Ast_Expr:
-		check_expr(c, node.expr, s.span, node.scope)
+		check_expr(c, node.expr, s.span, s.scope)
 	case Ast_Assignment:
-		check_assigment(c, &node, s.span)
+		check_assigment(c, s, s.span)
 	case Ast_Function:
 		check_function(c, &node, s.span)
 	case Ast_Return:
@@ -37,16 +37,17 @@ check_resolv_symbol :: proc(current_scope: ^Symbol_Scope, name: string) -> (Symb
 	return Symbol{}, false
 }
 
-check_assigment :: proc(c: ^Checker, s: ^Ast_Assignment, span: Span) {
-	var, ok := check_resolv_symbol(s.scope, s.name)
+check_assigment :: proc(c: ^Checker, s: ^Ast_Node, span: Span) {
+	assign := s.node.(Ast_Assignment)
+	var, ok := check_resolv_symbol(s.scope, s.node.(Ast_Assignment).name)
 	if ok {
-		expr_type := check_expr(c, s.expr, span, s.scope)
+		expr_type := check_expr(c, assign.expr, span, s.scope)
 		if var.type != expr_type {
 			error_span(span, "Cannot assign %v to %v", expr_type.kind, var.type.kind)
 		}
 	} else {
 		new_var := Symbol {
-			type = check_expr(c, s.expr, span, s.scope),
+			type = check_expr(c, assign.expr, span, s.scope),
 		}
 		_ = new_var
 	}

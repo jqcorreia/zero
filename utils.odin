@@ -84,7 +84,7 @@ statement_print :: proc(s: ^Ast_Node, lvl: u32 = 0) {
 	}
 	#partial switch node in s.node {
 	case Ast_Assignment:
-		fmt.println("Assignment ", node.name, node.scope)
+		fmt.println("Assignment ", node.name, s.scope)
 		expr_print(node.expr, lvl + 1)
 	case Ast_Return:
 		fmt.println("Return ")
@@ -98,7 +98,7 @@ statement_print :: proc(s: ^Ast_Node, lvl: u32 = 0) {
 		for p in node.params {
 			fmt.printf("%s: %s ", p.name, p.type_ident)
 		}
-		fmt.println(node.scope)
+		fmt.println(s.scope)
 		for st in node.body.statements {
 			statement_print(st, lvl + 1)
 		}

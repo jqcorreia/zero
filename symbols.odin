@@ -113,12 +113,12 @@ create_global_scope :: proc() -> Symbol_Scope {
 
 bind_scopes :: proc(c: ^Checker, s: ^Ast_Node) {
 	cur_scope := ss_cur(&c.scopes)
-	switch &node in s.node {
+	s.scope = cur_scope
+	#partial switch &node in s.node {
 	case Ast_Assignment:
 		// For now use resolv_var inside to check if var already exists.
 		// TODO(quadrado): if in the future we implement let or := then we change here
 		// Add the the symbol table if not existing
-		node.scope = cur_scope
 		if resolv_var(&c.scopes, node.name) == nil {
 			symbol := new(Symbol)
 			symbol.name = node.name
@@ -128,7 +128,6 @@ bind_scopes :: proc(c: ^Checker, s: ^Ast_Node) {
 		}
 
 	case Ast_Function:
-		node.scope = cur_scope
 		symbol := new(Symbol)
 		symbol.name = node.name
 		symbol.kind = .Function
@@ -146,7 +145,6 @@ bind_scopes :: proc(c: ^Checker, s: ^Ast_Node) {
 		get_block_symbols(c, node.body)
 		ss_pop(&c.scopes)
 	case Ast_If:
-		node.scope = cur_scope
 		scope := Symbol_Scope {
 			kind   = .Block,
 			parent = cur_scope,
@@ -159,7 +157,6 @@ bind_scopes :: proc(c: ^Checker, s: ^Ast_Node) {
 		}
 		ss_pop(&c.scopes)
 	case Ast_For:
-		node.scope = cur_scope
 		scope := Symbol_Scope {
 			kind   = .Loop,
 			parent = cur_scope,
@@ -168,16 +165,6 @@ bind_scopes :: proc(c: ^Checker, s: ^Ast_Node) {
 		ss_push(&c.scopes, scope)
 		get_block_symbols(c, node.body)
 		ss_pop(&c.scopes)
-	case Ast_Break:
-		node.scope = cur_scope
-	case Ast_Return:
-		node.scope = cur_scope
-	case Ast_Continue:
-		node.scope = cur_scope
-	case Ast_Block:
-		node.scope = cur_scope
-	case Ast_Expr:
-		node.scope = cur_scope
 	}
 }
 

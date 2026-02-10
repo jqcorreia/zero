@@ -10,7 +10,7 @@ Parser :: struct {
 Ast_Module :: []^Ast_Node
 
 Ast_Node :: struct {
-	node: union {
+	node:  union {
 		Ast_Expr,
 		Ast_Assignment,
 		Ast_Function,
@@ -21,23 +21,18 @@ Ast_Node :: struct {
 		Ast_Break,
 		Ast_Continue,
 	},
-	span: Span,
-}
-
-
-Ast_Base :: struct {
+	span:  Span,
 	scope: ^Symbol_Scope,
 }
 
+
 Ast_Expr :: struct {
-	using base: Ast_Base,
-	expr:       ^Expr,
+	expr: ^Expr,
 }
 
 Ast_Assignment :: struct {
-	using base: Ast_Base,
-	name:       string,
-	expr:       ^Expr,
+	name: string,
+	expr: ^Expr,
 }
 
 Param :: struct {
@@ -47,7 +42,6 @@ Param :: struct {
 }
 
 Ast_Function :: struct {
-	using base:     Ast_Base,
 	name:           string,
 	params:         []Param,
 	body:           ^Ast_Block,
@@ -58,34 +52,26 @@ Ast_Function :: struct {
 }
 
 Ast_Block :: struct {
-	using base: Ast_Base,
 	statements: []^Ast_Node,
 	terminated: bool,
 }
 
 Ast_Return :: struct {
-	using base: Ast_Base,
-	expr:       ^Expr,
+	expr: ^Expr,
 }
 
 Ast_If :: struct {
-	using base: Ast_Base,
 	cond:       ^Expr,
 	then_block: ^Ast_Block,
 	else_block: ^Ast_Block, // nil if no else
 }
 
 Ast_For :: struct {
-	using base: Ast_Base,
-	body:       ^Ast_Block,
+	body: ^Ast_Block,
 }
 
-Ast_Break :: struct {
-	using base: Ast_Base,
-}
-Ast_Continue :: struct {
-	using base: Ast_Base,
-}
+Ast_Break :: struct {}
+Ast_Continue :: struct {}
 
 
 Expr :: union {
