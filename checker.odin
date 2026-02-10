@@ -8,11 +8,17 @@ Checker :: struct {
 }
 
 check_resolv_symbol :: proc(current_scope: ^Symbol_Scope, name: string) -> (Symbol, bool) {
-	for scope := current_scope; scope.parent != nil; scope = scope.parent {
+	scope := current_scope
+	for {
 		if sym, ok := scope.symbols[name]; ok {
 			return sym, true
 		}
+		if scope.parent == nil {
+			break
+		}
+		scope = scope.parent
 	}
+
 	return Symbol{}, false
 }
 
@@ -54,25 +60,25 @@ check_assigment :: proc(c: ^Checker, s: ^Ast_Assignment, span: Span, scope: ^Sym
 }
 
 check_function :: proc(c: ^Checker, s: ^Ast_Function, span: Span, scope: ^Symbol_Scope) {
-	symbol := new(Symbol)
-	symbol.name = s.name
-	symbol.kind = .Function
-	symbol.type = ident_to_type(s.ret_type_ident)
-	symbol.scope = ss_cur(&c.scopes)
+	// symbol := new(Symbol)
+	// symbol.name = s.name
+	// symbol.kind = .Function
+	// symbol.type = ident_to_type(s.ret_type_ident)
+	// symbol.scope = ss_cur(&c.scopes)
 
-	scope := Symbol_Scope {
-		kind     = .Function,
-		function = symbol,
-	}
+	// scope := Symbol_Scope {
+	// 	kind     = .Function,
+	// 	function = symbol,
+	// }
 
-	for &param in s.params {
-		param.type = ident_to_type(param.type_ident)
-		scope.symbols[param.name] = Symbol {
-			name = param.name,
-			kind = .Variable,
-			type = param.type,
-		}
-	}
+	// for &param in s.params {
+	// 	param.type = ident_to_type(param.type_ident)
+	// 	scope.symbols[param.name] = Symbol {
+	// 		name = param.name,
+	// 		kind = .Variable,
+	// 		type = param.type,
+	// 	}
+	// }
 	check_block(c, s.body, span)
 }
 
@@ -106,12 +112,16 @@ check_expr :: proc(c: ^Checker, expr: ^Expr, span: Span, scope: ^Symbol_Scope) -
 		}
 	case Expr_Int_Literal:
 		return e.type
+
 	case Expr_Variable:
-		return ss_cur(&c.scopes).symbols[e.value].type
+		sym, ok := check_resolv_symbol(scope, e.value)
+		// fmt.println("-------------", e.value, sym, ok)
+		return sym.type
+
 	case Expr_Call:
 		func_name := e.callee.(Expr_Variable).value
 		sym, ok := check_resolv_symbol(scope, func_name)
-		fmt.println(sym)
+		// fmt.println("AAAAAAAAAAAAAAAAAA", sym)
 		if !ok {
 			error_span(span, "Function '%s' not found", func_name)
 			return nil

@@ -120,11 +120,11 @@ bind_scopes :: proc(c: ^Checker, s: ^Ast_Node) {
 		// TODO(quadrado): if in the future we implement let or := then we change here
 		// Add the the symbol table if not existing
 		if resolv_var(&c.scopes, node.name) == nil {
-			symbol := new(Symbol)
-			symbol.name = node.name
-			symbol.kind = .Variable
-			symbol.scope = cur_scope
-			cur_scope.symbols[node.name] = symbol^
+			cur_scope.symbols[node.name] = Symbol {
+				name  = node.name,
+				kind  = .Variable,
+				scope = cur_scope,
+			}
 		}
 
 	case Ast_Function:
@@ -141,9 +141,16 @@ bind_scopes :: proc(c: ^Checker, s: ^Ast_Node) {
 		}
 		scope.symbols[node.name] = symbol^
 
+		for &param in node.params {
+			scope.symbols[param.name] = Symbol {
+				kind = .Variable,
+			}
+		}
+
 		ss_push(&c.scopes, scope)
 		get_block_symbols(c, node.body)
 		ss_pop(&c.scopes)
+
 	case Ast_If:
 		scope := Symbol_Scope {
 			kind   = .Block,
@@ -156,6 +163,7 @@ bind_scopes :: proc(c: ^Checker, s: ^Ast_Node) {
 			get_block_symbols(c, node.else_block)
 		}
 		ss_pop(&c.scopes)
+
 	case Ast_For:
 		scope := Symbol_Scope {
 			kind   = .Loop,
