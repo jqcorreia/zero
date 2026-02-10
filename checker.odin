@@ -79,6 +79,10 @@ check_function :: proc(c: ^Checker, s: ^Ast_Function, span: Span, scope: ^Symbol
 	// 		type = param.type,
 	// 	}
 	// }
+	for p in s.params {
+
+	}
+
 	check_block(c, s.body, span)
 }
 
@@ -115,7 +119,7 @@ check_expr :: proc(c: ^Checker, expr: ^Expr, span: Span, scope: ^Symbol_Scope) -
 
 	case Expr_Variable:
 		sym, ok := check_resolv_symbol(scope, e.value)
-		// fmt.println("-------------", e.value, sym, ok)
+		fmt.println("-------------", e.value, sym, ok)
 		return sym.type
 
 	case Expr_Call:
@@ -174,7 +178,6 @@ check :: proc(c: ^Checker, nodes: []^Ast_Node) {
 		statement_print(node)
 	}
 
-	// ss_push(&c.scopes, Symbol_Scope{kind = .Global})
 	for node in nodes {
 		check_stmt(c, node)
 	}

@@ -73,47 +73,49 @@ create_global_scope :: proc() -> Symbol_Scope {
 		kind = .Type,
 	}
 
-	i8_t := new(Type)
-	i8_t.kind = .Int8
-	scope.symbols["i8"] = Symbol {
-		type = i8_t,
-		kind = .Type,
-	}
+	// i8_t := new(Type)
+	// i8_t.kind = .Int8
+	// scope.symbols["i8"] = Symbol {
+	// 	type = i8_t,
+	// 	kind = .Type,
+	// }
 
-	i16_t := new(Type)
-	i16_t.kind = .Int16
-	scope.symbols["i16"] = Symbol {
-		type = i16_t,
-		kind = .Type,
-	}
+	// i16_t := new(Type)
+	// i16_t.kind = .Int16
+	// scope.symbols["i16"] = Symbol {
+	// 	type = i16_t,
+	// 	kind = .Type,
+	// }
 
-	i32_t := new(Type)
-	i32_t.kind = .Int32
-	scope.symbols["i32"] = Symbol {
-		type = i32_t,
-		kind = .Type,
-	}
+	// i32_t := new(Type)
+	// i32_t.kind = .Int32
+	// scope.symbols["i32"] = Symbol {
+	// 	type = i32_t,
+	// 	kind = .Type,
+	// }
 
-	u32_t := new(Type)
-	u32_t.kind = .Uint32
-	scope.symbols["u32"] = Symbol {
-		type = u32_t,
-		kind = .Type,
-	}
+	// u32_t := new(Type)
+	// u32_t.kind = .Uint32
+	// scope.symbols["u32"] = Symbol {
+	// 	type = u32_t,
+	// 	kind = .Type,
+	// }
 
-	bool_t := new(Type)
-	bool_t.kind = .Bool
-	scope.symbols["bool"] = Symbol {
-		type = bool_t,
-		kind = .Type,
-	}
+	// bool_t := new(Type)
+	// bool_t.kind = .Bool
+	// scope.symbols["bool"] = Symbol {
+	// 	type = bool_t,
+	// 	kind = .Type,
+	// }
 
 	return scope
 }
 
 bind_scopes :: proc(c: ^Checker, s: ^Ast_Node) {
+	// Set the current scope first thing
 	cur_scope := ss_cur(&c.scopes)
 	s.scope = cur_scope
+
 	#partial switch &node in s.node {
 	case Ast_Assignment:
 		// For now use resolv_var inside to check if var already exists.
@@ -139,10 +141,12 @@ bind_scopes :: proc(c: ^Checker, s: ^Ast_Node) {
 			function = symbol,
 			parent   = cur_scope,
 		}
+
 		scope.symbols[node.name] = symbol^
 
 		for &param in node.params {
 			scope.symbols[param.name] = Symbol {
+				name = param.name,
 				kind = .Variable,
 			}
 		}

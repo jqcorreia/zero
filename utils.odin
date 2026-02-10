@@ -85,14 +85,14 @@ statement_print :: proc(s: ^Ast_Node, lvl: u32 = 0) {
 	#partial switch node in s.node {
 	case Ast_Assignment:
 		fmt.println("Assignment ", node.name, s.scope)
-		expr_print(node.expr, lvl + 1)
+		expr_print(node.expr, s.scope, lvl + 1)
 	case Ast_Return:
 		fmt.println("Return ")
-		expr_print(node.expr, lvl + 1)
+		expr_print(node.expr, s.scope, lvl + 1)
 	case Ast_Break:
 		fmt.println("Break")
 	case Ast_Expr:
-		expr_print(node.expr, lvl + 1)
+		expr_print(node.expr, s.scope, lvl + 1)
 	case Ast_Function:
 		fmt.print("Function", node.name, " ")
 		for p in node.params {
@@ -107,7 +107,7 @@ statement_print :: proc(s: ^Ast_Node, lvl: u32 = 0) {
 	}
 }
 
-expr_print :: proc(expr: ^Expr, lvl: u32 = 0) {
+expr_print :: proc(expr: ^Expr, scope: ^Symbol_Scope, lvl: u32 = 0) {
 	if expr == nil {
 		return
 	}
@@ -121,12 +121,12 @@ expr_print :: proc(expr: ^Expr, lvl: u32 = 0) {
 		fmt.println("Identifier ", e.value)
 	case Expr_Binary:
 		fmt.println("Binary ", e.op)
-		expr_print(e.left, lvl + 1)
-		expr_print(e.right, lvl + 1)
+		expr_print(e.left, scope, lvl + 1)
+		expr_print(e.right, scope, lvl + 1)
 	case Expr_Call:
 		fmt.println("Call ", e.callee.(Expr_Variable).value)
 		for arg in e.args {
-			expr_print(arg, lvl + 1)
+			expr_print(arg, scope, lvl + 1)
 		}
 	case:
 		fmt.println(e)
