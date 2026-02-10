@@ -1,6 +1,5 @@
 fn main() {
     bar()
-    break
 }
 
 fn bar(a: u32, b: u8) -> u32 {
