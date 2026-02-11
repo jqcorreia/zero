@@ -131,32 +131,38 @@ bind_scopes :: proc(c: ^Checker, s: ^Ast_Node) {
 		}
 
 	case Ast_Function:
-		symbol := new(Symbol)
-		symbol.name = node.name
-		symbol.kind = .Function
-		symbol.type = ident_to_type(node.ret_type_expr)
-		symbol.scope = cur_scope
+		fmt.println("NEW FUCKING FUNCTION")
+		// symbol := new(Symbol)
+		// symbol.name = node.name
+		// symbol.kind = .Function
+		// symbol.type = ident_to_type(node.ret_type_expr)
+		// symbol.scope = cur_scope
 
 		scope := Scope {
-			kind     = .Function,
-			function = symbol,
-			parent   = cur_scope,
+			kind   = .Function,
+			// function = symbol,
+			parent = cur_scope,
 		}
 
-		scope.symbols[node.name] = symbol^
+		// scope.symbols[node.name] = symbol^
 
 		for &param in node.params {
 			sym := Symbol {
 				name = param.name,
 				kind = .Param,
+				decl = s,
 			}
 			scope.symbols[param.name] = sym
 			param.symbol = &scope.symbols[param.name]
 		}
 
+		fmt.println("NEW FUCKING SCOPE", scope_string(&scope))
+		fmt.println("CURRENT SCOPE", scope_string(ss_cur(&c.scopes)))
 		ss_push(&c.scopes, scope)
+		fmt.println("PUSHED SCOPE", scope_string(ss_cur(&c.scopes)))
 		get_block_symbols(c, node.body)
 		ss_pop(&c.scopes)
+		fmt.println("AFTER POP", scope_string(ss_cur(&c.scopes)))
 
 	case Ast_If:
 		scope := Scope {
@@ -233,7 +239,6 @@ resolve_types :: proc(c: ^Checker, s: ^Ast_Node) {
 		for &param in node.params {
 			type_sym, ok := resolv_symbol(s.scope, param.type_expr)
 			if ok {
-				fmt.println(param.symbol)
 				param.symbol.type = type_sym.type
 			}
 		}

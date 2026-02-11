@@ -118,14 +118,12 @@ check_expr :: proc(c: ^Checker, expr: ^Expr, span: Span, scope: ^Scope) -> ^Type
 	// 	return e.type
 
 	case Expr_Variable:
-		sym, ok := resolv_symbol(scope, e.value)
-		fmt.println("-------------", e.value, sym, ok)
+		sym, _ := resolv_symbol(scope, e.value)
 		return sym.type
 
 	case Expr_Call:
 		func_name := e.callee.(Expr_Variable).value
 		sym, ok := resolv_symbol(scope, func_name)
-		// fmt.println("AAAAAAAAAAAAAAAAAA", sym)
 		if !ok {
 			error_span(span, "Function '%s' not found", func_name)
 			return nil

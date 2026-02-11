@@ -83,7 +83,8 @@ statement_print :: proc(s: ^Ast_Node, lvl: u32 = 0) {
 	}
 	#partial switch node in s.node {
 	case Ast_Assignment:
-		fmt.println("Assignment ", node.name, s.scope)
+		fmt.println("Assignment ", node.name)
+		fmt.println(scope_string(s.scope))
 		expr_print(node.expr, s.scope, lvl + 1)
 	case Ast_Return:
 		fmt.println("Return ")
@@ -97,7 +98,7 @@ statement_print :: proc(s: ^Ast_Node, lvl: u32 = 0) {
 		for p in node.params {
 			fmt.printf("%s: %s ", p.name, p.type_expr)
 		}
-		fmt.println(s.scope)
+		fmt.println()
 		for st in node.body.statements {
 			statement_print(st, lvl + 1)
 		}
@@ -136,6 +137,17 @@ scope_print :: proc(current_scope: ^Scope) {
 	for scope := current_scope; scope.parent != nil; scope = scope.parent {
 		fmt.println("Scope", scope)
 	}
+}
+scope_string :: proc(scope: ^Scope) -> string {
+	sb := strings.builder_make()
+
+	_addr := scope
+	fmt.sbprintln(&sb, "Scope ", scope.kind, &_addr)
+	for name, sym in scope.symbols {
+		fmt.sbprintln(&sb, name, sym.type, sym.kind, sym.decl)
+	}
+
+	return strings.to_string(sb)
 }
 
 
