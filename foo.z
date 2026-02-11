@@ -2,14 +2,13 @@ fn main() {
     bar()
 }
 
-fn qux(a: u32, b: u32) -> u32 {
-    c = a + b // This should err
-    print(c)
-    return a
+fn qux(x: u32, y: u32) -> u32 {
+    c = x + y // This should err
+    return c
 }
 
 fn bar(a: u32, b: u8) -> u32 {
     c = a + b // This should err
-    return a
+    return c
 }
 
