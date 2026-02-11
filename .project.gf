@@ -1,4 +1,4 @@
 [executable]
 path=lang
-arguments=tests/basic.z
+arguments=check foo.z
 ask_directory=1

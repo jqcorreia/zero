@@ -1,6 +1,5 @@
 package main
 
-import "core:container/queue"
 import "core:fmt"
 import "core:os"
 import "core:strings"
@@ -96,7 +95,7 @@ statement_print :: proc(s: ^Ast_Node, lvl: u32 = 0) {
 	case Ast_Function:
 		fmt.print("Function", node.name, " ")
 		for p in node.params {
-			fmt.printf("%s: %s ", p.name, p.type_ident)
+			fmt.printf("%s: %s ", p.name, p.type_expr)
 		}
 		fmt.println(s.scope)
 		for st in node.body.statements {
@@ -107,7 +106,7 @@ statement_print :: proc(s: ^Ast_Node, lvl: u32 = 0) {
 	}
 }
 
-expr_print :: proc(expr: ^Expr, scope: ^Symbol_Scope, lvl: u32 = 0) {
+expr_print :: proc(expr: ^Expr, scope: ^Scope, lvl: u32 = 0) {
 	if expr == nil {
 		return
 	}
@@ -133,7 +132,7 @@ expr_print :: proc(expr: ^Expr, scope: ^Symbol_Scope, lvl: u32 = 0) {
 	}
 }
 
-scope_print :: proc(current_scope: ^Symbol_Scope) {
+scope_print :: proc(current_scope: ^Scope) {
 	for scope := current_scope; scope.parent != nil; scope = scope.parent {
 		fmt.println("Scope", scope)
 	}
@@ -173,16 +172,4 @@ span_to_location :: proc(span: Span) -> (line: int, col: int) {
 		}
 	}
 	return compiler.line_starts[len(compiler.line_starts) - 1] + 1, start - left + 1
-}
-
-resolve_var :: proc(scopes: ^Scopes, name: string) -> Scope_Var {
-	for i in queue.len(scopes^) - 1 ..= 0 {
-		scope := queue.get(scopes, i)
-		var, ok := scope.vars[name]
-		if ok {
-			return var
-		}
-	}
-
-	return Scope_Var{}
 }

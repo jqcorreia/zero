@@ -9,101 +9,6 @@ Parser :: struct {
 
 Ast_Module :: []^Ast_Node
 
-Ast_Node :: struct {
-	node:  union {
-		Ast_Expr,
-		Ast_Assignment,
-		Ast_Function,
-		Ast_Return,
-		Ast_Block,
-		Ast_If,
-		Ast_For,
-		Ast_Break,
-		Ast_Continue,
-	},
-	span:  Span,
-	scope: ^Symbol_Scope,
-}
-
-
-Ast_Expr :: struct {
-	expr: ^Expr,
-}
-
-Ast_Assignment :: struct {
-	name: string,
-	expr: ^Expr,
-}
-
-Param :: struct {
-	name:       string,
-	type_ident: string,
-	type:       ^Type,
-}
-
-Ast_Function :: struct {
-	name:           string,
-	params:         []Param,
-	body:           ^Ast_Block,
-	ret_type:       ^Type,
-	ret_type_ident: string,
-	ty:             TypeRef,
-	fn:             ValueRef,
-}
-
-Ast_Block :: struct {
-	statements: []^Ast_Node,
-	terminated: bool,
-}
-
-Ast_Return :: struct {
-	expr: ^Expr,
-}
-
-Ast_If :: struct {
-	cond:       ^Expr,
-	then_block: ^Ast_Block,
-	else_block: ^Ast_Block, // nil if no else
-}
-
-Ast_For :: struct {
-	body: ^Ast_Block,
-}
-
-Ast_Break :: struct {}
-Ast_Continue :: struct {}
-
-
-Expr :: union {
-	Expr_Int_Literal,
-	Expr_Binary,
-	Expr_Variable,
-	Expr_Call,
-}
-
-Expr_Base :: struct {
-	type: ^Type,
-}
-
-Expr_Int_Literal :: struct {
-	using base: Expr_Base,
-	value:      i64,
-}
-
-Expr_Binary :: struct {
-	op:    Token_Kind,
-	left:  ^Expr,
-	right: ^Expr,
-}
-
-Expr_Variable :: struct {
-	value: string,
-}
-
-Expr_Call :: struct {
-	callee: ^Expr,
-	args:   []^Expr,
-}
 
 current :: proc(p: ^Parser) -> Token {
 	return p.tokens[p.pos]
@@ -217,7 +122,6 @@ expr_int_literal :: proc(value: i64) -> ^Expr {
 	ret := new(Expr)
 	ret^ = Expr_Int_Literal {
 		value = value,
-		type  = ident_to_type("i32"),
 	}
 	return ret
 }
@@ -296,7 +200,7 @@ parse_expression :: proc(p: ^Parser, min_lbp: int = 0) -> ^Expr {
 			rbp := lbp + 1
 
 			right := parse_expression(p, rbp)
-			left = expr_binary(left = left, right = right, op = op.kind)
+			left = expr_binary(op.kind, left, right)
 		}
 	}
 	return left
@@ -340,7 +244,7 @@ parse_function_decl :: proc(p: ^Parser) -> ^Ast_Function {
 	func.name = func_name
 	func.params = params
 	func.body = body
-	func.ret_type = ret_type
+	func.ret_type_expr = ret_type
 
 	return func
 }
@@ -363,7 +267,7 @@ parse_function_decl_params :: proc(p: ^Parser) -> []Param {
 			advance(p)
 			expect(p, .Colon)
 			type_ident := expect(p, .Identifier)
-			append(&params, Param{name = param_name, type_ident = type_ident.lexeme})
+			append(&params, Param{name = param_name, type_expr = type_ident.lexeme})
 
 		case .Comma:
 			if peek(p).kind == .RParen {
@@ -381,18 +285,15 @@ parse_function_decl_params :: proc(p: ^Parser) -> []Param {
 	return params[:]
 }
 
-parse_function_ret_type :: proc(p: ^Parser) -> ^Type {
+parse_function_ret_type :: proc(p: ^Parser) -> string {
 	if current(p).kind == .RightArrow {
 		advance(p)
 		type_token := expect(p, .Identifier)
 
-		type := ident_to_type(type_token.value.(string))
-		fmt.println(type)
-
-		return type
+		return type_token.lexeme
 	}
 
-	return nil
+	return ""
 }
 
 parse_block :: proc(p: ^Parser) -> ^Ast_Block {

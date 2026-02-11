@@ -8,23 +8,24 @@ Symbol :: struct {
 	kind:  Symbol_Kind,
 	type:  ^Type, // your type system
 	decl:  ^Ast_Node, // pointer back to the declaration
-	scope: ^Symbol_Scope,
+	scope: ^Scope,
 }
 
 Symbol_Kind :: enum {
 	Variable,
 	Function,
 	Type,
+	Param,
 }
 
 Symbol_Table :: map[string]Symbol
 
 
-Symbol_Scope :: struct {
+Scope :: struct {
 	kind:     ScopeKind,
 	symbols:  Symbol_Table,
 	function: ^Symbol,
-	parent:   ^Symbol_Scope,
+	parent:   ^Scope,
 }
 
 ScopeKind :: enum {
@@ -34,22 +35,22 @@ ScopeKind :: enum {
 	Loop,
 }
 
-Symbol_Scopes :: queue.Queue(Symbol_Scope)
+Symbol_Scopes :: queue.Queue(Scope)
 
-ss_push :: proc(scopes: ^Symbol_Scopes, scope: Symbol_Scope) {
+ss_push :: proc(scopes: ^Symbol_Scopes, scope: Scope) {
 	queue.push_front(scopes, scope)
 }
 
-ss_pop :: proc(scopes: ^Symbol_Scopes) -> Symbol_Scope {
+ss_pop :: proc(scopes: ^Symbol_Scopes) -> Scope {
 	scope := queue.pop_front(scopes)
 	return scope
 }
 
-ss_cur :: proc(scopes: ^Symbol_Scopes) -> ^Symbol_Scope {
+ss_cur :: proc(scopes: ^Symbol_Scopes) -> ^Scope {
 	return queue.front_ptr(scopes)
 }
 
-resolv_var :: proc(scopes: ^Symbol_Scopes, name: string) -> ^Symbol {
+get_scope_queue_var :: proc(scopes: ^Symbol_Scopes, name: string) -> ^Symbol {
 	for i in queue.len(scopes^) - 1 ..= 0 {
 		scope := queue.get(scopes, i)
 		var, ok := &scope.symbols[name]
@@ -61,13 +62,13 @@ resolv_var :: proc(scopes: ^Symbol_Scopes, name: string) -> ^Symbol {
 	return nil
 }
 
-create_global_scope :: proc() -> Symbol_Scope {
-	scope := Symbol_Scope {
+create_global_scope :: proc() -> Scope {
+	scope := Scope {
 		kind = .Global,
 	}
 
 	u8_t := new(Type)
-	u8_t.kind = .U8
+	u8_t.kind = .Uint8
 	scope.symbols["u8"] = Symbol {
 		type = u8_t,
 		kind = .Type,
@@ -94,12 +95,12 @@ create_global_scope :: proc() -> Symbol_Scope {
 	// 	kind = .Type,
 	// }
 
-	// u32_t := new(Type)
-	// u32_t.kind = .Uint32
-	// scope.symbols["u32"] = Symbol {
-	// 	type = u32_t,
-	// 	kind = .Type,
-	// }
+	u32_t := new(Type)
+	u32_t.kind = .Uint32
+	scope.symbols["u32"] = Symbol {
+		type = u32_t,
+		kind = .Type,
+	}
 
 	// bool_t := new(Type)
 	// bool_t.kind = .Bool
@@ -121,7 +122,7 @@ bind_scopes :: proc(c: ^Checker, s: ^Ast_Node) {
 		// For now use resolv_var inside to check if var already exists.
 		// TODO(quadrado): if in the future we implement let or := then we change here
 		// Add the the symbol table if not existing
-		if resolv_var(&c.scopes, node.name) == nil {
+		if get_scope_queue_var(&c.scopes, node.name) == nil {
 			cur_scope.symbols[node.name] = Symbol {
 				name  = node.name,
 				kind  = .Variable,
@@ -133,10 +134,10 @@ bind_scopes :: proc(c: ^Checker, s: ^Ast_Node) {
 		symbol := new(Symbol)
 		symbol.name = node.name
 		symbol.kind = .Function
-		symbol.type = ident_to_type(node.ret_type_ident)
+		symbol.type = ident_to_type(node.ret_type_expr)
 		symbol.scope = cur_scope
 
-		scope := Symbol_Scope {
+		scope := Scope {
 			kind     = .Function,
 			function = symbol,
 			parent   = cur_scope,
@@ -145,10 +146,12 @@ bind_scopes :: proc(c: ^Checker, s: ^Ast_Node) {
 		scope.symbols[node.name] = symbol^
 
 		for &param in node.params {
-			scope.symbols[param.name] = Symbol {
+			sym := Symbol {
 				name = param.name,
-				kind = .Variable,
+				kind = .Param,
 			}
+			scope.symbols[param.name] = sym
+			param.symbol = &scope.symbols[param.name]
 		}
 
 		ss_push(&c.scopes, scope)
@@ -156,7 +159,7 @@ bind_scopes :: proc(c: ^Checker, s: ^Ast_Node) {
 		ss_pop(&c.scopes)
 
 	case Ast_If:
-		scope := Symbol_Scope {
+		scope := Scope {
 			kind   = .Block,
 			parent = cur_scope,
 		}
@@ -169,7 +172,7 @@ bind_scopes :: proc(c: ^Checker, s: ^Ast_Node) {
 		ss_pop(&c.scopes)
 
 	case Ast_For:
-		scope := Symbol_Scope {
+		scope := Scope {
 			kind   = .Loop,
 			parent = cur_scope,
 		}
@@ -183,5 +186,70 @@ bind_scopes :: proc(c: ^Checker, s: ^Ast_Node) {
 get_block_symbols :: proc(c: ^Checker, s: ^Ast_Block) {
 	for node in s.statements {
 		bind_scopes(c, node)
+	}
+}
+
+error_type := Type {
+	kind = .Error,
+}
+
+resolve_expr_type :: proc(expr: ^Expr, scope: ^Scope, span: Span) -> ^Type {
+	switch e in expr {
+	case Expr_Int_Literal:
+		t := new(Type)
+		t.kind = .Int32
+	case Expr_Variable:
+		sym, ok := resolv_symbol(scope, e.value)
+		if ok {
+			return sym.type
+		} else {
+			return &error_type
+		}
+	case Expr_Binary:
+		left := resolve_expr_type(e.left, scope, span)
+		right := resolve_expr_type(e.right, scope, span)
+		if left.kind == .Error || right.kind == .Error {
+			return &error_type
+		}
+		if left.kind != right.kind {
+			error_span(span, "Type mismatch %s %s %s", left.kind, e.op, right.kind)
+		}
+
+	case Expr_Call:
+		func_name := e.callee.(Expr_Variable).value
+		sym, ok := resolv_symbol(scope, func_name)
+		if ok {
+			return sym.type
+		}
+	}
+	return nil
+}
+resolve_types :: proc(c: ^Checker, s: ^Ast_Node) {
+	#partial switch &node in s.node {
+	case Ast_Assignment:
+		node.symbol.type = resolve_expr_type(node.expr, s.scope, s.span)
+
+	case Ast_Function:
+		for &param in node.params {
+			type_sym, ok := resolv_symbol(s.scope, param.type_expr)
+			if ok {
+				fmt.println(param.symbol)
+				param.symbol.type = type_sym.type
+			}
+		}
+	case Ast_If:
+		resolve_block_types(c, node.then_block)
+		if node.else_block != nil {
+			resolve_block_types(c, node.else_block)
+		}
+
+	case Ast_For:
+		resolve_block_types(c, node.body)
+	}
+}
+
+resolve_block_types :: proc(c: ^Checker, s: ^Ast_Block) {
+	for node in s.statements {
+		resolve_types(c, node)
 	}
 }

@@ -7,7 +7,7 @@ Checker :: struct {
 	scopes: Symbol_Scopes,
 }
 
-check_resolv_symbol :: proc(current_scope: ^Symbol_Scope, name: string) -> (Symbol, bool) {
+resolv_symbol :: proc(current_scope: ^Scope, name: string) -> (Symbol, bool) {
 	scope := current_scope
 	for {
 		if sym, ok := scope.symbols[name]; ok {
@@ -44,8 +44,8 @@ check_stmt :: proc(c: ^Checker, s: ^Ast_Node) {
 }
 
 
-check_assigment :: proc(c: ^Checker, s: ^Ast_Assignment, span: Span, scope: ^Symbol_Scope) {
-	var, ok := check_resolv_symbol(scope, s.name)
+check_assigment :: proc(c: ^Checker, s: ^Ast_Assignment, span: Span, scope: ^Scope) {
+	var, ok := resolv_symbol(scope, s.name)
 	if ok {
 		expr_type := check_expr(c, s.expr, span, scope)
 		if var.type != expr_type {
@@ -59,7 +59,7 @@ check_assigment :: proc(c: ^Checker, s: ^Ast_Assignment, span: Span, scope: ^Sym
 	}
 }
 
-check_function :: proc(c: ^Checker, s: ^Ast_Function, span: Span, scope: ^Symbol_Scope) {
+check_function :: proc(c: ^Checker, s: ^Ast_Function, span: Span, scope: ^Scope) {
 	// symbol := new(Symbol)
 	// symbol.name = s.name
 	// symbol.kind = .Function
@@ -96,7 +96,7 @@ check_call :: proc(c: ^Checker, e: Expr_Call, span: Span) {
 
 }
 
-check_expr :: proc(c: ^Checker, expr: ^Expr, span: Span, scope: ^Symbol_Scope) -> ^Type {
+check_expr :: proc(c: ^Checker, expr: ^Expr, span: Span, scope: ^Scope) -> ^Type {
 	#partial switch e in expr {
 	case Expr_Binary:
 		left := check_expr(c, e.left, span, scope)
@@ -114,17 +114,17 @@ check_expr :: proc(c: ^Checker, expr: ^Expr, span: Span, scope: ^Symbol_Scope) -
 		} else {
 			return left
 		}
-	case Expr_Int_Literal:
-		return e.type
+	// case Expr_Int_Literal:
+	// 	return e.type
 
 	case Expr_Variable:
-		sym, ok := check_resolv_symbol(scope, e.value)
+		sym, ok := resolv_symbol(scope, e.value)
 		fmt.println("-------------", e.value, sym, ok)
 		return sym.type
 
 	case Expr_Call:
 		func_name := e.callee.(Expr_Variable).value
-		sym, ok := check_resolv_symbol(scope, func_name)
+		sym, ok := resolv_symbol(scope, func_name)
 		// fmt.println("AAAAAAAAAAAAAAAAAA", sym)
 		if !ok {
 			error_span(span, "Function '%s' not found", func_name)
@@ -172,6 +172,10 @@ check :: proc(c: ^Checker, nodes: []^Ast_Node) {
 	ss_push(&c.scopes, create_global_scope())
 	for node in nodes {
 		bind_scopes(c, node)
+	}
+
+	for node in nodes {
+		resolve_types(c, node)
 	}
 
 	for node in nodes {

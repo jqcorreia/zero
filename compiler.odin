@@ -19,17 +19,17 @@ Compiler_Error :: struct {
 	message: string,
 }
 
-Scopes :: queue.Queue(Scope)
+// Scopes :: queue.Queue(Scope)
 
-Scope :: struct {
-	vars: map[string]Scope_Var,
-}
+// Scope :: struct {
+// 	vars: map[string]Scope_Var,
+// }
 
-Scope_Var :: struct {
-	type_name: string,
-	type:      ^Type,
-	ref:       ValueRef,
-}
+// Scope_Var :: struct {
+// 	type_name: string,
+// 	type:      ^Type,
+// 	ref:       ValueRef,
+// }
 
 Loop :: struct {
 	break_block: BasicBlockRef,
@@ -44,7 +44,7 @@ compiler_init :: proc() {
 
 setup_native_types :: proc(compiler: ^Compiler) {
 	u8_t := new(Type)
-	u8_t.kind = .U8
+	u8_t.kind = .Uint8
 	compiler.types["u8"] = u8_t
 
 	i8_t := new(Type)

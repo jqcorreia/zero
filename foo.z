@@ -2,6 +2,12 @@ fn main() {
     bar()
 }
 
+fn qux(a: u32, b: u32) -> u32 {
+    c = a + b // This should err
+    print(c)
+    return a
+}
+
 fn bar(a: u32, b: u8) -> u32 {
     c = a + b // This should err
     return a
