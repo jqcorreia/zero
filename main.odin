@@ -25,8 +25,10 @@ main :: proc() {
 	// 	filename = os.args[1]
 	// }
 
-	// Lex
+	// Read file
 	expr := os.read_entire_file(opt.file) or_else panic("No file found")
+
+	// Lex
 	tokens := lex(string(expr))
 	if ODIN_DEBUG {
 		tokens_print(tokens)

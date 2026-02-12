@@ -192,11 +192,15 @@ error_type := Type {
 }
 
 resolve_expr_type :: proc(expr: ^Expr, scope: ^Scope, span: Span) -> ^Type {
+	// scope_print(scope)
+	// fmt.println("....")
 	switch e in expr {
 	case Expr_Int_Literal:
 		t := new(Type)
 		t.kind = .Int32
+		return t
 	case Expr_Variable:
+		fmt.println(span_to_location(span))
 		sym, ok := resolv_symbol(scope, e.value)
 		if ok {
 			return sym.type
@@ -222,11 +226,13 @@ resolve_expr_type :: proc(expr: ^Expr, scope: ^Scope, span: Span) -> ^Type {
 	}
 	return nil
 }
+
 resolve_types :: proc(c: ^Checker, s: ^Ast_Node) {
+	fmt.println(s)
 	#partial switch &node in s.node {
 	case Ast_Assignment:
-		node.symbol.type = resolve_expr_type(node.expr, s.scope, s.span)
-
+		t := resolve_expr_type(node.expr, s.scope, s.span)
+		node.symbol.type = t
 	case Ast_Function:
 		for &param in node.params {
 			type_sym, ok := resolv_symbol(s.scope, param.type_expr)
