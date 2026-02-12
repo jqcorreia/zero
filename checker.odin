@@ -172,22 +172,22 @@ check :: proc(c: ^Checker, nodes: []^Ast_Node) {
 		bind_scopes(c, node)
 	}
 
-	fmt.println("----------------- END OF BIND ---------------\n\n\n")
-	for node in nodes {
-		if func, ok := node.node.(Ast_Function); ok {
-			fmt.println("Func", func.name)
-			fmt.println("Params: ")
-			for p in func.params {
-				fmt.println(p.name)
-			}
-			fmt.println("OWN:", scope_string(node.scope))
-			fmt.println("CHILDREN:", scope_string(func.body.statements[0].scope))
-		}
-	}
-
+	// fmt.println("----------------- END OF BIND ---------------\n\n\n")
 	// for node in nodes {
-	// 	resolve_types(c, node)
+	// 	if func, ok := node.node.(Ast_Function); ok {
+	// 		fmt.println("Func", func.name)
+	// 		fmt.println("Params: ")
+	// 		for p in func.params {
+	// 			fmt.println(p.name)
+	// 		}
+	// 		fmt.println("OWN:", scope_string(node.scope))
+	// 		fmt.println("CHILDREN:", scope_string(func.body.statements[0].scope))
+	// 	}
 	// }
+
+	for node in nodes {
+		resolve_types(c, node)
+	}
 
 	// for node in nodes {
 	// 	statement_print(node)
