@@ -139,6 +139,9 @@ scope_print :: proc(current_scope: ^Scope) {
 	}
 }
 scope_string :: proc(scope: ^Scope) -> string {
+	if scope == nil {
+		return "No scope"
+	}
 	sb := strings.builder_make()
 
 	_addr := scope

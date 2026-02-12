@@ -35,19 +35,19 @@ ScopeKind :: enum {
 	Loop,
 }
 
-Symbol_Scopes :: queue.Queue(Scope)
+Symbol_Scopes :: queue.Queue(^Scope)
 
-ss_push :: proc(scopes: ^Symbol_Scopes, scope: Scope) {
+ss_push :: proc(scopes: ^Symbol_Scopes, scope: ^Scope) {
 	queue.push_front(scopes, scope)
 }
 
-ss_pop :: proc(scopes: ^Symbol_Scopes) -> Scope {
+ss_pop :: proc(scopes: ^Symbol_Scopes) -> ^Scope {
 	scope := queue.pop_front(scopes)
 	return scope
 }
 
 ss_cur :: proc(scopes: ^Symbol_Scopes) -> ^Scope {
-	return queue.front_ptr(scopes)
+	return queue.front(scopes)
 }
 
 get_scope_queue_var :: proc(scopes: ^Symbol_Scopes, name: string) -> ^Symbol {
@@ -62,10 +62,10 @@ get_scope_queue_var :: proc(scopes: ^Symbol_Scopes, name: string) -> ^Symbol {
 	return nil
 }
 
-create_global_scope :: proc() -> Scope {
-	scope := Scope {
-		kind = .Global,
-	}
+create_global_scope :: proc() -> ^Scope {
+
+	scope := new(Scope)
+	scope.kind = .Global
 
 	u8_t := new(Type)
 	u8_t.kind = .Uint8
@@ -138,11 +138,9 @@ bind_scopes :: proc(c: ^Checker, s: ^Ast_Node) {
 		// symbol.type = ident_to_type(node.ret_type_expr)
 		// symbol.scope = cur_scope
 
-		scope := Scope {
-			kind   = .Function,
-			// function = symbol,
-			parent = cur_scope,
-		}
+		scope := new(Scope)
+		scope.kind = .Function
+		scope.parent = cur_scope
 
 		// scope.symbols[node.name] = symbol^
 
@@ -153,10 +151,10 @@ bind_scopes :: proc(c: ^Checker, s: ^Ast_Node) {
 				decl = s,
 			}
 			scope.symbols[param.name] = sym
-			param.symbol = &scope.symbols[param.name]
+			// param.symbol = &scope.symbols[param.name]
 		}
 
-		fmt.println("NEW FUCKING SCOPE", scope_string(&scope))
+		fmt.println("NEW FUCKING SCOPE", scope_string(scope))
 		fmt.println("CURRENT SCOPE", scope_string(ss_cur(&c.scopes)))
 		ss_push(&c.scopes, scope)
 		fmt.println("PUSHED SCOPE", scope_string(ss_cur(&c.scopes)))
@@ -165,10 +163,9 @@ bind_scopes :: proc(c: ^Checker, s: ^Ast_Node) {
 		fmt.println("AFTER POP", scope_string(ss_cur(&c.scopes)))
 
 	case Ast_If:
-		scope := Scope {
-			kind   = .Block,
-			parent = cur_scope,
-		}
+		scope := new(Scope)
+		scope.kind = .Block
+		scope.parent = cur_scope
 
 		ss_push(&c.scopes, scope)
 		get_block_symbols(c, node.then_block)
@@ -178,10 +175,9 @@ bind_scopes :: proc(c: ^Checker, s: ^Ast_Node) {
 		ss_pop(&c.scopes)
 
 	case Ast_For:
-		scope := Scope {
-			kind   = .Loop,
-			parent = cur_scope,
-		}
+		scope := new(Scope)
+		scope.kind = .Block
+		scope.parent = cur_scope
 
 		ss_push(&c.scopes, scope)
 		get_block_symbols(c, node.body)
