@@ -1,6 +1,5 @@
 package main
 
-import "core:container/queue"
 import "core:fmt"
 
 Checker :: struct {}
@@ -20,7 +19,7 @@ check_stmt :: proc(c: ^Checker, s: ^Ast_Node) {
 	case Ast_For:
 		check_for_loop(c, &node, s.span)
 	case Ast_Break:
-		check_break(c, &node, s.span)
+		check_break(c, &node, s.span, s.scope)
 	case:
 		unimplemented(fmt.tprint("Unimplement check", s))
 	}
@@ -43,29 +42,8 @@ check_assigment :: proc(c: ^Checker, s: ^Ast_Assignment, span: Span, scope: ^Sco
 }
 
 check_function :: proc(c: ^Checker, s: ^Ast_Function, span: Span, scope: ^Scope) {
-	// symbol := new(Symbol)
-	// symbol.name = s.name
-	// symbol.kind = .Function
-	// symbol.type = ident_to_type(s.ret_type_ident)
-	// symbol.scope = ss_cur(&c.scopes)
-
-	// scope := Symbol_Scope {
-	// 	kind     = .Function,
-	// 	function = symbol,
+	// for p in s.params {
 	// }
-
-	// for &param in s.params {
-	// 	param.type = ident_to_type(param.type_ident)
-	// 	scope.symbols[param.name] = Symbol {
-	// 		name = param.name,
-	// 		kind = .Variable,
-	// 		type = param.type,
-	// 	}
-	// }
-	for p in s.params {
-
-	}
-
 	check_block(c, s.body, span)
 }
 
@@ -133,20 +111,10 @@ check_for_loop :: proc(c: ^Checker, s: ^Ast_For, span: Span) {
 	check_block(c, s.body, span)
 }
 
-check_break :: proc(c: ^Checker, s: ^Ast_Break, span: Span) {
-	// inside_loop := false
-
-	// for i in queue.len(c.scopes) - 1 ..= 0 {
-	// 	scope := queue.get(&c.scopes, i)
-	// 	if scope.kind == .Loop {
-	// 		inside_loop = true
-	// 		break
-	// 	}
-	// }
-
-	// if !inside_loop {
-	// 	error_span(span, "Break statement outside of loop")
-	// }
+check_break :: proc(c: ^Checker, s: ^Ast_Break, span: Span, scope: ^Scope) {
+	if scope.kind != .Loop {
+		error_span(span, "Break statement outside of loop")
+	}
 }
 
 check :: proc(c: ^Checker, nodes: []^Ast_Node) {
@@ -173,7 +141,6 @@ check :: proc(c: ^Checker, nodes: []^Ast_Node) {
 	}
 
 	check_resolved_symbols := proc(node: ^Ast_Node) {
-		// scope_print(node.scope)
 		for _, symbol in node.scope.symbols {
 			if symbol.type == nil {
 				error_span(node.span, "nil typed symbol %v", symbol)
@@ -185,7 +152,7 @@ check :: proc(c: ^Checker, nodes: []^Ast_Node) {
 		traverse_ast(node, check_resolved_symbols)
 	}
 
-	// for node in nodes {
-	// 	check_stmt(c, node)
-	// }
+	for node in nodes {
+		check_stmt(c, node)
+	}
 }
