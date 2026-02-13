@@ -155,7 +155,7 @@ check :: proc(c: ^Checker, nodes: []^Ast_Node) {
 		bind_scopes(node, global_scope)
 	}
 
-	fmt.println("----------------- END OF BIND ---------------\n\n\n")
+	// fmt.println("----------------- END OF BIND ---------------\n\n\n")
 	// for node in nodes {
 	// 	if func, ok := node.node.(Ast_Function); ok {
 	// 		fmt.println("Func", func.name)
@@ -172,18 +172,17 @@ check :: proc(c: ^Checker, nodes: []^Ast_Node) {
 		resolve_types(c, node)
 	}
 
-	trav := proc(node: ^Ast_Node) {
+	check_resolved_symbols := proc(node: ^Ast_Node) {
 		// scope_print(node.scope)
 		for _, symbol in node.scope.symbols {
 			if symbol.type == nil {
-				fmt.println("nil typed symbol", symbol)
-
+				error_span(node.span, "nil typed symbol %v", symbol)
 			}
 		}
 	}
 
 	for node in nodes {
-		traverse_ast(node, trav)
+		traverse_ast(node, check_resolved_symbols)
 	}
 
 	// for node in nodes {

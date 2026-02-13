@@ -79,7 +79,6 @@ bind_scopes :: proc(s: ^Ast_Node, cur_scope: ^Scope) {
 	case Ast_Assignment:
 		sym, ok := resolve_symbol(cur_scope, node.name)
 		if !ok {
-			fmt.println("NEW VAR", node.name)
 			sym = make_symbol(.Variable)
 			cur_scope.symbols[node.name] = sym
 		}
@@ -129,9 +128,6 @@ error_type := Type {
 }
 
 resolve_expr_type :: proc(expr: ^Expr, scope: ^Scope, span: Span) -> ^Type {
-	// scope_print(scope)
-	// fmt.println("....")
-	fmt.println(expr)
 	switch e in expr {
 	case Expr_Int_Literal:
 		t := new(Type)
@@ -173,7 +169,6 @@ resolve_expr_type :: proc(expr: ^Expr, scope: ^Scope, span: Span) -> ^Type {
 }
 
 resolve_types :: proc(c: ^Checker, s: ^Ast_Node) {
-	fmt.println(s)
 	#partial switch &node in s.node {
 	case Ast_Assignment:
 		t := resolve_expr_type(node.expr, s.scope, s.span)
