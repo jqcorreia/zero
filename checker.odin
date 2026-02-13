@@ -58,39 +58,39 @@ check_call :: proc(c: ^Checker, e: Expr_Call, span: Span) {
 }
 
 check_expr :: proc(c: ^Checker, expr: ^Expr, span: Span, scope: ^Scope) -> ^Type {
-	#partial switch e in expr {
-	case Expr_Binary:
-		left := check_expr(c, e.left, span, scope)
-		right := check_expr(c, e.right, span, scope)
+	// #partial switch e in expr {
+	// case Expr_Binary:
+	// 	left := check_expr(c, e.left, span, scope)
+	// 	right := check_expr(c, e.right, span, scope)
 
-		if left != right {
-			error_span(
-				span,
-				"Operation '%s' cannot be done on different types: %s vs %s",
-				e.op,
-				left.kind,
-				right.kind,
-			)
-			return nil
-		} else {
-			return left
-		}
+	// 	if left != right {
+	// 		error_span(
+	// 			span,
+	// 			"Operation '%s' cannot be done on different types: %s vs %s",
+	// 			e.op,
+	// 			left.kind,
+	// 			right.kind,
+	// 		)
+	// 		return nil
+	// 	} else {
+	// 		return left
+	// 	}
 	// case Expr_Int_Literal:
 	// 	return e.type
 
-	case Expr_Variable:
-		sym, _ := resolve_symbol(scope, e.value)
-		return sym.type
+	// case Expr_Variable:
+	// 	sym, _ := resolve_symbol(scope, e.value)
+	// 	return sym.type
 
-	case Expr_Call:
-		func_name := e.callee.(Expr_Variable).value
-		sym, ok := resolve_symbol(scope, func_name)
-		if !ok {
-			error_span(span, "Function '%s' not found", func_name)
-			return nil
-		}
-		return sym.type
-	}
+	// case Expr_Call:
+	// 	func_name := e.callee.(Expr_Variable).value
+	// 	sym, ok := resolve_symbol(scope, func_name)
+	// 	if !ok {
+	// 		error_span(span, "Function '%s' not found", func_name)
+	// 		return nil
+	// 	}
+	// 	return sym.type
+	// }
 	return nil
 }
 
@@ -117,8 +117,10 @@ check_break :: proc(c: ^Checker, s: ^Ast_Break, span: Span, scope: ^Scope) {
 	}
 }
 
+global_scope: ^Scope
+
 check :: proc(c: ^Checker, nodes: []^Ast_Node) {
-	global_scope := create_global_scope()
+	global_scope = create_global_scope()
 	for node in nodes {
 		bind_scopes(node, global_scope)
 	}

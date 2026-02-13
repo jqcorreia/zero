@@ -5,5 +5,8 @@ fn qux(a: u32, b: u32) {
     }
 }
 
+fn main() {
+    qux(1, 2)
+}
 
 

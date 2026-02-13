@@ -62,7 +62,7 @@ main :: proc() {
 	}
 
 	// Code generation
-	// generate(stmts)
+	generate(stmts)
 
 	if ODIN_DEBUG {
 		fmt.println("--- Compilation done in", time.diff(start_time, time.now()), "---")
