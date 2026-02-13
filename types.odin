@@ -8,7 +8,7 @@ ident_to_type :: proc(ident: string) -> ^Type {
 }
 
 ident_to_type_in_scope :: proc(node: ^Ast_Node, ident: string) -> ^Type {
-	sym, ok := resolv_symbol(node.scope, ident)
+	sym, ok := resolve_symbol(node.scope, ident)
 
 	if !ok {
 		error_span(node.span, "Unknown symbol: %s", sym.name)
