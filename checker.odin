@@ -139,7 +139,7 @@ check :: proc(c: ^Checker, nodes: []^Ast_Node) {
 		resolve_types(c, node)
 	}
 
-	check_resolved_symbols := proc(node: ^Ast_Node) {
+	check_resolved_symbols := proc(node: ^Ast_Node, userdata: rawptr) {
 		for _, symbol in node.scope.symbols {
 			if symbol.type == nil && symbol.kind != .Function {
 				error_span(node.span, "nil typed symbol %v", symbol)

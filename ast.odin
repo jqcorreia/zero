@@ -95,36 +95,40 @@ Expr_Call :: struct {
 
 
 // Generic AST traverse function
-traverse_ast :: proc(ast: ^Ast_Node, func: proc(node: ^Ast_Node)) {
+traverse_ast :: proc(
+	ast: ^Ast_Node,
+	func: proc(node: ^Ast_Node, userdata: rawptr = nil),
+	userdata: rawptr = nil,
+) {
 	#partial switch &node in ast.node {
 	case Ast_Expr:
-		func(ast)
+		func(ast, userdata)
 	case Ast_Assignment:
-		func(ast)
+		func(ast, userdata)
 	case Ast_Function:
-		func(ast)
+		func(ast, userdata)
 		for child in node.body.statements {
-			traverse_ast(child, func)
+			traverse_ast(child, func, userdata)
 		}
 	case Ast_Return:
-		func(ast)
+		func(ast, userdata)
 	case Ast_If:
-		func(ast)
+		func(ast, userdata)
 		for child in node.then_block.statements {
-			traverse_ast(child, func)
+			traverse_ast(child, func, userdata)
 		}
 		if node.else_block != nil {
 			for child in node.else_block.statements {
-				traverse_ast(child, func)
+				traverse_ast(child, func, userdata)
 			}
 		}
 	case Ast_For:
-		func(ast)
+		func(ast, userdata)
 		for child in node.body.statements {
-			traverse_ast(child, func)
+			traverse_ast(child, func, userdata)
 		}
 	case Ast_Break:
-		func(ast)
+		func(ast, userdata)
 	case:
 		unimplemented(fmt.tprint("Unimplement traverse statement", ast))
 	}

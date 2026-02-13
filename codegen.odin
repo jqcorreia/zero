@@ -19,7 +19,6 @@ emit_stmt :: proc(gen: ^Generator, s: ^Ast_Node) {
 	case Ast_Assignment:
 		emit_assigment(gen, &node, s.scope, s.span)
 	case Ast_Function:
-		emit_function(gen, &node, s.scope, s.span)
 	case Ast_Return:
 		emit_return(gen, &node, s.scope, s.span)
 	case Ast_If:
@@ -61,6 +60,10 @@ emit_assigment :: proc(gen: ^Generator, s: ^Ast_Assignment, scope: ^Scope, span:
 	}
 }
 
+emit_function_decl :: proc(gen: ^Generator, s: ^Ast_Function, scope: ^Scope, span: Span) {
+
+}
+
 emit_function :: proc(gen: ^Generator, s: ^Ast_Function, scope: ^Scope, span: Span) {
 	old_pos := GetInsertBlock(gen.builder)
 
@@ -90,9 +93,6 @@ emit_function :: proc(gen: ^Generator, s: ^Ast_Function, scope: ^Scope, span: Sp
 	// Complete the information with TypeRef and ValueRef
 	gen.values[sym] = fn
 	gen.types[sym] = fn_type
-
-	// Store function Ast node for further reference in calls
-	compiler.funcs[s.name] = s
 
 	SetLinkage(fn, .ExternalLinkage)
 	entry := AppendBasicBlockInContext(gen.ctx, fn, "")
@@ -147,13 +147,15 @@ emit_call :: proc(gen: ^Generator, e: Expr_Call, scope: ^Scope, span: Span) -> V
 		append(&args, emit_expr(gen, a, scope, span))
 	}
 
-	scope_print(scope)
 	sym, ok := resolve_symbol(scope, fn_name)
 	if !ok {
 		fatal_span(span, "Unresolved function %s in function call", fn_name)
 	}
 	sym_type := gen.types[sym]
 	sym_value := gen.values[sym]
+	if sym_type == nil || sym_value == nil {
+		fmt.println(sym_type, sym_value)
+	}
 	if len(args) == 0 {
 		return BuildCall2(gen.builder, sym_type, sym_value, nil, 0, "")
 	} else {
@@ -387,6 +389,18 @@ generate :: proc(stmts: []^Ast_Node) {
 		builder = builder,
 	}
 	setup_codegen(&generator)
+
+	emit_function_decls := proc(node: ^Ast_Node, userdata: rawptr = nil) {
+		if fnode, ok := node.node.(Ast_Function); ok {
+			fmt.println("should generate function")
+			gen := cast(^Generator)userdata
+			emit_function(gen, &fnode, node.scope, node.span)
+		}
+	}
+
+	for stmt in stmts {
+		traverse_ast(stmt, emit_function_decls, &generator)
+	}
 
 	for stmt in stmts {
 		emit_stmt(&generator, stmt)
