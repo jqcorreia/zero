@@ -147,6 +147,7 @@ emit_call :: proc(gen: ^Generator, e: Expr_Call, scope: ^Scope, span: Span) -> V
 		append(&args, emit_expr(gen, a, scope, span))
 	}
 
+	scope_print(scope)
 	sym, ok := resolve_symbol(scope, fn_name)
 	if !ok {
 		fatal_span(span, "Unresolved function %s in function call", fn_name)

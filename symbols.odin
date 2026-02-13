@@ -91,6 +91,8 @@ bind_scopes :: proc(s: ^Ast_Node, cur_scope: ^Scope) {
 		symbol.name = node.name
 		symbol.kind = .Function
 
+		cur_scope.symbols[node.name] = symbol
+
 		for &param in node.params {
 			sym := make_symbol(.Param)
 			sym.decl = s

@@ -27,18 +27,18 @@ check_stmt :: proc(c: ^Checker, s: ^Ast_Node) {
 
 
 check_assigment :: proc(c: ^Checker, s: ^Ast_Assignment, span: Span, scope: ^Scope) {
-	var, ok := resolve_symbol(scope, s.name)
-	if ok {
-		expr_type := check_expr(c, s.expr, span, scope)
-		if var.type != expr_type {
-			error_span(span, "Cannot assign %v to %v", expr_type.kind, var.type.kind)
-		}
-	} else {
-		new_var := Symbol {
-			type = check_expr(c, s.expr, span, scope),
-		}
-		_ = new_var
-	}
+	// var, ok := resolve_symbol(scope, s.name)
+	// if ok {
+	// 	expr_type := check_expr(c, s.expr, span, scope)
+	// 	if var.type != expr_type {
+	// 		error_span(span, "Cannot assign %v to %v", expr_type.kind, var.type.kind)
+	// 	}
+	// } else {
+	// 	new_var := Symbol {
+	// 		type = check_expr(c, s.expr, span, scope),
+	// 	}
+	// 	_ = new_var
+	// }
 }
 
 check_function :: proc(c: ^Checker, s: ^Ast_Function, span: Span, scope: ^Scope) {
@@ -75,8 +75,8 @@ check_expr :: proc(c: ^Checker, expr: ^Expr, span: Span, scope: ^Scope) -> ^Type
 	// 	} else {
 	// 		return left
 	// 	}
-	// case Expr_Int_Literal:
-	// 	return e.type
+	// // case Expr_Int_Literal:
+	// // 	return e.type
 
 	// case Expr_Variable:
 	// 	sym, _ := resolve_symbol(scope, e.value)
@@ -112,7 +112,17 @@ check_for_loop :: proc(c: ^Checker, s: ^Ast_For, span: Span) {
 }
 
 check_break :: proc(c: ^Checker, s: ^Ast_Break, span: Span, scope: ^Scope) {
-	if scope.kind != .Loop {
+	sc := scope
+	inside_loop := false
+	for {
+		if sc.kind == .Loop {
+			inside_loop = true
+			break
+		}
+		sc = sc.parent
+	}
+
+	if !inside_loop {
 		error_span(span, "Break statement outside of loop")
 	}
 }
@@ -125,26 +135,13 @@ check :: proc(c: ^Checker, nodes: []^Ast_Node) {
 		bind_scopes(node, global_scope)
 	}
 
-	// fmt.println("----------------- END OF BIND ---------------\n\n\n")
-	// for node in nodes {
-	// 	if func, ok := node.node.(Ast_Function); ok {
-	// 		fmt.println("Func", func.name)
-	// 		fmt.println("Params: ")
-	// 		for p in func.params {
-	// 			fmt.println(p.name)
-	// 		}
-	// 		fmt.println("OWN:", scope_string(node.scope))
-	// 		fmt.println("CHILDREN:", scope_string(func.body.statements[0].scope))
-	// 	}
-	// }
-
 	for node in nodes {
 		resolve_types(c, node)
 	}
 
 	check_resolved_symbols := proc(node: ^Ast_Node) {
 		for _, symbol in node.scope.symbols {
-			if symbol.type == nil {
+			if symbol.type == nil && symbol.kind != .Function {
 				error_span(node.span, "nil typed symbol %v", symbol)
 			}
 		}
