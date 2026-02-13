@@ -136,7 +136,7 @@ expr_print :: proc(expr: ^Expr, scope: ^Scope, lvl: u32 = 0) {
 scope_print :: proc(current_scope: ^Scope) {
 	scope := current_scope
 	for {
-		fmt.println(scope)
+		fmt.println(scope_string(scope))
 		if scope.parent == nil {
 			break
 		}

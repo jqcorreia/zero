@@ -22,7 +22,7 @@ check_stmt :: proc(c: ^Checker, s: ^Ast_Node) {
 	case Ast_Break:
 		check_break(c, &node, s.span)
 	case:
-		unimplemented(fmt.tprint("Unimplement emit statement", s))
+		unimplemented(fmt.tprint("Unimplement check", s))
 	}
 }
 
@@ -156,25 +156,35 @@ check :: proc(c: ^Checker, nodes: []^Ast_Node) {
 	}
 
 	fmt.println("----------------- END OF BIND ---------------\n\n\n")
-	for node in nodes {
-		if func, ok := node.node.(Ast_Function); ok {
-			fmt.println("Func", func.name)
-			fmt.println("Params: ")
-			for p in func.params {
-				fmt.println(p.name)
-			}
-			fmt.println("OWN:", scope_string(node.scope))
-			fmt.println("CHILDREN:", scope_string(func.body.statements[0].scope))
-		}
-	}
+	// for node in nodes {
+	// 	if func, ok := node.node.(Ast_Function); ok {
+	// 		fmt.println("Func", func.name)
+	// 		fmt.println("Params: ")
+	// 		for p in func.params {
+	// 			fmt.println(p.name)
+	// 		}
+	// 		fmt.println("OWN:", scope_string(node.scope))
+	// 		fmt.println("CHILDREN:", scope_string(func.body.statements[0].scope))
+	// 	}
+	// }
 
 	for node in nodes {
 		resolve_types(c, node)
 	}
 
-	// for node in nodes {
-	// 	statement_print(node)
-	// }
+	trav := proc(node: ^Ast_Node) {
+		// scope_print(node.scope)
+		for _, symbol in node.scope.symbols {
+			if symbol.type == nil {
+				fmt.println("nil typed symbol", symbol)
+
+			}
+		}
+	}
+
+	for node in nodes {
+		traverse_ast(node, trav)
+	}
 
 	// for node in nodes {
 	// 	check_stmt(c, node)

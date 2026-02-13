@@ -1,5 +1,7 @@
 package main
 
+import "core:fmt"
+
 Ast_Node :: struct {
 	node:  union {
 		Ast_Expr,
@@ -89,4 +91,41 @@ Expr_Variable :: struct {
 Expr_Call :: struct {
 	callee: ^Expr,
 	args:   []^Expr,
+}
+
+
+// Generic AST traverse function
+traverse_ast :: proc(ast: ^Ast_Node, func: proc(node: ^Ast_Node)) {
+	#partial switch &node in ast.node {
+	case Ast_Expr:
+		func(ast)
+	case Ast_Assignment:
+		func(ast)
+	case Ast_Function:
+		func(ast)
+		for child in node.body.statements {
+			traverse_ast(child, func)
+		}
+	case Ast_Return:
+		func(ast)
+	case Ast_If:
+		func(ast)
+		for child in node.then_block.statements {
+			traverse_ast(child, func)
+		}
+		if node.else_block != nil {
+			for child in node.else_block.statements {
+				traverse_ast(child, func)
+			}
+		}
+	case Ast_For:
+		func(ast)
+		for child in node.body.statements {
+			traverse_ast(child, func)
+		}
+	case Ast_Break:
+		func(ast)
+	case:
+		unimplemented(fmt.tprint("Unimplement traverse statement", ast))
+	}
 }

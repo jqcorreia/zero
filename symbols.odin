@@ -56,12 +56,9 @@ create_global_scope :: proc() -> ^Scope {
 	// 	kind = .Type,
 	// }
 
-	// i32_t := new(Type)
-	// i32_t.kind = .Int32
-	// scope.symbols["i32"] = Symbol {
-	// 	type = i32_t,
-	// 	kind = .Type,
-	// }
+	i32_t := new(Type)
+	i32_t.kind = .Uint32
+	scope.symbols["i32"] = make_symbol(.Type, i32_t)
 
 	u32_t := new(Type)
 	u32_t.kind = .Uint32
@@ -143,6 +140,9 @@ resolve_expr_type :: proc(expr: ^Expr, scope: ^Scope, span: Span) -> ^Type {
 	case Expr_Variable:
 		sym, ok := resolve_symbol(scope, e.value)
 		if ok {
+			if sym.type == nil {
+				error_span(span, "unresolved type for symbol %v", sym)
+			}
 			return sym.type
 		} else {
 			return &error_type
@@ -183,6 +183,8 @@ resolve_types :: proc(c: ^Checker, s: ^Ast_Node) {
 			type_sym, ok := resolve_symbol(s.scope, param.type_expr)
 			if ok {
 				param.symbol.type = type_sym.type
+			} else {
+				error_span(s.span, "unresolved type expression '%v'", param.type_expr)
 			}
 		}
 		resolve_block_types(c, node.body)
