@@ -19,6 +19,7 @@ emit_stmt :: proc(gen: ^Generator, s: ^Ast_Node) {
 	case Ast_Assignment:
 		emit_assigment(gen, &node, s.scope, s.span)
 	case Ast_Function:
+		emit_function_body(gen, &node, s.scope, s.span)
 	case Ast_Return:
 		emit_return(gen, &node, s.scope, s.span)
 	case Ast_If:
@@ -61,12 +62,6 @@ emit_assigment :: proc(gen: ^Generator, s: ^Ast_Assignment, scope: ^Scope, span:
 }
 
 emit_function_decl :: proc(gen: ^Generator, s: ^Ast_Function, scope: ^Scope, span: Span) {
-
-}
-
-emit_function :: proc(gen: ^Generator, s: ^Ast_Function, scope: ^Scope, span: Span) {
-	old_pos := GetInsertBlock(gen.builder)
-
 	int32 := Int32TypeInContext(gen.ctx)
 	param_types: [dynamic]TypeRef
 
@@ -90,8 +85,18 @@ emit_function :: proc(gen: ^Generator, s: ^Ast_Function, scope: ^Scope, span: Sp
 	gen.values[sym] = fn
 	gen.types[sym] = fn_type
 
+}
+
+emit_function_body :: proc(gen: ^Generator, s: ^Ast_Function, scope: ^Scope, span: Span) {
+	int32 := Int32TypeInContext(gen.ctx)
+
+	sym := s.symbol
+	fn := gen.values[sym]
+
 	SetLinkage(fn, .ExternalLinkage)
 	entry := AppendBasicBlockInContext(gen.ctx, fn, "")
+
+	old_pos := GetInsertBlock(gen.builder)
 	PositionBuilderAtEnd(gen.builder, entry)
 
 	for ast_param, i in s.params {
@@ -384,7 +389,7 @@ generate :: proc(stmts: []^Ast_Node) {
 	emit_function_decls := proc(node: ^Ast_Node, userdata: rawptr = nil) {
 		if fnode, ok := node.node.(Ast_Function); ok {
 			gen := cast(^Generator)userdata
-			emit_function(gen, &fnode, node.scope, node.span)
+			emit_function_decl(gen, &fnode, node.scope, node.span)
 		}
 	}
 

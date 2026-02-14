@@ -1,3 +1,12 @@
+// Main function must be defined, otherwise error will be thrown
+fn main() -> i32 {
+    print(func()) // Should print "1 3 5" and "6"
+    print(fib(10)) // Should print "55"
+
+    param_test(5, 10) // Should print "15"
+    return 0
+}
+
 // This is a simple test of function definition and recursion
 // Also tests if/then/else statements and variable scope
 fn fib(n: i32) -> i32 {
@@ -36,11 +45,3 @@ fn param_test(x: u8, y: u8) {
     print(x + y)
 }
 
-// Main function must be defined, otherwise error will be thrown
-fn main() -> i32 {
-    print(func()) // Should print "1 3 5" and "6"
-    print(fib(10)) // Should print "55"
-
-    param_test(5, 10) // Should print "15"
-    return 0
-}
