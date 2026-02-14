@@ -1,6 +1,7 @@
 # Lang
 
 Procedural language with basics done right. Straightforward, correct and if possible with some syntatic sugar on top.
+Aims to be explicit but to not sacrifice all the creature comforts of a modern language.
 
 Already done:
 - Lexing
@@ -18,7 +19,8 @@ Already done:
 Potentially this README can look a lot different in a couple of months if this becomes a serious project.
 
 # TODO
-- [ ] Do not need forward declaration with symbol table pass and LLVM function declaration  
+- [x] Do not need forward declaration with symbol table pass and LLVM function declaration  
+- [x] Basic type system
 - [ ] User defined types (i.e structs)  
 - [ ] Bound checked arrays  
 - [ ] Bound checked strings  
@@ -26,5 +28,5 @@ Potentially this README can look a lot different in a couple of months if this b
 # Try it
 ```
 odin build .
-./lang tests/basic.z 
+./lang run tests/basic.z 
 ```
