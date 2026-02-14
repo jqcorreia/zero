@@ -100,7 +100,25 @@ parse_statement :: proc(p: ^Parser) -> ^Ast_Node {
 			}
 			expect(p, .NewLine) // This should end with newline
 
+		case peek(p).kind == .Colon:
+			// Get variable name
+			name_tok := current(p)
 
+			advance(p)
+			expect(p, .Colon)
+
+			type_expr := expect(p, .Identifier).lexeme
+			default_value_expr: ^Expr
+			if current(p).kind == .Equal {
+				advance(p)
+				default_value_expr = parse_expression(p, 0)
+
+			}
+
+			fmt.println(type_expr, default_value_expr)
+			stmt^ = Ast_Var_Decl {
+				name = name_tok.lexeme,
+			}
 		case:
 			next_token := peek(p)
 			fatal_token(next_token, "Unexpected token %s", next_token.kind)

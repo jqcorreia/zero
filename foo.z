@@ -1,5 +1,6 @@
 fn qux(a: u32, b: u32) {
     c := a + b // This should not err
+    d: u32 = 1 + 2
     for {
         break
     }

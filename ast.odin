@@ -13,6 +13,7 @@ Ast_Node :: struct {
 		Ast_For,
 		Ast_Break,
 		Ast_Continue,
+		Ast_Var_Decl,
 	},
 	span:  Span,
 	scope: ^Scope,
@@ -29,6 +30,14 @@ Ast_Var_Assign :: struct {
 	symbol: ^Symbol,
 	create: bool,
 }
+
+Ast_Var_Decl :: struct {
+	name:      string, // var name
+	expr:      ^Expr, // nil if default value, whatever that is
+	symbol:    ^Symbol, // symbol to be bound
+	type_expr: string, // Type expression to be resolved
+}
+
 
 Param :: struct {
 	name:      string,
@@ -105,6 +114,8 @@ traverse_ast :: proc(
 	case Ast_Expr:
 		func(ast, userdata)
 	case Ast_Var_Assign:
+		func(ast, userdata)
+	case Ast_Var_Decl:
 		func(ast, userdata)
 	case Ast_Function:
 		func(ast, userdata)
