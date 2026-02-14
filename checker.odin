@@ -8,7 +8,7 @@ check_stmt :: proc(c: ^Checker, s: ^Ast_Node) {
 	#partial switch &node in s.node {
 	case Ast_Expr:
 		check_expr(c, node.expr, s.span, s.scope)
-	case Ast_Assignment:
+	case Ast_Var_Assign:
 		check_assigment(c, &node, s.span, s.scope)
 	case Ast_Function:
 		check_function(c, &node, s.span, s.scope)
@@ -26,7 +26,7 @@ check_stmt :: proc(c: ^Checker, s: ^Ast_Node) {
 }
 
 
-check_assigment :: proc(c: ^Checker, s: ^Ast_Assignment, span: Span, scope: ^Scope) {
+check_assigment :: proc(c: ^Checker, s: ^Ast_Var_Assign, span: Span, scope: ^Scope) {
 	// var, ok := resolve_symbol(scope, s.name)
 	// if ok {
 	// 	expr_type := check_expr(c, s.expr, span, scope)

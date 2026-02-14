@@ -5,7 +5,7 @@ import "core:fmt"
 Ast_Node :: struct {
 	node:  union {
 		Ast_Expr,
-		Ast_Assignment,
+		Ast_Var_Assign,
 		Ast_Function,
 		Ast_Return,
 		Ast_Block,
@@ -23,10 +23,11 @@ Ast_Expr :: struct {
 	expr: ^Expr,
 }
 
-Ast_Assignment :: struct {
+Ast_Var_Assign :: struct {
 	name:   string,
 	expr:   ^Expr,
 	symbol: ^Symbol,
+	create: bool,
 }
 
 Param :: struct {
@@ -103,7 +104,7 @@ traverse_ast :: proc(
 	#partial switch &node in ast.node {
 	case Ast_Expr:
 		func(ast, userdata)
-	case Ast_Assignment:
+	case Ast_Var_Assign:
 		func(ast, userdata)
 	case Ast_Function:
 		func(ast, userdata)

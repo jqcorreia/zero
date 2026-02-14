@@ -16,7 +16,7 @@ emit_stmt :: proc(gen: ^Generator, s: ^Ast_Node) {
 	#partial switch &node in s.node {
 	case Ast_Expr:
 		emit_expr(gen, node.expr, s.scope, s.span)
-	case Ast_Assignment:
+	case Ast_Var_Assign:
 		emit_assigment(gen, &node, s.scope, s.span)
 	case Ast_Function:
 		emit_function_body(gen, &node, s.scope, s.span)
@@ -33,7 +33,7 @@ emit_stmt :: proc(gen: ^Generator, s: ^Ast_Node) {
 	}
 }
 
-emit_assigment :: proc(gen: ^Generator, s: ^Ast_Assignment, scope: ^Scope, span: Span) {
+emit_assigment :: proc(gen: ^Generator, s: ^Ast_Var_Assign, scope: ^Scope, span: Span) {
 	// Build local variables
 	// If the variable exists, just emit a Store, otherwise emit Alloca + Store
 	is_global := scope.kind == .Global

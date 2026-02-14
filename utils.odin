@@ -82,7 +82,7 @@ statement_print :: proc(s: ^Ast_Node, lvl: u32 = 0) {
 		fmt.print(" ")
 	}
 	#partial switch node in s.node {
-	case Ast_Assignment:
+	case Ast_Var_Assign:
 		fmt.println("Assignment ", node.name)
 		fmt.println(scope_string(s.scope))
 		expr_print(node.expr, s.scope, lvl + 1)

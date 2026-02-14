@@ -22,6 +22,7 @@ Token_Kind :: enum {
 	LesserOrEqual,
 	Comma,
 	Colon,
+	ColonEqual,
 	RightArrow,
 	Func_Keyword,
 	Return_Keyword,
@@ -223,8 +224,16 @@ lex :: proc(input: string) -> []Token {
 			append(&tokens, Token{kind = .Comma, lexeme = ",", span = one_char_span(lexer)})
 			lexer.pos += 1
 		case c == ':':
-			append(&tokens, Token{kind = .Colon, lexeme = ":", span = one_char_span(lexer)})
-			lexer.pos += 1
+			if lex_peek(&lexer) == '=' {
+				append(
+					&tokens,
+					Token{kind = .ColonEqual, lexeme = "==", span = two_char_span(lexer)},
+				)
+				lexer.pos += 2
+			} else {
+				append(&tokens, Token{kind = .Colon, lexeme = ":", span = one_char_span(lexer)})
+				lexer.pos += 1
+			}
 		case c == '>':
 			if lex_peek(&lexer) == '=' {
 				append(

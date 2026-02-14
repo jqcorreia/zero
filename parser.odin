@@ -70,9 +70,10 @@ parse_statement :: proc(p: ^Parser) -> ^Ast_Node {
 			advance(p)
 			expect(p, .Equal)
 
-			stmt^ = Ast_Assignment {
-				name = name_tok.lexeme,
-				expr = parse_expression(p, 0),
+			stmt^ = Ast_Var_Assign {
+				name   = name_tok.lexeme,
+				expr   = parse_expression(p, 0),
+				create = false,
 			}
 			expect(p, .NewLine) // This should end with newline
 
@@ -83,8 +84,26 @@ parse_statement :: proc(p: ^Parser) -> ^Ast_Node {
 				expr = expr,
 			}
 			expect(p, .NewLine)
+		case peek(p).kind == .ColonEqual:
+			// --- Assignment and initialization---
+			// Get variable name
+			name_tok := current(p)
+
+			// Advance and expect an '='
+			advance(p)
+			expect(p, .ColonEqual)
+
+			stmt^ = Ast_Var_Assign {
+				name   = name_tok.lexeme,
+				expr   = parse_expression(p, 0),
+				create = true,
+			}
+			expect(p, .NewLine) // This should end with newline
+
+
 		case:
-			unimplemented()
+			next_token := peek(p)
+			fatal_token(next_token, "Unexpected token %s", next_token.kind)
 		}
 	case t.kind == .Func_Keyword:
 		advance(p)
