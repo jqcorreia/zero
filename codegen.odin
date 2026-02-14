@@ -72,15 +72,12 @@ emit_function :: proc(gen: ^Generator, s: ^Ast_Function, scope: ^Scope, span: Sp
 
 	fn_type: TypeRef
 
-	//TODO(quadrado): For now do this until we have proper function return types resolved
-	ret_type_ref :=
-		s.ret_type_expr == "" ? VoidTypeInContext(gen.ctx) : Int32TypeInContext(gen.ctx)
+	ret_type_ref := s.symbol.type == nil ? VoidTypeInContext(gen.ctx) : Int32TypeInContext(gen.ctx)
 
 	if len(s.params) > 0 {
 		for _ in s.params {
 			append(&param_types, int32)
 		}
-
 		fn_type = FunctionType(ret_type_ref, &param_types[0], u32(len(param_types)), false)
 	} else {
 		fn_type = FunctionType(ret_type_ref, nil, 0, false)
@@ -89,8 +86,7 @@ emit_function :: proc(gen: ^Generator, s: ^Ast_Function, scope: ^Scope, span: Sp
 
 	sym := s.symbol
 	fn := AddFunction(gen.module, strings.clone_to_cstring(s.name), fn_type)
-	// By now the function must exist in state
-	// Complete the information with TypeRef and ValueRef
+
 	gen.values[sym] = fn
 	gen.types[sym] = fn_type
 
@@ -98,9 +94,6 @@ emit_function :: proc(gen: ^Generator, s: ^Ast_Function, scope: ^Scope, span: Sp
 	entry := AppendBasicBlockInContext(gen.ctx, fn, "")
 	PositionBuilderAtEnd(gen.builder, entry)
 
-	// Allocate vars
-	scope := Scope{}
-	scope_push(scope)
 	for ast_param, i in s.params {
 		param_sym := ast_param.symbol
 		param := GetParam(fn, u32(i))
@@ -117,8 +110,6 @@ emit_function :: proc(gen: ^Generator, s: ^Ast_Function, scope: ^Scope, span: Sp
 	}
 	PositionBuilderAtEnd(gen.builder, old_pos)
 	// DumpValue(fn)
-
-	scope_pop()
 }
 
 emit_return :: proc(gen: ^Generator, s: ^Ast_Return, scope: ^Scope, span: Span) {
@@ -392,7 +383,6 @@ generate :: proc(stmts: []^Ast_Node) {
 
 	emit_function_decls := proc(node: ^Ast_Node, userdata: rawptr = nil) {
 		if fnode, ok := node.node.(Ast_Function); ok {
-			fmt.println("should generate function")
 			gen := cast(^Generator)userdata
 			emit_function(gen, &fnode, node.scope, node.span)
 		}
