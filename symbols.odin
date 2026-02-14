@@ -56,12 +56,9 @@ create_global_scope :: proc() -> ^Scope {
 	// 	kind = .Type,
 	// }
 
-	// i32_t := new(Type)
-	// i32_t.kind = .Int32
-	// scope.symbols["i32"] = Symbol {
-	// 	type = i32_t,
-	// 	kind = .Type,
-	// }
+	i32_t := new(Type)
+	i32_t.kind = .Uint32
+	scope.symbols["i32"] = make_symbol(.Type, i32_t)
 
 	u32_t := new(Type)
 	u32_t.kind = .Uint32
@@ -76,13 +73,12 @@ create_global_scope :: proc() -> ^Scope {
 	return scope
 }
 
-bind_sAst_Var_Assigns: ^Ast_Node, cur_scope: ^Scope) {
+bind_scopes :: proc(s: ^Ast_Node, cur_scope: ^Scope) {
 	s.scope = cur_scope
 	#partial switch &node in s.node {
-	case Ast_Assignment:
+	case Ast_Var_Assign:
 		sym, ok := resolve_symbol(cur_scope, node.name)
 		if !ok {
-			fmt.println("NEW VAR", node.name)
 			sym = make_symbol(.Variable)
 			cur_scope.symbols[node.name] = sym
 		}
@@ -94,8 +90,8 @@ bind_sAst_Var_Assigns: ^Ast_Node, cur_scope: ^Scope) {
 		symbol := new(Symbol)
 		symbol.name = node.name
 		symbol.kind = .Function
-		symbol.type = ident_to_type(node.ret_type_expr)
-		// symbol.scope = cur_scope
+
+		cur_scope.symbols[node.name] = symbol
 
 		for &param in node.params {
 			sym := make_symbol(.Param)
@@ -105,6 +101,7 @@ bind_sAst_Var_Assigns: ^Ast_Node, cur_scope: ^Scope) {
 			param.symbol = sym
 		}
 
+		node.symbol = symbol
 		get_block_symbols(node.body, new_scope)
 
 	case Ast_If:
@@ -132,9 +129,6 @@ error_type := Type {
 }
 
 resolve_expr_type :: proc(expr: ^Expr, scope: ^Scope, span: Span) -> ^Type {
-	// scope_print(scope)
-	// fmt.println("....")
-	fmt.println(expr)
 	switch e in expr {
 	case Expr_Int_Literal:
 		t := new(Type)
@@ -143,6 +137,9 @@ resolve_expr_type :: proc(expr: ^Expr, scope: ^Scope, span: Span) -> ^Type {
 	case Expr_Variable:
 		sym, ok := resolve_symbol(scope, e.value)
 		if ok {
+			if sym.type == nil {
+				error_span(span, "unresolved type for symbol %v", sym)
+			}
 			return sym.type
 		} else {
 			return &error_type
@@ -171,20 +168,33 @@ resolve_expr_type :: proc(expr: ^Expr, scope: ^Scope, span: Span) -> ^Type {
 	}
 	return nil
 }
-Ast_Var_Assign
+
 resolve_types :: proc(c: ^Checker, s: ^Ast_Node) {
-	fmt.println(s)
 	#partial switch &node in s.node {
-	case Ast_Assignment:
+	case Ast_Var_Assign:
 		t := resolve_expr_type(node.expr, s.scope, s.span)
 		node.symbol.type = t
 	case Ast_Function:
+		// Resolve function param type expressions
 		for &param in node.params {
 			type_sym, ok := resolve_symbol(s.scope, param.type_expr)
 			if ok {
 				param.symbol.type = type_sym.type
+			} else {
+				error_span(s.span, "unresolved type expression '%v'", param.type_expr)
 			}
 		}
+
+		if node.ret_type_expr != "" {
+			// Resolve function return type expression
+			return_type_sym, ok := resolve_symbol(s.scope, node.ret_type_expr)
+			if ok {
+				node.symbol.type = return_type_sym.type
+			} else {
+				error_span(s.span, "unresolved type expression '%v'", node.ret_type_expr)
+			}
+		}
+
 		resolve_block_types(c, node.body)
 
 	case Ast_If:
