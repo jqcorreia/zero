@@ -8,6 +8,7 @@ check_stmt :: proc(c: ^Checker, s: ^Ast_Node) {
 	#partial switch &node in s.node {
 	case Ast_Expr:
 		check_expr(c, node.expr, s.span, s.scope)
+	case Ast_Var_Decl:
 	case Ast_Var_Assign:
 		check_assigment(c, &node, s.span, s.scope)
 	case Ast_Function:

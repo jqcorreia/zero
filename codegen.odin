@@ -18,6 +18,8 @@ emit_stmt :: proc(gen: ^Generator, s: ^Ast_Node) {
 		emit_expr(gen, node.expr, s.scope, s.span)
 	case Ast_Var_Assign:
 		emit_assigment(gen, &node, s.scope, s.span)
+	case Ast_Var_Decl:
+		emit_var_decl(gen, &node, s.scope, s.span)
 	case Ast_Function:
 		emit_function_body(gen, &node, s.scope, s.span)
 	case Ast_Return:
@@ -34,6 +36,16 @@ emit_stmt :: proc(gen: ^Generator, s: ^Ast_Node) {
 }
 
 emit_assigment :: proc(gen: ^Generator, s: ^Ast_Var_Assign, scope: ^Scope, span: Span) {
+	sym, _ := resolve_symbol(scope, s.name)
+	ptr, exists := gen.values[sym]
+	if exists {
+		BuildStore(gen.builder, emit_expr(gen, s.expr, scope, span), ptr)
+	} else {
+		fatal_span(span, "Variable '%s' doesn't exist yet", s.name)
+	}
+}
+
+emit_var_decl :: proc(gen: ^Generator, s: ^Ast_Var_Decl, scope: ^Scope, span: Span) {
 	// Build local variables
 	// If the variable exists, just emit a Store, otherwise emit Alloca + Store
 	is_global := scope.kind == .Global
@@ -43,11 +55,12 @@ emit_assigment :: proc(gen: ^Generator, s: ^Ast_Var_Assign, scope: ^Scope, span:
 	}
 	if !is_global {
 		ptr, exists := gen.values[sym]
-		if exists {
-			BuildStore(gen.builder, emit_expr(gen, s.expr, scope, span), ptr)
-		} else {
-			ptr = BuildAlloca(gen.builder, Int32Type(), "")
-			gen.values[sym] = ptr
+
+		if exists do fatal_span(span, "Variable aliasing detected. Fatal error for now")
+
+		ptr = BuildAlloca(gen.builder, Int32Type(), "")
+		gen.values[sym] = ptr
+		if s.expr != nil {
 			BuildStore(gen.builder, emit_expr(gen, s.expr, scope, span), ptr)
 		}
 	} else {

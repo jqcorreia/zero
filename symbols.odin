@@ -77,12 +77,22 @@ bind_scopes :: proc(s: ^Ast_Node, cur_scope: ^Scope) {
 	s.scope = cur_scope
 	#partial switch &node in s.node {
 	case Ast_Var_Assign:
+	// sym, ok := resolve_symbol(cur_scope, node.name)
+	// if !ok {
+	// 	sym = make_symbol(.Variable)
+	// 	cur_scope.symbols[node.name] = sym
+	// }
+	// node.symbol = sym
+	case Ast_Var_Decl:
+		fmt.println("Var DECL", node)
 		sym, ok := resolve_symbol(cur_scope, node.name)
 		if !ok {
 			sym = make_symbol(.Variable)
 			cur_scope.symbols[node.name] = sym
+			node.symbol = sym
+		} else {
+			error_span(s.span, "Re-declaration of variable '%s'", node.name)
 		}
-		node.symbol = sym
 
 	case Ast_Function:
 		new_scope := make_scope(.Function, parent = cur_scope)
@@ -172,8 +182,18 @@ resolve_expr_type :: proc(expr: ^Expr, scope: ^Scope, span: Span) -> ^Type {
 resolve_types :: proc(c: ^Checker, s: ^Ast_Node) {
 	#partial switch &node in s.node {
 	case Ast_Var_Assign:
-		t := resolve_expr_type(node.expr, s.scope, s.span)
-		node.symbol.type = t
+	// t := resolve_expr_type(node.expr, s.scope, s.span)
+	// node.symbol.type = t
+	case Ast_Var_Decl:
+		fmt.println("Var DECL resolve", node)
+		type_sym, ok := resolve_symbol(s.scope, node.type_expr)
+		if ok {
+			node.symbol.type = type_sym.type
+		} else {
+			error_span(s.span, "unresolved type expression '%v'", node.type_expr)
+		}
+	// t := resolve_expr_type(node.expr, s.scope, s.span)
+	// node.symbol.type = t
 	case Ast_Function:
 		// Resolve function param type expressions
 		for &param in node.params {

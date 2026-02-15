@@ -117,7 +117,8 @@ parse_statement :: proc(p: ^Parser) -> ^Ast_Node {
 
 			fmt.println(type_expr, default_value_expr)
 			stmt^ = Ast_Var_Decl {
-				name = name_tok.lexeme,
+				name      = name_tok.lexeme,
+				type_expr = type_expr,
 			}
 		case:
 			next_token := peek(p)
