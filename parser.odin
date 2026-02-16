@@ -151,7 +151,7 @@ parse_identifier :: proc(p: ^Parser) -> Ast_Data {
 
 		}
 
-		fmt.println(type_expr, default_value_expr)
+		// fmt.println(type_expr, default_value_expr)
 		return Ast_Var_Decl{name = name_tok.lexeme, type_expr = type_expr}
 	case:
 		next_token := peek(p)

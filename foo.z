@@ -1,8 +1,7 @@
-fn qux(a: u32, b: u32) {
-    d: u32
-    e: u8
+fn qux(a: i32, b: i32) {
+    d: i32
+    e := 255
     d = 100
-    e = 255
     print(d + e)
     for {
         break

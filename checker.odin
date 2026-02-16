@@ -14,7 +14,7 @@ check_stmt :: proc(c: ^Checker, node: ^Ast_Node) {
 	case Ast_Function:
 		check_function(c, &data, node.span, node.scope)
 	case Ast_Return:
-		check_return(c, &data, node.span)
+		check_return(c, &data, node.span, node.scope)
 	case Ast_If:
 		check_if(c, &data, node.span)
 	case Ast_For:
@@ -30,9 +30,8 @@ check_stmt :: proc(c: ^Checker, node: ^Ast_Node) {
 check_assigment :: proc(c: ^Checker, s: ^Ast_Var_Assign, span: Span, scope: ^Scope) {
 	var, ok := resolve_symbol(scope, s.name)
 	if ok {
-		expr_type := check_expr(c, s.expr, span, scope)
-		if var.type != expr_type {
-			error_span(span, "Cannot assign %v to %v", expr_type.kind, var.type.kind)
+		if var.type != s.expr.type {
+			error_span(span, "Cannot assign %v to %v", s.expr.type.kind, var.type.kind)
 		}
 	} else {
 		error_span(span, "symbol %s not found", s.name)
@@ -45,10 +44,21 @@ check_function :: proc(c: ^Checker, s: ^Ast_Function, span: Span, scope: ^Scope)
 	check_block(c, s.body, span)
 }
 
-check_return :: proc(c: ^Checker, s: ^Ast_Return, span: Span) {
-	// if queue.len(c.scopes) == 0 {
-	// 	error_span(span, "Calling 'return' outside of function.")
-	// }
+check_return :: proc(c: ^Checker, s: ^Ast_Return, span: Span, scope: ^Scope) {
+	sc := scope
+	inside_function := false
+	for {
+		if sc.kind == .Function {
+			inside_function = true
+			break
+		}
+		if sc.parent == nil do break
+		sc = sc.parent
+	}
+
+	if !inside_function {
+		error_span(span, "Return statement outside of function")
+	}
 }
 
 check_call :: proc(c: ^Checker, e: Expr_Call, span: Span) {
@@ -118,6 +128,7 @@ check_break :: proc(c: ^Checker, s: ^Ast_Break, span: Span, scope: ^Scope) {
 			inside_loop = true
 			break
 		}
+		if sc.parent == nil do break
 		sc = sc.parent
 	}
 
