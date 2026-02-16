@@ -73,59 +73,59 @@ create_global_scope :: proc() -> ^Scope {
 	return scope
 }
 
-bind_scopes :: proc(s: ^Ast_Node, cur_scope: ^Scope) {
-	s.scope = cur_scope
-	#partial switch &node in s.node {
+bind_scopes :: proc(node: ^Ast_Node, cur_scope: ^Scope) {
+	node.scope = cur_scope
+	#partial switch &data in node.data {
 	case Ast_Var_Assign:
-	// sym, ok := resolve_symbol(cur_scope, node.name)
+	// sym, ok := resolve_symbol(cur_scope, data.name)
 	// if !ok {
 	// 	sym = make_symbol(.Variable)
-	// 	cur_scope.symbols[node.name] = sym
+	// 	cur_scope.symbols[data.name] = sym
 	// } else {
-	// 	error_span(s.span, "Variable not declared '%s'", node.name)
+	// 	error_span(s.span, "Variable not declared '%s'", data.name)
 	// }
 	case Ast_Var_Decl:
-		fmt.println("Var DECL", node)
-		sym, ok := resolve_symbol(cur_scope, node.name)
+		fmt.println("Var DECL", data)
+		sym, ok := resolve_symbol(cur_scope, data.name)
 		if !ok {
 			sym = make_symbol(.Variable)
-			cur_scope.symbols[node.name] = sym
-			node.symbol = sym
+			cur_scope.symbols[data.name] = sym
+			data.symbol = sym
 		} else {
-			error_span(s.span, "Re-declaration of variable '%s'", node.name)
+			error_span(node.span, "Re-declaration of variable '%s'", data.name)
 		}
 
 	case Ast_Function:
 		new_scope := make_scope(.Function, parent = cur_scope)
 
 		symbol := new(Symbol)
-		symbol.name = node.name
+		symbol.name = data.name
 		symbol.kind = .Function
 
-		cur_scope.symbols[node.name] = symbol
+		cur_scope.symbols[data.name] = symbol
 
-		for &param in node.params {
+		for &param in data.params {
 			sym := make_symbol(.Param)
-			sym.decl = s
+			sym.decl = node
 			sym.name = param.name
 			new_scope.symbols[param.name] = sym
 			param.symbol = sym
 		}
 
-		node.symbol = symbol
-		get_block_symbols(node.body, new_scope)
+		data.symbol = symbol
+		get_block_symbols(data.body, new_scope)
 
 	case Ast_If:
 		new_scope_then := make_scope(.Block, parent = cur_scope)
-		get_block_symbols(node.then_block, new_scope_then)
-		if node.else_block != nil {
+		get_block_symbols(data.then_block, new_scope_then)
+		if data.else_block != nil {
 			new_scope_else := make_scope(.Block, parent = cur_scope)
-			get_block_symbols(node.else_block, new_scope_else)
+			get_block_symbols(data.else_block, new_scope_else)
 		}
 
 	case Ast_For:
 		new_scope := make_scope(.Loop, parent = cur_scope)
-		get_block_symbols(node.body, new_scope)
+		get_block_symbols(data.body, new_scope)
 	}
 }
 
@@ -181,61 +181,61 @@ resolve_expr_type :: proc(expr: ^Expr, scope: ^Scope, span: Span) -> ^Type {
 	return nil
 }
 
-resolve_types :: proc(c: ^Checker, s: ^Ast_Node) {
-	#partial switch &node in s.node {
+resolve_types :: proc(c: ^Checker, node: ^Ast_Node) {
+	#partial switch &data in node.data {
 	case Ast_Var_Assign:
-	// t := resolve_expr_type(node.expr, s.scope, s.span)
-	// sym, ok := resolve_symbol(s.scope, node.name)
+		t := resolve_expr_type(data.expr, node.scope, node.span)
+	// sym, ok := resolve_symbol(node.scope, data.name)
 	// if ok {
 
 	// }
-	// node.symbol.type = t
+	// data.symbol.type = t
 	case Ast_Var_Decl:
-		fmt.println("Var DECL resolve", node)
-		type_sym, ok := resolve_symbol(s.scope, node.type_expr)
+		fmt.println("Var DECL resolve", data)
+		type_sym, ok := resolve_symbol(node.scope, data.type_expr)
 		if ok {
-			node.symbol.type = type_sym.type
+			data.symbol.type = type_sym.type
 		} else {
-			error_span(s.span, "unresolved type expression '%v'", node.type_expr)
+			error_span(node.span, "unresolved type expression '%v'", data.type_expr)
 		}
-	// t := resolve_expr_type(node.expr, s.scope, s.span)
-	// node.symbol.type = t
+	// t := resolve_expr_type(data.expr, node.scope, node.span)
+	// data.symbol.type = t
 	case Ast_Function:
 		// Resolve function param type expressions
-		for &param in node.params {
-			type_sym, ok := resolve_symbol(s.scope, param.type_expr)
+		for &param in data.params {
+			type_sym, ok := resolve_symbol(node.scope, param.type_expr)
 			if ok {
 				param.symbol.type = type_sym.type
 			} else {
-				error_span(s.span, "unresolved type expression '%v'", param.type_expr)
+				error_span(node.span, "unresolved type expression '%v'", param.type_expr)
 			}
 		}
 
-		if node.ret_type_expr != "" {
+		if data.ret_type_expr != "" {
 			// Resolve function return type expression
-			return_type_sym, ok := resolve_symbol(s.scope, node.ret_type_expr)
+			return_type_sym, ok := resolve_symbol(node.scope, data.ret_type_expr)
 			if ok {
-				node.symbol.type = return_type_sym.type
+				data.symbol.type = return_type_sym.type
 			} else {
-				error_span(s.span, "unresolved type expression '%v'", node.ret_type_expr)
+				error_span(node.span, "unresolved type expression '%v'", data.ret_type_expr)
 			}
 		}
 
-		resolve_block_types(c, node.body)
+		resolve_block_types(c, data.body)
 
 	case Ast_If:
-		resolve_block_types(c, node.then_block)
-		if node.else_block != nil {
-			resolve_block_types(c, node.else_block)
+		resolve_block_types(c, data.then_block)
+		if data.else_block != nil {
+			resolve_block_types(c, data.else_block)
 		}
 
 	case Ast_For:
-		resolve_block_types(c, node.body)
+		resolve_block_types(c, data.body)
 	}
 }
 
-resolve_block_types :: proc(c: ^Checker, s: ^Ast_Block) {
-	for node in s.statements {
+resolve_block_types :: proc(c: ^Checker, node: ^Ast_Block) {
+	for node in node.statements {
 		resolve_types(c, node)
 	}
 }

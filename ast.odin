@@ -3,22 +3,23 @@ package main
 import "core:fmt"
 
 Ast_Node :: struct {
-	node:  union {
-		Ast_Expr,
-		Ast_Var_Assign,
-		Ast_Function,
-		Ast_Return,
-		Ast_Block,
-		Ast_If,
-		Ast_For,
-		Ast_Break,
-		Ast_Continue,
-		Ast_Var_Decl,
-	},
+	data:  Ast_Data,
 	span:  Span,
 	scope: ^Scope,
 }
 
+Ast_Data :: union {
+	Ast_Expr,
+	Ast_Var_Assign,
+	Ast_Function,
+	Ast_Return,
+	Ast_Block,
+	Ast_If,
+	Ast_For,
+	Ast_Break,
+	Ast_Continue,
+	Ast_Var_Decl,
+}
 
 Ast_Expr :: struct {
 	expr: ^Expr,
@@ -110,7 +111,7 @@ traverse_ast :: proc(
 	func: proc(node: ^Ast_Node, userdata: rawptr = nil),
 	userdata: rawptr = nil,
 ) {
-	#partial switch &node in ast.node {
+	#partial switch &node in ast.data {
 	case Ast_Expr:
 		func(ast, userdata)
 	case Ast_Var_Assign:

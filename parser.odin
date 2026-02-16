@@ -56,7 +56,7 @@ parse_statement :: proc(p: ^Parser) -> ^Ast_Node {
 		start = t.span.start,
 	}
 	ast_node := new(Ast_Node)
-	stmt := &ast_node.node
+	data := &ast_node.data
 
 	switch {
 	case t.kind == .Identifier:
@@ -70,7 +70,7 @@ parse_statement :: proc(p: ^Parser) -> ^Ast_Node {
 			advance(p)
 			expect(p, .Equal)
 
-			stmt^ = Ast_Var_Assign {
+			data^ = Ast_Var_Assign {
 				name   = name_tok.lexeme,
 				expr   = parse_expression(p, 0),
 				create = false,
@@ -80,7 +80,7 @@ parse_statement :: proc(p: ^Parser) -> ^Ast_Node {
 		case peek(p).kind == .LParen:
 			// --- Function Call ---
 			expr := parse_expression(p)
-			stmt^ = Ast_Expr {
+			data^ = Ast_Expr {
 				expr = expr,
 			}
 			expect(p, .NewLine)
@@ -93,7 +93,7 @@ parse_statement :: proc(p: ^Parser) -> ^Ast_Node {
 			advance(p)
 			expect(p, .ColonEqual)
 
-			stmt^ = Ast_Var_Assign {
+			data^ = Ast_Var_Assign {
 				name   = name_tok.lexeme,
 				expr   = parse_expression(p, 0),
 				create = true,
@@ -116,7 +116,7 @@ parse_statement :: proc(p: ^Parser) -> ^Ast_Node {
 			}
 
 			fmt.println(type_expr, default_value_expr)
-			stmt^ = Ast_Var_Decl {
+			data^ = Ast_Var_Decl {
 				name      = name_tok.lexeme,
 				type_expr = type_expr,
 			}
@@ -126,28 +126,28 @@ parse_statement :: proc(p: ^Parser) -> ^Ast_Node {
 		}
 	case t.kind == .Func_Keyword:
 		advance(p)
-		stmt^ = parse_function_decl(p)^
+		data^ = parse_function_decl(p)^
 	case t.kind == .For_Keyword:
 		advance(p)
-		stmt^ = parse_for_loop(p)^
+		data^ = parse_for_loop(p)^
 	case t.kind == .Break_Keyword:
 		advance(p)
-		stmt^ = parse_break(p)^
+		data^ = parse_break(p)^
 	case t.kind == .Continue_Keyword:
 		advance(p)
-		stmt^ = parse_continue(p)^
+		data^ = parse_continue(p)^
 	case t.kind == .Return_Keyword:
 		// --- Return statment ---
 		advance(p)
 		expr := parse_expression(p, 0)
 		expect(p, .NewLine)
 
-		stmt^ = Ast_Return {
+		data^ = Ast_Return {
 			expr = expr,
 		}
 	case t.kind == .If_Keyword:
 		advance(p)
-		stmt^ = parse_if(p)^
+		data^ = parse_if(p)^
 	case:
 		unimplemented(fmt.tprintf("Unexpected token: %s", token_serialize(t)))
 	}

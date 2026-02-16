@@ -12,26 +12,26 @@ Generator :: struct {
 	module:  ModuleRef,
 }
 
-emit_stmt :: proc(gen: ^Generator, s: ^Ast_Node) {
-	#partial switch &node in s.node {
+emit_stmt :: proc(gen: ^Generator, node: ^Ast_Node) {
+	#partial switch &data in node.data {
 	case Ast_Expr:
-		emit_expr(gen, node.expr, s.scope, s.span)
+		emit_expr(gen, data.expr, node.scope, node.span)
 	case Ast_Var_Assign:
-		emit_assigment(gen, &node, s.scope, s.span)
+		emit_assigment(gen, &data, node.scope, node.span)
 	case Ast_Var_Decl:
-		emit_var_decl(gen, &node, s.scope, s.span)
+		emit_var_decl(gen, &data, node.scope, node.span)
 	case Ast_Function:
-		emit_function_body(gen, &node, s.scope, s.span)
+		emit_function_body(gen, &data, node.scope, node.span)
 	case Ast_Return:
-		emit_return(gen, &node, s.scope, s.span)
+		emit_return(gen, &data, node.scope, node.span)
 	case Ast_If:
-		emit_if(gen, &node, s.scope, s.span)
+		emit_if(gen, &data, node.scope, node.span)
 	case Ast_For:
-		emit_for_loop(gen, &node, s.scope, s.span)
+		emit_for_loop(gen, &data, node.scope, node.span)
 	case Ast_Break:
-		emit_break(gen, &node, s.scope, s.span)
+		emit_break(gen, &data, node.scope, node.span)
 	case:
-		unimplemented(fmt.tprint("Unimplement emit statement", s))
+		unimplemented(fmt.tprint("Unimplement emit statement", node))
 	}
 }
 
@@ -270,7 +270,7 @@ emit_expr :: proc(gen: ^Generator, expr: ^Expr, scope: ^Scope, span: Span) -> Va
 emit_block :: proc(gen: ^Generator, block: ^Ast_Block) {
 	for bst in block.statements {
 		emit_stmt(gen, bst)
-		if _, ok := bst.node.(Ast_Return); ok {
+		if _, ok := bst.data.(Ast_Return); ok {
 			block.terminated = true
 		}
 	}
@@ -400,7 +400,7 @@ generate :: proc(stmts: []^Ast_Node) {
 	setup_codegen(&generator)
 
 	emit_function_decls := proc(node: ^Ast_Node, userdata: rawptr = nil) {
-		if fnode, ok := node.node.(Ast_Function); ok {
+		if fnode, ok := node.data.(Ast_Function); ok {
 			gen := cast(^Generator)userdata
 			emit_function_decl(gen, &fnode, node.scope, node.span)
 		}

@@ -4,25 +4,25 @@ import "core:fmt"
 
 Checker :: struct {}
 
-check_stmt :: proc(c: ^Checker, s: ^Ast_Node) {
-	#partial switch &node in s.node {
+check_stmt :: proc(c: ^Checker, node: ^Ast_Node) {
+	#partial switch &data in node.data {
 	case Ast_Expr:
-		check_expr(c, node.expr, s.span, s.scope)
+		check_expr(c, data.expr, node.span, node.scope)
 	case Ast_Var_Decl:
 	case Ast_Var_Assign:
-		check_assigment(c, &node, s.span, s.scope)
+		check_assigment(c, &data, node.span, node.scope)
 	case Ast_Function:
-		check_function(c, &node, s.span, s.scope)
+		check_function(c, &data, node.span, node.scope)
 	case Ast_Return:
-		check_return(c, &node, s.span)
+		check_return(c, &data, node.span)
 	case Ast_If:
-		check_if(c, &node, s.span)
+		check_if(c, &data, node.span)
 	case Ast_For:
-		check_for_loop(c, &node, s.span)
+		check_for_loop(c, &data, node.span)
 	case Ast_Break:
-		check_break(c, &node, s.span, s.scope)
+		check_break(c, &data, node.span, node.scope)
 	case:
-		unimplemented(fmt.tprint("Unimplement check", s))
+		unimplemented(fmt.tprint("Unimplement check", node))
 	}
 }
 
@@ -74,8 +74,8 @@ check_expr :: proc(c: ^Checker, expr: ^Expr, span: Span, scope: ^Scope) -> ^Type
 		} else {
 			return left
 		}
-	case Expr_Int_Literal:
-		return e.type
+	// case Expr_Int_Literal:
+	// 	return e.type
 	}
 
 	// case Expr_Variable:
@@ -139,6 +139,7 @@ check :: proc(c: ^Checker, nodes: []^Ast_Node) {
 		resolve_types(c, node)
 	}
 
+	// Debug traverse to make sure that no symbol in untyped
 	check_resolved_symbols := proc(node: ^Ast_Node, userdata: rawptr) {
 		for _, symbol in node.scope.symbols {
 			if symbol.type == nil && symbol.kind != .Function {

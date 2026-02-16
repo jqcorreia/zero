@@ -74,32 +74,32 @@ expr_print_sb :: proc(expr: ^Expr, lvl: u32 = 0) -> string {
 	return strings.to_string(sb)
 }
 
-statement_print :: proc(s: ^Ast_Node, lvl: u32 = 0) {
-	if s == nil {
+statement_print :: proc(node: ^Ast_Node, lvl: u32 = 0) {
+	if node == nil {
 		return
 	}
 	for _ in 0 ..< lvl {
 		fmt.print(" ")
 	}
-	#partial switch node in s.node {
+	#partial switch data in node.data {
 	case Ast_Var_Assign:
-		fmt.println("Assignment ", node.name)
-		fmt.println(scope_string(s.scope))
-		expr_print(node.expr, s.scope, lvl + 1)
+		fmt.println("Assignment ", data.name)
+		fmt.println(scope_string(node.scope))
+		expr_print(data.expr, node.scope, lvl + 1)
 	case Ast_Return:
 		fmt.println("Return ")
-		expr_print(node.expr, s.scope, lvl + 1)
+		expr_print(data.expr, node.scope, lvl + 1)
 	case Ast_Break:
 		fmt.println("Break")
 	case Ast_Expr:
-		expr_print(node.expr, s.scope, lvl + 1)
+		expr_print(data.expr, node.scope, lvl + 1)
 	case Ast_Function:
-		fmt.print("Function", node.name, " ")
-		for p in node.params {
+		fmt.print("Function", data.name, " ")
+		for p in data.params {
 			fmt.printf("%s: %s ", p.name, p.type_expr)
 		}
 		fmt.println()
-		for st in node.body.statements {
+		for st in data.body.statements {
 			statement_print(st, lvl + 1)
 		}
 	case:
