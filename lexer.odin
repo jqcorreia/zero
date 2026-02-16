@@ -9,6 +9,7 @@ Token_Kind :: enum {
 	LBrace,
 	RBrace,
 	Identifier,
+	QuotedString,
 	Equal,
 	DoubleEqual,
 	Number,
@@ -168,6 +169,22 @@ lex :: proc(input: string) -> []Token {
 					},
 				)
 			}
+		case c == '"':
+			start := lexer.pos
+			for lexer.pos < len(lexer.input) && lexer.input[lexer.pos] != '"' {
+				lexer.pos += 1
+			}
+			end := lexer.pos
+			lexeme := lexer.input[start:end]
+			append(
+				&tokens,
+				Token {
+					kind = .QuotedString,
+					lexeme = lexeme,
+					span = Span{start = start, end = end},
+				},
+			)
+
 		case c == '/':
 			if lexer.input[lexer.pos + 1] == '/' {
 				// This will keep NOT consume the final newline as it needs to be emitted

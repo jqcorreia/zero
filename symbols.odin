@@ -38,41 +38,7 @@ create_global_scope :: proc() -> ^Scope {
 	scope := new(Scope)
 	scope.kind = .Global
 
-	void := new(Type)
-	void.kind = .Void
-	scope.symbols[""] = make_symbol(.Type, void)
-
-	u8_t := new(Type)
-	u8_t.kind = .Uint8
-	scope.symbols["u8"] = make_symbol(.Type, u8_t)
-
-	// i8_t := new(Type)
-	// i8_t.kind = .Int8
-	// scope.symbols["i8"] = Symbol {
-	// 	type = i8_t,
-	// 	kind = .Type,
-	// }
-
-	// i16_t := new(Type)
-	// i16_t.kind = .Int16
-	// scope.symbols["i16"] = Symbol {
-	// 	type = i16_t,
-	// 	kind = .Type,
-	// }
-
-	i32_t := new(Type)
-	i32_t.kind = .Int32
-	scope.symbols["i32"] = make_symbol(.Type, i32_t)
-
-	u32_t := new(Type)
-	u32_t.kind = .Uint32
-	scope.symbols["u32"] = make_symbol(.Type, u32_t)
-	// bool_t := new(Type)
-	// bool_t.kind = .Bool
-	// scope.symbols["bool"] = Symbol {
-	// 	type = bool_t,
-	// 	kind = .Type,
-	// }
+	create_primitive_types(scope)
 
 	return scope
 }
