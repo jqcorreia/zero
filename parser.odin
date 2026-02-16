@@ -105,9 +105,8 @@ parse_identifier :: proc(p: ^Parser) -> Ast_Data {
 		expect(p, .Equal)
 
 		data := Ast_Var_Assign {
-			name   = name_tok.lexeme,
-			expr   = parse_expression(p, 0),
-			create = false,
+			name = name_tok.lexeme,
+			expr = parse_expression(p, 0),
 		}
 
 		expect(p, .NewLine) // This should end with newline
@@ -129,11 +128,11 @@ parse_identifier :: proc(p: ^Parser) -> Ast_Data {
 		advance(p)
 		expect(p, .ColonEqual)
 
-		data := Ast_Var_Assign {
-			name   = name_tok.lexeme,
-			expr   = parse_expression(p, 0),
-			create = true,
+		data := Ast_Var_Decl {
+			name = name_tok.lexeme,
+			expr = parse_expression(p, 0),
 		}
+
 		expect(p, .NewLine) // This should end with newline
 		return data
 
