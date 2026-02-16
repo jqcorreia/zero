@@ -38,6 +38,10 @@ create_global_scope :: proc() -> ^Scope {
 	scope := new(Scope)
 	scope.kind = .Global
 
+	void := new(Type)
+	void.kind = .Void
+	scope.symbols[""] = make_symbol(.Type, void)
+
 	u8_t := new(Type)
 	u8_t.kind = .Uint8
 	scope.symbols["u8"] = make_symbol(.Type, u8_t)
@@ -85,7 +89,6 @@ bind_scopes :: proc(node: ^Ast_Node, cur_scope: ^Scope) {
 	// 	error_span(s.span, "Variable not declared '%s'", data.name)
 	// }
 	case Ast_Var_Decl:
-		fmt.println("Var DECL", data)
 		sym, ok := resolve_symbol(cur_scope, data.name)
 		if !ok {
 			sym = make_symbol(.Variable)
@@ -140,10 +143,13 @@ error_type := Type {
 }
 
 resolve_expr_type :: proc(expr: ^Expr, scope: ^Scope, span: Span) -> ^Type {
+	fmt.println(expr)
 	switch e in expr.data {
 	case Expr_Int_Literal:
 		t := new(Type)
 		t.kind = .Int32
+		expr.type = t
+
 		return t
 	case Expr_Variable:
 		sym, ok := resolve_symbol(scope, e.value)
@@ -151,23 +157,29 @@ resolve_expr_type :: proc(expr: ^Expr, scope: ^Scope, span: Span) -> ^Type {
 			if sym.type == nil {
 				error_span(span, "unresolved type for symbol %v", sym)
 			}
+			expr.type = sym.type
 			return sym.type
 		} else {
+			expr.type = &error_type
 			return &error_type
 		}
 	case Expr_Binary:
 		left := resolve_expr_type(e.left, scope, span)
 		right := resolve_expr_type(e.right, scope, span)
 
+		fmt.println("left", left, "right", right)
 		if left == nil || right == nil {
 			scope_print(scope)
 			fatal_span(span, "left or right are nil. L = %v, R = %v", left, right)
 		}
 		if left.kind == .Error || right.kind == .Error {
+			expr.type = &error_type
 			return &error_type
 		}
 		if left.kind != right.kind {
+			expr.type = &error_type
 			error_span(span, "Type mismatch %s %s %s", left.kind, e.op, right.kind)
+			return &error_type
 		}
 		return left
 
@@ -184,14 +196,14 @@ resolve_expr_type :: proc(expr: ^Expr, scope: ^Scope, span: Span) -> ^Type {
 resolve_types :: proc(c: ^Checker, node: ^Ast_Node) {
 	#partial switch &data in node.data {
 	case Ast_Var_Assign:
-		t := resolve_expr_type(data.expr, node.scope, node.span)
+		resolve_expr_type(data.expr, node.scope, node.span)
+	// t := resolve_expr_type(data.expr, node.scope, node.span)
 	// sym, ok := resolve_symbol(node.scope, data.name)
 	// if ok {
 
 	// }
 	// data.symbol.type = t
 	case Ast_Var_Decl:
-		fmt.println("Var DECL resolve", data)
 		type_sym, ok := resolve_symbol(node.scope, data.type_expr)
 		if ok {
 			data.symbol.type = type_sym.type
@@ -220,7 +232,6 @@ resolve_types :: proc(c: ^Checker, node: ^Ast_Node) {
 				error_span(node.span, "unresolved type expression '%v'", data.ret_type_expr)
 			}
 		}
-
 		resolve_block_types(c, data.body)
 
 	case Ast_If:
