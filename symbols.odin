@@ -157,6 +157,7 @@ resolve_expr_type :: proc(expr: ^Expr, scope: ^Scope, span: Span) -> ^Type {
 	case Expr_Binary:
 		left := resolve_expr_type(e.left, scope, span)
 		right := resolve_expr_type(e.right, scope, span)
+
 		if left == nil || right == nil {
 			scope_print(scope)
 			fatal_span(span, "left or right are nil. L = %v, R = %v", left, right)

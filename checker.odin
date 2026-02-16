@@ -28,18 +28,18 @@ check_stmt :: proc(c: ^Checker, s: ^Ast_Node) {
 
 
 check_assigment :: proc(c: ^Checker, s: ^Ast_Var_Assign, span: Span, scope: ^Scope) {
-	// var, ok := resolve_symbol(scope, s.name)
-	// if ok {
-	// 	expr_type := check_expr(c, s.expr, span, scope)
-	// 	if var.type != expr_type {
-	// 		error_span(span, "Cannot assign %v to %v", expr_type.kind, var.type.kind)
-	// 	}
-	// } else {
-	// 	new_var := Symbol {
-	// 		type = check_expr(c, s.expr, span, scope),
-	// 	}
-	// 	_ = new_var
-	// }
+	var, ok := resolve_symbol(scope, s.name)
+	if ok {
+		expr_type := check_expr(c, s.expr, span, scope)
+		if var.type != expr_type {
+			error_span(span, "Cannot assign %v to %v", expr_type.kind, var.type.kind)
+		}
+	} else {
+		new_var := Symbol {
+			type = check_expr(c, s.expr, span, scope),
+		}
+		_ = new_var
+	}
 }
 
 check_function :: proc(c: ^Checker, s: ^Ast_Function, span: Span, scope: ^Scope) {
@@ -59,23 +59,24 @@ check_call :: proc(c: ^Checker, e: Expr_Call, span: Span) {
 }
 
 check_expr :: proc(c: ^Checker, expr: ^Expr, span: Span, scope: ^Scope) -> ^Type {
-	// #partial switch e in expr {
-	// case Expr_Binary:
-	// 	left := check_expr(c, e.left, span, scope)
-	// 	right := check_expr(c, e.right, span, scope)
+	#partial switch e in expr {
+	case Expr_Binary:
+		left := check_expr(c, e.left, span, scope)
+		right := check_expr(c, e.right, span, scope)
 
-	// 	if left != right {
-	// 		error_span(
-	// 			span,
-	// 			"Operation '%s' cannot be done on different types: %s vs %s",
-	// 			e.op,
-	// 			left.kind,
-	// 			right.kind,
-	// 		)
-	// 		return nil
-	// 	} else {
-	// 		return left
-	// 	}
+		if left != right {
+			error_span(
+				span,
+				"Operation '%s' cannot be done on different types: %s vs %s",
+				e.op,
+				left.kind,
+				right.kind,
+			)
+			return nil
+		} else {
+			return left
+		}
+	}
 	// // case Expr_Int_Literal:
 	// // 	return e.type
 
