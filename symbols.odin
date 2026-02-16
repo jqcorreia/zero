@@ -80,14 +80,6 @@ create_global_scope :: proc() -> ^Scope {
 bind_scopes :: proc(node: ^Ast_Node, cur_scope: ^Scope) {
 	node.scope = cur_scope
 	#partial switch &data in node.data {
-	case Ast_Var_Assign:
-	// sym, ok := resolve_symbol(cur_scope, data.name)
-	// if !ok {
-	// 	sym = make_symbol(.Variable)
-	// 	cur_scope.symbols[data.name] = sym
-	// } else {
-	// 	error_span(s.span, "Variable not declared '%s'", data.name)
-	// }
 	case Ast_Var_Decl:
 		sym, ok := resolve_symbol(cur_scope, data.name)
 		if !ok {

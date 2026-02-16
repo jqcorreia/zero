@@ -64,6 +64,9 @@ parse_statement :: proc(p: ^Parser) -> ^Ast_Node {
 	case t.kind == .Func_Keyword:
 		advance(p)
 		data^ = parse_function_decl(p)^
+	case t.kind == .Struct_Keyword:
+		advance(p)
+		data^ = parse_struct_decl(p)^
 	case t.kind == .For_Keyword:
 		advance(p)
 		data^ = parse_for_loop(p)^
@@ -162,6 +165,12 @@ parse_identifier :: proc(p: ^Parser) -> Ast_Data {
 		fatal_token(next_token, "Unexpected token %s", next_token.kind)
 	}
 	panic("Should be unreachable")
+}
+
+parse_struct_decl :: proc(p: ^Parser) -> ^Ast_Struct_Decl {
+	decl := new(Ast_Struct_Decl)
+
+	return decl
 }
 
 expr_int_literal :: proc(value: i64) -> ^Expr {

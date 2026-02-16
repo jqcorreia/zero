@@ -19,6 +19,7 @@ Ast_Data :: union {
 	Ast_Break,
 	Ast_Continue,
 	Ast_Var_Decl,
+	Ast_Struct_Decl,
 }
 
 Ast_Expr :: struct {
@@ -53,6 +54,13 @@ Ast_Function :: struct {
 	ret_type_expr: string,
 	symbol:        ^Symbol,
 }
+
+Ast_Struct_Decl :: struct {
+	name:   string,
+	fields: []Struct_Field,
+}
+
+Struct_Field :: struct {}
 
 Ast_Block :: struct {
 	statements: []^Ast_Node,
