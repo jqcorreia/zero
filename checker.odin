@@ -31,14 +31,12 @@ check_assigment :: proc(c: ^Checker, s: ^Ast_Var_Assign, span: Span, scope: ^Sco
 	var, ok := resolve_symbol(scope, s.name)
 	if ok {
 		expr_type := check_expr(c, s.expr, span, scope)
+		fmt.println("sdhfshdfshdf", expr_type)
 		if var.type != expr_type {
 			error_span(span, "Cannot assign %v to %v", expr_type.kind, var.type.kind)
 		}
 	} else {
-		new_var := Symbol {
-			type = check_expr(c, s.expr, span, scope),
-		}
-		_ = new_var
+		error_span(span, "symbol %s not found", s.name)
 	}
 }
 
@@ -76,9 +74,9 @@ check_expr :: proc(c: ^Checker, expr: ^Expr, span: Span, scope: ^Scope) -> ^Type
 		} else {
 			return left
 		}
+	case Expr_Int_Literal:
+		return e.type
 	}
-	// // case Expr_Int_Literal:
-	// // 	return e.type
 
 	// case Expr_Variable:
 	// 	sym, _ := resolve_symbol(scope, e.value)

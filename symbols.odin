@@ -81,8 +81,9 @@ bind_scopes :: proc(s: ^Ast_Node, cur_scope: ^Scope) {
 	// if !ok {
 	// 	sym = make_symbol(.Variable)
 	// 	cur_scope.symbols[node.name] = sym
+	// } else {
+	// 	error_span(s.span, "Variable not declared '%s'", node.name)
 	// }
-	// node.symbol = sym
 	case Ast_Var_Decl:
 		fmt.println("Var DECL", node)
 		sym, ok := resolve_symbol(cur_scope, node.name)
@@ -184,6 +185,10 @@ resolve_types :: proc(c: ^Checker, s: ^Ast_Node) {
 	#partial switch &node in s.node {
 	case Ast_Var_Assign:
 	// t := resolve_expr_type(node.expr, s.scope, s.span)
+	// sym, ok := resolve_symbol(s.scope, node.name)
+	// if ok {
+
+	// }
 	// node.symbol.type = t
 	case Ast_Var_Decl:
 		fmt.println("Var DECL resolve", node)
