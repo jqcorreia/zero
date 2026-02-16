@@ -152,7 +152,11 @@ parse_identifier :: proc(p: ^Parser) -> Ast_Data {
 		}
 
 		// fmt.println(type_expr, default_value_expr)
-		return Ast_Var_Decl{name = name_tok.lexeme, type_expr = type_expr}
+		return Ast_Var_Decl {
+			name = name_tok.lexeme,
+			type_expr = type_expr,
+			expr = default_value_expr,
+		}
 	case:
 		next_token := peek(p)
 		fatal_token(next_token, "Unexpected token %s", next_token.kind)

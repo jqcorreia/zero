@@ -60,6 +60,7 @@ emit_var_decl :: proc(gen: ^Generator, s: ^Ast_Var_Decl, scope: ^Scope, span: Sp
 
 		ptr = BuildAlloca(gen.builder, Int32Type(), "")
 		gen.values[sym] = ptr
+		fmt.println(s, s.expr)
 		if s.expr != nil {
 			BuildStore(gen.builder, emit_expr(gen, s.expr, scope, span), ptr)
 		}
