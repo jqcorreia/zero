@@ -60,70 +60,7 @@ parse_statement :: proc(p: ^Parser) -> ^Ast_Node {
 
 	switch {
 	case t.kind == .Identifier:
-		switch {
-		case peek(p).kind == .Equal:
-			// --- Assignment ---
-			// Get variable name
-			name_tok := current(p)
-
-			// Advance and expect an '='
-			advance(p)
-			expect(p, .Equal)
-
-			data^ = Ast_Var_Assign {
-				name   = name_tok.lexeme,
-				expr   = parse_expression(p, 0),
-				create = false,
-			}
-			expect(p, .NewLine) // This should end with newline
-
-		case peek(p).kind == .LParen:
-			// --- Function Call ---
-			expr := parse_expression(p)
-			data^ = Ast_Expr {
-				expr = expr,
-			}
-			expect(p, .NewLine)
-		case peek(p).kind == .ColonEqual:
-			// --- Assignment and initialization---
-			// Get variable name
-			name_tok := current(p)
-
-			// Advance and expect an '='
-			advance(p)
-			expect(p, .ColonEqual)
-
-			data^ = Ast_Var_Assign {
-				name   = name_tok.lexeme,
-				expr   = parse_expression(p, 0),
-				create = true,
-			}
-			expect(p, .NewLine) // This should end with newline
-
-		case peek(p).kind == .Colon:
-			// Get variable name
-			name_tok := current(p)
-
-			advance(p)
-			expect(p, .Colon)
-
-			type_expr := expect(p, .Identifier).lexeme
-			default_value_expr: ^Expr
-			if current(p).kind == .Equal {
-				advance(p)
-				default_value_expr = parse_expression(p, 0)
-
-			}
-
-			fmt.println(type_expr, default_value_expr)
-			data^ = Ast_Var_Decl {
-				name      = name_tok.lexeme,
-				type_expr = type_expr,
-			}
-		case:
-			next_token := peek(p)
-			fatal_token(next_token, "Unexpected token %s", next_token.kind)
-		}
+		data^ = parse_identifier(p)
 	case t.kind == .Func_Keyword:
 		advance(p)
 		data^ = parse_function_decl(p)^
@@ -154,6 +91,74 @@ parse_statement :: proc(p: ^Parser) -> ^Ast_Node {
 	span.end = current(p).span.end
 	ast_node.span = span
 	return ast_node
+}
+
+parse_identifier :: proc(p: ^Parser) -> Ast_Data {
+	switch {
+	case peek(p).kind == .Equal:
+		// --- Assignment ---
+		// Get variable name
+		name_tok := current(p)
+
+		// Advance and expect an '='
+		advance(p)
+		expect(p, .Equal)
+
+		data := Ast_Var_Assign {
+			name   = name_tok.lexeme,
+			expr   = parse_expression(p, 0),
+			create = false,
+		}
+
+		expect(p, .NewLine) // This should end with newline
+
+		return data
+
+	case peek(p).kind == .LParen:
+		// --- Function Call ---
+		expr := parse_expression(p)
+		expect(p, .NewLine)
+		return Ast_Expr{expr = expr}
+
+	case peek(p).kind == .ColonEqual:
+		// --- Assignment and initialization---
+		// Get variable name
+		name_tok := current(p)
+
+		// Advance and expect an '='
+		advance(p)
+		expect(p, .ColonEqual)
+
+		data := Ast_Var_Assign {
+			name   = name_tok.lexeme,
+			expr   = parse_expression(p, 0),
+			create = true,
+		}
+		expect(p, .NewLine) // This should end with newline
+		return data
+
+	case peek(p).kind == .Colon:
+		// Get variable name
+		name_tok := current(p)
+
+		advance(p)
+		expect(p, .Colon)
+
+		type_expr := expect(p, .Identifier).lexeme
+		default_value_expr: ^Expr
+		if current(p).kind == .Equal {
+			advance(p)
+			default_value_expr = parse_expression(p, 0)
+
+		}
+
+		fmt.println(type_expr, default_value_expr)
+		return Ast_Var_Decl{name = name_tok.lexeme, type_expr = type_expr}
+	case:
+		next_token := peek(p)
+		fatal_token(next_token, "Unexpected token %s", next_token.kind)
+	}
+	panic("Should be unreachable")
 }
 
 expr_int_literal :: proc(value: i64) -> ^Expr {
