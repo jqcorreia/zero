@@ -171,9 +171,11 @@ lex :: proc(input: string) -> []Token {
 			}
 		case c == '"':
 			start := lexer.pos
+			lexer.pos += 1 // Skip first quote
 			for lexer.pos < len(lexer.input) && lexer.input[lexer.pos] != '"' {
 				lexer.pos += 1
 			}
+			lexer.pos += 1 // Skip last quote
 			end := lexer.pos
 			lexeme := lexer.input[start:end]
 			append(
