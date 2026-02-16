@@ -57,7 +57,7 @@ check_call :: proc(c: ^Checker, e: Expr_Call, span: Span) {
 }
 
 check_expr :: proc(c: ^Checker, expr: ^Expr, span: Span, scope: ^Scope) -> ^Type {
-	#partial switch e in expr {
+	#partial switch e in expr.data {
 	case Expr_Binary:
 		left := check_expr(c, e.left, span, scope)
 		right := check_expr(c, e.right, span, scope)

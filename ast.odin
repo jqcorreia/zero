@@ -77,7 +77,12 @@ Ast_Break :: struct {}
 Ast_Continue :: struct {}
 
 
-Expr :: union {
+Expr :: struct {
+	data: Expr_Data,
+	type: ^Type,
+}
+
+Expr_Data :: union {
 	Expr_Int_Literal,
 	Expr_Binary,
 	Expr_Variable,

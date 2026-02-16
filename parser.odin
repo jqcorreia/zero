@@ -162,7 +162,7 @@ parse_identifier :: proc(p: ^Parser) -> Ast_Data {
 
 expr_int_literal :: proc(value: i64) -> ^Expr {
 	ret := new(Expr)
-	ret^ = Expr_Int_Literal {
+	ret.data = Expr_Int_Literal {
 		value = value,
 	}
 	return ret
@@ -170,7 +170,7 @@ expr_int_literal :: proc(value: i64) -> ^Expr {
 
 expr_binary :: proc(op: Token_Kind, left: ^Expr, right: ^Expr) -> ^Expr {
 	expr := new(Expr)
-	expr^ = Expr_Binary {
+	expr.data = Expr_Binary {
 		op    = op,
 		left  = left,
 		right = right,
@@ -180,7 +180,7 @@ expr_binary :: proc(op: Token_Kind, left: ^Expr, right: ^Expr) -> ^Expr {
 
 expr_ident :: proc(value: string) -> ^Expr {
 	ret := new(Expr)
-	ret^ = Expr_Variable {
+	ret.data = Expr_Variable {
 		value = value,
 	}
 
@@ -189,7 +189,7 @@ expr_ident :: proc(value: string) -> ^Expr {
 
 expr_call :: proc(callee: ^Expr, args: []^Expr) -> ^Expr {
 	ret := new(Expr)
-	ret^ = Expr_Call {
+	ret.data = Expr_Call {
 		callee = callee,
 		args   = args,
 	}

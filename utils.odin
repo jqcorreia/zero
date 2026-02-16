@@ -60,11 +60,11 @@ expr_print_sb :: proc(expr: ^Expr, lvl: u32 = 0) -> string {
 	for _ in 0 ..< lvl {
 		fmt.sbprint(&sb, " ")
 	}
-	#partial switch e in expr {
+	#partial switch e in expr.data {
 	case Expr_Int_Literal:
-		fmt.sbprint(&sb, "Int ", expr.(Expr_Int_Literal).value)
+		fmt.sbprint(&sb, "Int ", e.value)
 	case Expr_Variable:
-		fmt.sbprint(&sb, "Identifier ", expr.(Expr_Variable).value)
+		fmt.sbprint(&sb, "Identifier ", expr.data.(Expr_Variable).value)
 	case Expr_Binary:
 		fmt.sbprintln(&sb, "Binary ", e.op)
 		fmt.sbprintln(&sb, expr_print_sb(e.left, lvl + 1))
@@ -114,7 +114,7 @@ expr_print :: proc(expr: ^Expr, scope: ^Scope, lvl: u32 = 0) {
 	for _ in 0 ..< lvl {
 		fmt.print(" ")
 	}
-	#partial switch e in expr {
+	#partial switch e in expr.data {
 	case Expr_Int_Literal:
 		fmt.println("Int ", e.value)
 	case Expr_Variable:
@@ -124,7 +124,7 @@ expr_print :: proc(expr: ^Expr, scope: ^Scope, lvl: u32 = 0) {
 		expr_print(e.left, scope, lvl + 1)
 		expr_print(e.right, scope, lvl + 1)
 	case Expr_Call:
-		fmt.println("Call ", e.callee.(Expr_Variable).value)
+		fmt.println("Call ", e.callee.data.(Expr_Variable).value)
 		for arg in e.args {
 			expr_print(arg, scope, lvl + 1)
 		}

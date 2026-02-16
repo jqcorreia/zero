@@ -140,7 +140,7 @@ error_type := Type {
 }
 
 resolve_expr_type :: proc(expr: ^Expr, scope: ^Scope, span: Span) -> ^Type {
-	switch e in expr {
+	switch e in expr.data {
 	case Expr_Int_Literal:
 		t := new(Type)
 		t.kind = .Int32
@@ -172,7 +172,7 @@ resolve_expr_type :: proc(expr: ^Expr, scope: ^Scope, span: Span) -> ^Type {
 		return left
 
 	case Expr_Call:
-		func_name := e.callee.(Expr_Variable).value
+		func_name := e.callee.data.(Expr_Variable).value
 		sym, ok := resolve_symbol(scope, func_name)
 		if ok {
 			return sym.type

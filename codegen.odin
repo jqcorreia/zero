@@ -65,9 +65,12 @@ emit_var_decl :: proc(gen: ^Generator, s: ^Ast_Var_Decl, scope: ^Scope, span: Sp
 		}
 	} else {
 		// Create global variables, only constant for now
-		if _, ok := s.expr.(Expr_Int_Literal); ok {
+		if _, ok := s.expr.data.(Expr_Int_Literal); ok {
 			ptr := AddGlobal(gen.module, Int32Type(), strings.clone_to_cstring(s.name))
-			SetInitializer(ptr, ConstInt(Int32Type(), u64(s.expr.(Expr_Int_Literal).value), false))
+			SetInitializer(
+				ptr,
+				ConstInt(Int32Type(), u64(s.expr.data.(Expr_Int_Literal).value), false),
+			)
 		} else {
 			panic("Global variables need to be constants")
 		}
@@ -149,7 +152,7 @@ emit_print_call :: proc(gen: ^Generator, e: Expr_Call, scope: ^Scope, span: Span
 }
 
 emit_call :: proc(gen: ^Generator, e: Expr_Call, scope: ^Scope, span: Span) -> ValueRef {
-	fn_name := e.callee.(Expr_Variable).value
+	fn_name := e.callee.data.(Expr_Variable).value
 
 	args: [dynamic]ValueRef
 	for a in e.args {
@@ -174,12 +177,12 @@ emit_call :: proc(gen: ^Generator, e: Expr_Call, scope: ^Scope, span: Span) -> V
 
 emit_expr :: proc(gen: ^Generator, expr: ^Expr, scope: ^Scope, span: Span) -> ValueRef {
 	int32 := Int32TypeInContext(gen.ctx)
-	#partial switch e in expr {
+	#partial switch e in expr.data {
 	case Expr_Int_Literal:
 		return ConstInt(int32, u64(e.value), false)
 	case Expr_Call:
 		data := e
-		if data.callee.(Expr_Variable).value == "print" {
+		if data.callee.data.(Expr_Variable).value == "print" {
 			return emit_print_call(gen, e, scope, span)
 		} else {
 			return emit_call(gen, e, scope, span)
