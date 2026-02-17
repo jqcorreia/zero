@@ -1,6 +1,5 @@
 fn string_test() {
-    s: str
-    s = "Hello, World\n"
+    s: str = "Hello, World\n"
     print(s)
     print("Goodbye!\n")
 }

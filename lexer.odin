@@ -177,6 +177,7 @@ lex :: proc(input: string) -> []Token {
 			lexer.pos += 1 // Skip first quote
 			sb := strings.builder_make()
 			for lexer.pos < len(lexer.input) && lexer.input[lexer.pos] != '"' {
+				// Really simple escape code parsing, right now just deal with \n
 				cur_c := lexer.input[lexer.pos]
 				if cur_c == '\\' {
 					switch lex_peek(&lexer) {
