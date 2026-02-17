@@ -5,11 +5,12 @@ import "core:fmt"
 import "core:strings"
 
 Generator :: struct {
-	values:  map[^Symbol]ValueRef,
-	types:   map[^Symbol]TypeRef,
-	ctx:     ContextRef,
-	builder: BuilderRef,
-	module:  ModuleRef,
+	values:          map[^Symbol]ValueRef,
+	types:           map[^Symbol]TypeRef,
+	ctx:             ContextRef,
+	builder:         BuilderRef,
+	module:          ModuleRef,
+	primitive_types: map[^Type]TypeRef,
 }
 
 emit_stmt :: proc(gen: ^Generator, node: ^Ast_Node) {
@@ -58,7 +59,7 @@ emit_var_decl :: proc(gen: ^Generator, s: ^Ast_Var_Decl, scope: ^Scope, span: Sp
 
 		if exists do fatal_span(span, "Variable aliasing detected. Fatal error for now")
 
-		ptr = BuildAlloca(gen.builder, Int32Type(), "")
+		ptr = BuildAlloca(gen.builder, gen.primitive_types[sym.type], "")
 		gen.values[sym] = ptr
 		fmt.println(s, s.expr)
 		if s.expr != nil {
@@ -141,15 +142,27 @@ emit_return :: proc(gen: ^Generator, s: ^Ast_Return, scope: ^Scope, span: Span) 
 
 // This a hacked printf-type emission until we have proper external functions and string support
 emit_print_call :: proc(gen: ^Generator, e: Expr_Call, scope: ^Scope, span: Span) -> ValueRef {
-	fmt_ptr := BuildGlobalStringPtr(gen.builder, "%d\n", "")
-	args := []ValueRef{fmt_ptr, emit_expr(gen, e.args[0], scope, span)}
+	fmt.println(e.args[0].type)
+	if e.args[0].type.kind == .String {
+		args := []ValueRef{emit_expr(gen, e.args[0], scope, span)}
 
-	ty := gen.types[printf_sym]
-	fn := gen.values[printf_sym]
+		ty := gen.types[printf_sym]
+		fn := gen.values[printf_sym]
 
-	call := BuildCall2(gen.builder, ty, fn, &args[0], u32(len(args)), "")
+		call := BuildCall2(gen.builder, ty, fn, &args[0], u32(len(args)), "")
 
-	return call
+		return call
+	} else {
+		fmt_ptr := BuildGlobalStringPtr(gen.builder, "%d\n", "")
+		args := []ValueRef{fmt_ptr, emit_expr(gen, e.args[0], scope, span)}
+
+		ty := gen.types[printf_sym]
+		fn := gen.values[printf_sym]
+
+		call := BuildCall2(gen.builder, ty, fn, &args[0], u32(len(args)), "")
+
+		return call
+	}
 }
 
 emit_call :: proc(gen: ^Generator, e: Expr_Call, scope: ^Scope, span: Span) -> ValueRef {
@@ -181,6 +194,9 @@ emit_expr :: proc(gen: ^Generator, expr: ^Expr, scope: ^Scope, span: Span) -> Va
 	#partial switch e in expr.data {
 	case Expr_Int_Literal:
 		return ConstInt(int32, u64(e.value), false)
+	case Expr_String_Literal:
+		fmt.println("jasdasd", e.value)
+		return BuildGlobalStringPtr(gen.builder, strings.clone_to_cstring(e.value), "")
 	case Expr_Call:
 		data := e
 		if data.callee.data.(Expr_Variable).value == "print" {
@@ -195,7 +211,7 @@ emit_expr :: proc(gen: ^Generator, expr: ^Expr, scope: ^Scope, span: Span) -> Va
 		}
 		var := gen.values[sym]
 
-		return BuildLoad2(gen.builder, int32, var, "")
+		return BuildLoad2(gen.builder, gen.primitive_types[sym.type], var, "")
 	case Expr_Binary:
 		#partial switch e.op {
 		case .Plus:
@@ -268,7 +284,7 @@ emit_expr :: proc(gen: ^Generator, expr: ^Expr, scope: ^Scope, span: Span) -> Va
 			)
 		}
 	}
-	unreachable()
+	unimplemented(fmt.tprintf("Expression %v emit not implemented", expr))
 }
 
 emit_block :: proc(gen: ^Generator, block: ^Ast_Block) {
@@ -366,6 +382,19 @@ printf_sym: ^Symbol
 // Calls to this will be exceptionally emited in emit_print_call() for now
 // Also do some house keeping before running codegen
 setup_codegen :: proc(gen: ^Generator) {
+	// Primitive types
+	for _, sym in global_scope.symbols {
+		if sym.kind == .Type {
+			#partial switch sym.type.kind {
+			case .Int32:
+				gen.primitive_types[sym.type] = Int32TypeInContext(gen.ctx)
+			case .String:
+				gen.primitive_types[sym.type] = PointerTypeInContext(gen.ctx, 0)
+			}
+		}
+	}
+
+
 	// Printf
 	i32 := Int32TypeInContext(gen.ctx)
 	i8 := Int8TypeInContext(gen.ctx)

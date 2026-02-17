@@ -184,6 +184,7 @@ lex :: proc(input: string) -> []Token {
 					kind = .QuotedString,
 					lexeme = lexeme,
 					span = Span{start = start, end = end},
+					value = lexeme[1:len(lexeme) - 1],
 				},
 			)
 

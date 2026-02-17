@@ -143,7 +143,8 @@ resolve_types :: proc(c: ^Checker, node: ^Ast_Node) {
 			}
 		}
 		resolve_block_types(c, data.body)
-
+	case Ast_Expr:
+		resolve_expr_type(data.expr, node.scope, node.span)
 	case Ast_If:
 		resolve_block_types(c, data.then_block)
 		if data.else_block != nil {
@@ -159,6 +160,11 @@ resolve_expr_type :: proc(expr: ^Expr, scope: ^Scope, span: Span) -> ^Type {
 	switch e in expr.data {
 	case Expr_Int_Literal:
 		sym, _ := resolve_symbol(scope, "i32")
+		expr.type = sym.type
+		return sym.type
+
+	case Expr_String_Literal:
+		sym, _ := resolve_symbol(scope, "str")
 		expr.type = sym.type
 		return sym.type
 
@@ -200,11 +206,16 @@ resolve_expr_type :: proc(expr: ^Expr, scope: ^Scope, span: Span) -> ^Type {
 		return left
 
 	case Expr_Call:
+		fmt.println("----------")
 		func_name := e.callee.data.(Expr_Variable).value
 		sym, ok := resolve_symbol(scope, func_name)
 		if ok {
 			return sym.type
 		}
+		for arg in e.args {
+			arg.type = resolve_expr_type(arg, scope, span)
+		}
+
 	}
 	return nil
 }

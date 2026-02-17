@@ -92,11 +92,15 @@ Expr :: struct {
 
 Expr_Data :: union {
 	Expr_Int_Literal,
+	Expr_String_Literal,
 	Expr_Binary,
 	Expr_Variable,
 	Expr_Call,
 }
 
+Expr_String_Literal :: struct {
+	value: string,
+}
 
 Expr_Int_Literal :: struct {
 	value: i64,

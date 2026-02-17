@@ -3,7 +3,13 @@
 package main
 
 Type :: struct {
-	kind: Type_Kind,
+	kind:     Type_Kind,
+	compiled: Compiled_Type,
+}
+
+
+Compiled_Type :: union {
+	TypeRef,
 }
 
 Type_Kind :: enum {

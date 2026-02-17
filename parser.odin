@@ -181,6 +181,14 @@ expr_int_literal :: proc(value: i64) -> ^Expr {
 	return ret
 }
 
+expr_string_literal :: proc(value: string) -> ^Expr {
+	ret := new(Expr)
+	ret.data = Expr_String_Literal {
+		value = value,
+	}
+	return ret
+}
+
 expr_binary :: proc(op: Token_Kind, left: ^Expr, right: ^Expr) -> ^Expr {
 	expr := new(Expr)
 	expr.data = Expr_Binary {
@@ -231,6 +239,8 @@ parse_expression :: proc(p: ^Parser, min_lbp: int = 0) -> ^Expr {
 	#partial switch t.kind {
 	case .Number:
 		left = expr_int_literal(i64(t.value.(int)))
+	case .QuotedString:
+		left = expr_string_literal(t.value.(string))
 	case .Identifier:
 		left = expr_ident(t.value.(string))
 	case .LParen:

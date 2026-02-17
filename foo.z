@@ -1,7 +1,7 @@
 fn string_test() {
     s: str
-    s = "Hello, World!"
-    puts(s)
+    s = "Hello, World"
+    print(s)
 }
 
 fn qux(a: i32, b: i32) {
