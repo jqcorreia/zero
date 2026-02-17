@@ -2,6 +2,9 @@
 
 package main
 
+import "core:fmt"
+import "core:strings"
+
 Token_Kind :: enum {
 	NewLine,
 	LParen,
@@ -172,19 +175,33 @@ lex :: proc(input: string) -> []Token {
 		case c == '"':
 			start := lexer.pos
 			lexer.pos += 1 // Skip first quote
+			sb := strings.builder_make()
 			for lexer.pos < len(lexer.input) && lexer.input[lexer.pos] != '"' {
+				cur_c := lexer.input[lexer.pos]
+				if cur_c == '\\' {
+					switch lex_peek(&lexer) {
+					case 'n':
+						strings.write_rune(&sb, '\n')
+						lexer.pos += 1
+					case:
+						strings.write_byte(&sb, cur_c)
+					}
+				} else {
+					strings.write_byte(&sb, cur_c)
+				}
 				lexer.pos += 1
 			}
 			lexer.pos += 1 // Skip last quote
 			end := lexer.pos
 			lexeme := lexer.input[start:end]
+			value := strings.to_string(sb)
 			append(
 				&tokens,
 				Token {
 					kind = .QuotedString,
 					lexeme = lexeme,
 					span = Span{start = start, end = end},
-					value = lexeme[1:len(lexeme) - 1],
+					value = value,
 				},
 			)
 
