@@ -2,6 +2,8 @@ external fn printf(format: str, ...) -> i32
 
 // Main function must be defined, otherwise it errs
 fn main() -> i32 {
+    s := "This is a basic testing program\n"
+    printf(s)
     printf("%d\n", func()) // Should print "1 3 5" and "6"
     printf("%d\n", fib(10)) // Should print "55"
 
