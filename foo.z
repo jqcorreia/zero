@@ -10,13 +10,14 @@ fn qux(a: i32, b: i32) {
     d: i32
     e := 255
     d = 100
+    printf("%d\n", a + b)
     for {
         break
     }
 }
 
 fn main() {
-    qux(1, 2)
+    qux(31, 11)
     string_test()
 }
 

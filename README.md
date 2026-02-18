@@ -21,7 +21,10 @@ Potentially this README can look a lot different in a couple of months if this b
 # TODO
 - [x] Do not need forward declaration with symbol table pass and LLVM function declaration  
 - [x] Basic type system
-- [ ] External functions system and cleanup the printf mess
+- [x] Basic External functions system and cleanup the printf mess
+- [x] Implement a really dumb variadic marker
+- [ ] Check types for function calls. right now is a mess.
+- [ ] Make sure that the available types are synched with the primtive types in codegen 
 - [ ] User defined types (i.e structs)  
 - [ ] Bound checked arrays  
 - [ ] Bound checked strings  

@@ -86,7 +86,8 @@ emit_function_decl :: proc(gen: ^Generator, s: ^Ast_Function, scope: ^Scope, spa
 
 	fn_type: TypeRef
 
-	ret_type_ref := s.symbol.type == nil ? VoidTypeInContext(gen.ctx) : Int32TypeInContext(gen.ctx)
+	ret_type_ref :=
+		s.symbol.type == nil ? VoidTypeInContext(gen.ctx) : gen.primitive_types[s.symbol.type]
 
 	if len(s.params) > 0 {
 		variadic := false
@@ -124,6 +125,7 @@ emit_function_body :: proc(gen: ^Generator, s: ^Ast_Function, scope: ^Scope, spa
 
 	for ast_param, i in s.params {
 		param_sym := ast_param.symbol
+		fmt.println(ast_param, param_sym, fn)
 		param := GetParam(fn, u32(i))
 
 		alloca := BuildAlloca(gen.builder, int32, strings.clone_to_cstring(ast_param.name))
@@ -391,6 +393,14 @@ setup_codegen :: proc(gen: ^Generator) {
 	for _, sym in global_scope.symbols {
 		if sym.kind == .Type {
 			#partial switch sym.type.kind {
+			case .Bool:
+				gen.primitive_types[sym.type] = Int1TypeInContext(gen.ctx)
+			case .Uint8:
+				gen.primitive_types[sym.type] = Int8TypeInContext(gen.ctx)
+			case .Int8:
+				gen.primitive_types[sym.type] = Int8TypeInContext(gen.ctx)
+			case .Uint32:
+				gen.primitive_types[sym.type] = Int32TypeInContext(gen.ctx)
 			case .Int32:
 				gen.primitive_types[sym.type] = Int32TypeInContext(gen.ctx)
 			case .String:
