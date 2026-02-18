@@ -63,7 +63,6 @@ emit_var_decl :: proc(gen: ^Generator, s: ^Ast_Var_Decl, scope: ^Scope, span: Sp
 
 		ptr = BuildAlloca(gen.builder, gen.primitive_types[sym.type], "")
 		gen.values[sym] = ptr
-		fmt.println(s, s.expr)
 		if s.expr != nil {
 			BuildStore(gen.builder, emit_expr(gen, s.expr, scope, span), ptr)
 		}
@@ -125,7 +124,6 @@ emit_function_body :: proc(gen: ^Generator, s: ^Ast_Function, scope: ^Scope, spa
 
 	for ast_param, i in s.params {
 		param_sym := ast_param.symbol
-		fmt.println(ast_param, param_sym, fn)
 		param := GetParam(fn, u32(i))
 
 		alloca := BuildAlloca(gen.builder, int32, strings.clone_to_cstring(ast_param.name))
@@ -149,7 +147,6 @@ emit_return :: proc(gen: ^Generator, s: ^Ast_Return, scope: ^Scope, span: Span) 
 
 // This a hacked printf-type emission until we have proper external functions and string support
 emit_print_call :: proc(gen: ^Generator, e: Expr_Call, scope: ^Scope, span: Span) -> ValueRef {
-	// fmt.println(e.args[0].type, span_to_location(span))
 	if e.args[0].type.kind == .String {
 		args := []ValueRef{emit_expr(gen, e.args[0], scope, span)}
 
@@ -202,7 +199,6 @@ emit_expr :: proc(gen: ^Generator, expr: ^Expr, scope: ^Scope, span: Span) -> Va
 	case Expr_Int_Literal:
 		return ConstInt(int32, u64(e.value), false)
 	case Expr_String_Literal:
-		fmt.println("jasdasd", e.value)
 		return BuildGlobalStringPtr(gen.builder, strings.clone_to_cstring(e.value), "")
 	case Expr_Call:
 		data := e

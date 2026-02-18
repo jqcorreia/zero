@@ -208,7 +208,6 @@ resolve_expr_type :: proc(expr: ^Expr, scope: ^Scope, span: Span) -> ^Type {
 		return left
 
 	case Expr_Call:
-		fmt.println(span_to_location(span), e)
 		func_name := e.callee.data.(Expr_Variable).value
 		sym, ok := resolve_symbol(scope, func_name)
 		if ok {
@@ -220,7 +219,6 @@ resolve_expr_type :: proc(expr: ^Expr, scope: ^Scope, span: Span) -> ^Type {
 				e.callee.type = sym.type
 			}
 			for arg in e.args {
-				fmt.println("arg", arg)
 				arg.type = resolve_expr_type(arg, scope, span)
 			}
 			return sym.type

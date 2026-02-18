@@ -19,11 +19,6 @@ main :: proc() {
 	compiler_init()
 
 	start_time := time.now()
-	// filename := "tests/basic.z"
-
-	// if len(os.args) > 1 {
-	// 	filename = os.args[1]
-	// }
 
 	// Read file
 	expr := os.read_entire_file(opt.file) or_else panic("No file found")
@@ -75,7 +70,7 @@ main :: proc() {
 			os.exit(0)
 		}
 		if opt.command == "run" {
-			posix.system("cc -o calc calc.o")
+			posix.system("cc -o calc calc.o -lraylib")
 			posix.system("./calc")
 			os.exit(0)
 		}
