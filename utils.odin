@@ -175,6 +175,10 @@ two_char_span :: proc(lexer: Lexer) -> Span {
 
 }
 
+n_char_span :: proc(lexer: Lexer, n: int) -> Span {
+	return Span{start = lexer.pos, end = lexer.pos + n - 1}
+}
+
 span_to_location :: proc(span: Span) -> (line: int, col: int) {
 	if len(compiler.line_starts) == 1 {
 		return 1, span.start

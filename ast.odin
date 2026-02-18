@@ -42,9 +42,10 @@ Ast_Var_Decl :: struct {
 
 
 Param :: struct {
-	name:      string,
-	type_expr: string,
-	symbol:    ^Symbol,
+	name:            string,
+	type_expr:       string,
+	symbol:          ^Symbol,
+	variadic_marker: bool,
 }
 
 Ast_Function :: struct {

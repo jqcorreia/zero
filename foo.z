@@ -1,4 +1,4 @@
-external fn printf(format: str) -> i32
+external fn printf(format: str, ...) -> i32
 
 fn string_test() {
     s: str = "Hello, World\n"

@@ -327,13 +327,6 @@ parse_function_decl_params :: proc(p: ^Parser) -> []Param {
 	done := false
 	expect(p, .LParen)
 	for !done {
-		// if current(p).kind == .RParen {
-		// 	advance(p)
-		// 	return params[:]
-		// }
-		// arg_name := expect(p, .Identifier).lexeme
-		// append(&params, arg_name)
-
 		#partial switch current(p).kind {
 		case .Identifier:
 			param_name := current(p).lexeme
@@ -342,6 +335,9 @@ parse_function_decl_params :: proc(p: ^Parser) -> []Param {
 			type_ident := expect(p, .Identifier)
 			append(&params, Param{name = param_name, type_expr = type_ident.lexeme})
 
+		case .Ellipsis:
+			append(&params, Param{variadic_marker = true})
+			advance(p)
 		case .Comma:
 			if peek(p).kind == .RParen {
 				unexpected_token(peek(p))

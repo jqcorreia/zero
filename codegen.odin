@@ -82,7 +82,6 @@ emit_var_decl :: proc(gen: ^Generator, s: ^Ast_Var_Decl, scope: ^Scope, span: Sp
 }
 
 emit_function_decl :: proc(gen: ^Generator, s: ^Ast_Function, scope: ^Scope, span: Span) {
-	int32 := Int32TypeInContext(gen.ctx)
 	param_types: [dynamic]TypeRef
 
 	fn_type: TypeRef
@@ -90,11 +89,15 @@ emit_function_decl :: proc(gen: ^Generator, s: ^Ast_Function, scope: ^Scope, spa
 	ret_type_ref := s.symbol.type == nil ? VoidTypeInContext(gen.ctx) : Int32TypeInContext(gen.ctx)
 
 	if len(s.params) > 0 {
+		variadic := false
 		for param in s.params {
-			fmt.println(param)
-			append(&param_types, gen.primitive_types[param.symbol.type])
+			if param.variadic_marker {
+				variadic = true
+			} else {
+				append(&param_types, gen.primitive_types[param.symbol.type])
+			}
 		}
-		fn_type = FunctionType(ret_type_ref, &param_types[0], u32(len(param_types)), false)
+		fn_type = FunctionType(ret_type_ref, &param_types[0], u32(len(param_types)), i32(variadic))
 	} else {
 		fn_type = FunctionType(ret_type_ref, nil, 0, false)
 
