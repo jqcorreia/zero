@@ -1,14 +1,15 @@
+external fn printf(format: str) -> i32
+
 fn string_test() {
     s: str = "Hello, World\n"
-    print(s)
-    print("Goodbye!\n")
+    printf(s)
+    printf("Goodbye!\n")
 }
 
 fn qux(a: i32, b: i32) {
     d: i32
     e := 255
     d = 100
-    print(d + e)
     for {
         break
     }

@@ -22,7 +22,9 @@ emit_stmt :: proc(gen: ^Generator, node: ^Ast_Node) {
 	case Ast_Var_Decl:
 		emit_var_decl(gen, &data, node.scope, node.span)
 	case Ast_Function:
-		emit_function_body(gen, &data, node.scope, node.span)
+		if !data.external {
+			emit_function_body(gen, &data, node.scope, node.span)
+		}
 	case Ast_Return:
 		emit_return(gen, &data, node.scope, node.span)
 	case Ast_If:
@@ -88,8 +90,9 @@ emit_function_decl :: proc(gen: ^Generator, s: ^Ast_Function, scope: ^Scope, spa
 	ret_type_ref := s.symbol.type == nil ? VoidTypeInContext(gen.ctx) : Int32TypeInContext(gen.ctx)
 
 	if len(s.params) > 0 {
-		for _ in s.params {
-			append(&param_types, int32)
+		for param in s.params {
+			fmt.println(param)
+			append(&param_types, gen.primitive_types[param.symbol.type])
 		}
 		fn_type = FunctionType(ret_type_ref, &param_types[0], u32(len(param_types)), false)
 	} else {
@@ -102,7 +105,6 @@ emit_function_decl :: proc(gen: ^Generator, s: ^Ast_Function, scope: ^Scope, spa
 
 	gen.values[sym] = fn
 	gen.types[sym] = fn_type
-
 }
 
 emit_function_body :: proc(gen: ^Generator, s: ^Ast_Function, scope: ^Scope, span: Span) {
@@ -142,7 +144,7 @@ emit_return :: proc(gen: ^Generator, s: ^Ast_Return, scope: ^Scope, span: Span) 
 
 // This a hacked printf-type emission until we have proper external functions and string support
 emit_print_call :: proc(gen: ^Generator, e: Expr_Call, scope: ^Scope, span: Span) -> ValueRef {
-	fmt.println(e.args[0].type)
+	// fmt.println(e.args[0].type, span_to_location(span))
 	if e.args[0].type.kind == .String {
 		args := []ValueRef{emit_expr(gen, e.args[0], scope, span)}
 
@@ -395,29 +397,29 @@ setup_codegen :: proc(gen: ^Generator) {
 	}
 
 
-	// Printf
-	i32 := Int32TypeInContext(gen.ctx)
-	i8 := Int8TypeInContext(gen.ctx)
-	i8p := PointerType(i8, 0)
+	// // Printf
+	// i32 := Int32TypeInContext(gen.ctx)
+	// i8 := Int8TypeInContext(gen.ctx)
+	// i8p := PointerType(i8, 0)
 
-	printf_ty := FunctionType(
-		i32, // return type
-		&i8p, // first arg: char *
-		1,
-		true, // variadic
-	)
+	// printf_ty := FunctionType(
+	// 	i32, // return type
+	// 	&i8p, // first arg: char *
+	// 	1,
+	// 	true, // variadic
+	// )
 
-	printf_fn := AddFunction(gen.module, "printf", printf_ty)
+	// printf_fn := AddFunction(gen.module, "printf", printf_ty)
 
-	sym := make_symbol(.Function)
-	sym.scope = global_scope
-	sym.type = global_scope.symbols["i32"].type
-	sym.name = "print"
+	// sym := make_symbol(.Function)
+	// sym.scope = global_scope
+	// sym.type = global_scope.symbols["i32"].type
+	// sym.name = "print"
 
-	printf_sym = sym
+	// printf_sym = sym
 
-	gen.values[sym] = printf_fn
-	gen.types[sym] = printf_ty
+	// gen.values[sym] = printf_fn
+	// gen.types[sym] = printf_ty
 }
 
 generate :: proc(stmts: []^Ast_Node) {

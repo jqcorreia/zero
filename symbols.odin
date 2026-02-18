@@ -62,6 +62,7 @@ bind_scopes :: proc(node: ^Ast_Node, cur_scope: ^Scope) {
 		symbol := new(Symbol)
 		symbol.name = data.name
 		symbol.kind = .Function
+		symbol.decl = node
 
 		cur_scope.symbols[data.name] = symbol
 
@@ -74,8 +75,9 @@ bind_scopes :: proc(node: ^Ast_Node, cur_scope: ^Scope) {
 		}
 
 		data.symbol = symbol
-		get_block_symbols(data.body, new_scope)
-
+		if !data.external {
+			get_block_symbols(data.body, new_scope)
+		}
 	case Ast_If:
 		new_scope_then := make_scope(.Block, parent = cur_scope)
 		get_block_symbols(data.then_block, new_scope_then)
@@ -142,7 +144,9 @@ resolve_types :: proc(c: ^Checker, node: ^Ast_Node) {
 				error_span(node.span, "unresolved type expression '%v'", data.ret_type_expr)
 			}
 		}
-		resolve_block_types(c, data.body)
+		if !data.external {
+			resolve_block_types(c, data.body)
+		}
 	case Ast_Expr:
 		resolve_expr_type(data.expr, node.scope, node.span)
 	case Ast_If:
@@ -180,7 +184,6 @@ resolve_expr_type :: proc(expr: ^Expr, scope: ^Scope, span: Span) -> ^Type {
 			type = &error_type
 		}
 
-		fmt.println("Resolved variable type", type, e.value, span_to_location(span))
 		expr.type = sym.type
 		return type
 
@@ -188,7 +191,6 @@ resolve_expr_type :: proc(expr: ^Expr, scope: ^Scope, span: Span) -> ^Type {
 		left := resolve_expr_type(e.left, scope, span)
 		right := resolve_expr_type(e.right, scope, span)
 
-		fmt.println("left", left, "right", right)
 		if left == nil || right == nil {
 			scope_print(scope)
 			fatal_span(span, "left or right are nil. L = %v, R = %v", left, right)
@@ -206,16 +208,26 @@ resolve_expr_type :: proc(expr: ^Expr, scope: ^Scope, span: Span) -> ^Type {
 		return left
 
 	case Expr_Call:
-		fmt.println("----------")
+		fmt.println(span_to_location(span), e)
 		func_name := e.callee.data.(Expr_Variable).value
 		sym, ok := resolve_symbol(scope, func_name)
 		if ok {
-			return sym.type
-		}
-		for arg in e.args {
-			arg.type = resolve_expr_type(arg, scope, span)
-		}
+			if sym.type == nil {
+				// type_sym, _ := resolve_symbol(scope, sym.decl.data.(Ast_Function).ret_type_expr)
+				// e.callee.type = type_sym.type
 
+			} else {
+				e.callee.type = sym.type
+			}
+			for arg in e.args {
+				fmt.println("arg", arg)
+				arg.type = resolve_expr_type(arg, scope, span)
+			}
+			return sym.type
+		} else {
+			fmt.println("Not found")
+			e.callee.type = &error_type
+		}
 	}
 	return nil
 }

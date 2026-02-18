@@ -41,7 +41,9 @@ check_assigment :: proc(c: ^Checker, s: ^Ast_Var_Assign, span: Span, scope: ^Sco
 check_function :: proc(c: ^Checker, s: ^Ast_Function, span: Span, scope: ^Scope) {
 	// for p in s.params {
 	// }
-	check_block(c, s.body, span)
+	if !s.external {
+		check_block(c, s.body, span)
+	}
 }
 
 check_return :: proc(c: ^Checker, s: ^Ast_Return, span: Span, scope: ^Scope) {

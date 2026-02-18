@@ -99,8 +99,10 @@ statement_print :: proc(node: ^Ast_Node, lvl: u32 = 0) {
 			fmt.printf("%s: %s ", p.name, p.type_expr)
 		}
 		fmt.println()
-		for st in data.body.statements {
-			statement_print(st, lvl + 1)
+		if !data.external {
+			for st in data.body.statements {
+				statement_print(st, lvl + 1)
+			}
 		}
 	case:
 		fmt.println(node)

@@ -53,7 +53,9 @@ Ast_Function :: struct {
 	body:          ^Ast_Block,
 	ret_type_expr: string,
 	symbol:        ^Symbol,
+	external:      bool,
 }
+
 
 Ast_Struct_Decl :: struct {
 	name:   string,
@@ -137,8 +139,10 @@ traverse_ast :: proc(
 		func(ast, userdata)
 	case Ast_Function:
 		func(ast, userdata)
-		for child in node.body.statements {
-			traverse_ast(child, func, userdata)
+		if !node.external {
+			for child in node.body.statements {
+				traverse_ast(child, func, userdata)
+			}
 		}
 	case Ast_Return:
 		func(ast, userdata)

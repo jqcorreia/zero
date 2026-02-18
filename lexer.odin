@@ -36,6 +36,7 @@ Token_Kind :: enum {
 	Break_Keyword,
 	Continue_Keyword,
 	Struct_Keyword,
+	External_Keyword,
 	EOF,
 }
 
@@ -87,6 +88,7 @@ Keyword_Map: map[string]Token_Kind = {
 	"break"    = .Break_Keyword,
 	"continue" = .Continue_Keyword,
 	"struct"   = .Struct_Keyword,
+	"external" = .External_Keyword,
 }
 
 lex_current :: proc(lexer: ^Lexer) -> u8 {

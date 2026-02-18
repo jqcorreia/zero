@@ -59,11 +59,15 @@ parse_statement :: proc(p: ^Parser) -> ^Ast_Node {
 	data := &ast_node.data
 
 	switch {
+	case t.kind == .External_Keyword:
+		advance(p)
+		expect(p, .Func_Keyword)
+		data^ = parse_function_decl(p, external = true)^
 	case t.kind == .Identifier:
 		data^ = parse_identifier(p)
 	case t.kind == .Func_Keyword:
 		advance(p)
-		data^ = parse_function_decl(p)^
+		data^ = parse_function_decl(p, external = false)^
 	case t.kind == .Struct_Keyword:
 		advance(p)
 		data^ = parse_struct_decl(p)^
@@ -297,12 +301,15 @@ parse_call_args :: proc(p: ^Parser) -> []^Expr {
 	return args[:]
 }
 
-parse_function_decl :: proc(p: ^Parser) -> ^Ast_Function {
+parse_function_decl :: proc(p: ^Parser, external: bool = false) -> ^Ast_Function {
 	func_name := expect(p, .Identifier).value.(string)
 	params := parse_function_decl_params(p)
 	ret_type := parse_function_ret_type(p)
 
-	body := parse_block(p)
+	body: ^Ast_Block
+	if !external {
+		body = parse_block(p)
+	}
 
 	func := new(Ast_Function)
 
@@ -310,6 +317,7 @@ parse_function_decl :: proc(p: ^Parser) -> ^Ast_Function {
 	func.params = params
 	func.body = body
 	func.ret_type_expr = ret_type
+	func.external = external
 
 	return func
 }
