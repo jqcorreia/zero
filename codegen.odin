@@ -215,6 +215,17 @@ emit_expr :: proc(gen: ^Generator, expr: ^Expr, scope: ^Scope, span: Span) -> Va
 		var := gen.values[sym]
 
 		return BuildLoad2(gen.builder, gen.primitive_types[sym.type], var, "")
+	case Expr_Unary:
+		#partial switch e.op {
+		case .Minus:
+			return BuildSub(
+				gen.builder,
+				ConstInt(int32, 0, false),
+				emit_expr(gen, e.expr, scope, span),
+				"subzero",
+			)
+		}
+
 	case Expr_Binary:
 		#partial switch e.op {
 		case .Plus:

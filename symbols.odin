@@ -187,6 +187,11 @@ resolve_expr_type :: proc(expr: ^Expr, scope: ^Scope, span: Span) -> ^Type {
 		expr.type = sym.type
 		return type
 
+	case Expr_Unary:
+		operand := resolve_expr_type(e.expr, scope, span)
+		expr.type = operand
+		return expr.type
+
 	case Expr_Binary:
 		left := resolve_expr_type(e.left, scope, span)
 		right := resolve_expr_type(e.right, scope, span)

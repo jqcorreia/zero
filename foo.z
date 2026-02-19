@@ -14,6 +14,7 @@ fn qux(a: i32, b: i32) {
     for {
         break
     }
+    printf("%d\n", -10 + 5)
 }
 
 fn main() {

@@ -193,6 +193,15 @@ expr_string_literal :: proc(value: string) -> ^Expr {
 	return ret
 }
 
+expr_unary :: proc(op: Token_Kind, e: ^Expr) -> ^Expr {
+	expr := new(Expr)
+	expr.data = Expr_Unary {
+		op   = op,
+		expr = e,
+	}
+	return expr
+}
+
 expr_binary :: proc(op: Token_Kind, left: ^Expr, right: ^Expr) -> ^Expr {
 	expr := new(Expr)
 	expr.data = Expr_Binary {
@@ -234,6 +243,15 @@ precedence :: proc(op: Token_Kind) -> int {
 	}
 	return -1
 }
+prefix_precedence :: proc(op: Token_Kind) -> int {
+	#partial switch op {
+	case .Minus:
+		return 50
+	case .Bang:
+		return 50
+	}
+	return -1
+}
 
 parse_expression :: proc(p: ^Parser, min_lbp: int = 0) -> ^Expr {
 	t := advance(p)
@@ -250,6 +268,10 @@ parse_expression :: proc(p: ^Parser, min_lbp: int = 0) -> ^Expr {
 	case .LParen:
 		left = parse_expression(p, 0)
 		expect(p, .RParen)
+	case .Minus, .Bang:
+		rbp := prefix_precedence(t.kind)
+		right := parse_expression(p, rbp)
+		left = expr_unary(t.kind, right)
 	case:
 		panic("Invalid expression")
 	}

@@ -70,7 +70,7 @@ main :: proc() {
 			os.exit(0)
 		}
 		if opt.command == "run" {
-			posix.system("cc -o calc calc.o -lraylib")
+			posix.system("cc -o calc calc.o")
 			posix.system("./calc")
 			os.exit(0)
 		}

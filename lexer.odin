@@ -2,7 +2,6 @@
 
 package main
 
-import "core:fmt"
 import "core:strings"
 
 Token_Kind :: enum {
@@ -20,6 +19,7 @@ Token_Kind :: enum {
 	Minus,
 	Slash,
 	Star,
+	Bang,
 	Greater,
 	Lesser,
 	GreaterOrEqual,
@@ -238,6 +238,9 @@ lex :: proc(input: string) -> []Token {
 			}
 		case c == '*':
 			append(&tokens, Token{kind = .Star, lexeme = "*", span = one_char_span(lexer)})
+			lexer.pos += 1
+		case c == '!':
+			append(&tokens, Token{kind = .Bang, lexeme = "!", span = one_char_span(lexer)})
 			lexer.pos += 1
 		case c == '(':
 			append(&tokens, Token{kind = .LParen, lexeme = "(", span = one_char_span(lexer)})
