@@ -278,33 +278,41 @@ emit_expr :: proc(gen: ^Generator, expr: ^Expr, scope: ^Scope, span: Span) -> Va
 				"gt",
 			)
 		case .Greater:
+			left_type := e.left.type
+			right_type := e.left.type
 			return BuildICmp(
 				gen.builder,
-				.IntUGT,
+				left_type.signed || right_type.signed ? .IntSGT : .IntUGT,
 				emit_expr(gen, e.left, scope, span),
 				emit_expr(gen, e.right, scope, span),
 				"gt",
 			)
 		case .Lesser:
+			left_type := e.left.type
+			right_type := e.left.type
 			return BuildICmp(
 				gen.builder,
-				.IntULT,
+				left_type.signed || right_type.signed ? .IntSLT : .IntULT,
 				emit_expr(gen, e.left, scope, span),
 				emit_expr(gen, e.right, scope, span),
 				"lt",
 			)
 		case .GreaterOrEqual:
+			left_type := e.left.type
+			right_type := e.left.type
 			return BuildICmp(
 				gen.builder,
-				.IntUGE,
+				left_type.signed || right_type.signed ? .IntSGE : .IntUGE,
 				emit_expr(gen, e.left, scope, span),
 				emit_expr(gen, e.right, scope, span),
 				"gte",
 			)
 		case .LesserOrEqual:
+			left_type := e.left.type
+			right_type := e.left.type
 			return BuildICmp(
 				gen.builder,
-				.IntULE,
+				left_type.signed || right_type.signed ? .IntSLE : .IntULE,
 				emit_expr(gen, e.left, scope, span),
 				emit_expr(gen, e.right, scope, span),
 				"lte",

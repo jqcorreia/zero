@@ -29,6 +29,7 @@ Potentially this README can look a lot different in a couple of months if this b
 - [ ] Bound checked arrays  
 - [ ] Bound checked strings  
 - [ ] Make `external` blocks it's own AST node kind
+- [ ] Make sure that lexer is UTF-8 compliant
 
 # Try it
 ```

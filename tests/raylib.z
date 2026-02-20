@@ -14,13 +14,28 @@ fn main() {
     W := 800
     H := 600
 
+    dir := 1
+
     InitWindow(W, H, "Hello Raylib")
-    a: i32 = 0
+    x: i32 = 0
     for {
-        a = a + 1
+        if dir == 1 {
+            x = x + 1
+        }
+        if dir == 2 {
+            x = x - 1
+        }
+        if x > W - 50 {
+            dir = 2
+        }
+        if x < 0 {
+            dir = 1
+        }
+        printf("x: %d\n, dir: %d\n", x, dir)
+        
         BeginDrawing()
         ClearBackground(0)
-        DrawRectangle(100, 100, 50, 50, 4278190335)
+        DrawRectangle(x, 100, 50, 50, 4278190335)
         EndDrawing()
     }
 }
