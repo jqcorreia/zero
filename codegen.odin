@@ -14,7 +14,6 @@ Generator :: struct {
 }
 
 emit_stmt :: proc(gen: ^Generator, node: ^Ast_Node) {
-	fmt.println(node.data)
 	#partial switch &data in node.data {
 	case Ast_Expr:
 		emit_expr(gen, data.expr, node.scope, node.span)
@@ -27,11 +26,11 @@ emit_stmt :: proc(gen: ^Generator, node: ^Ast_Node) {
 			emit_function_body(gen, &data, node.scope, node.span)
 		}
 	case Ast_Block:
+		// if data.is_external_functions {
+		// 	fmt.println("is_external", data)
+		// 	// emit_block(gen, &data)
+		// }
 		fmt.println("block?")
-	// if data.is_external_functions {
-	// 	fmt.println("is_external", data)
-	// 	// emit_block(gen, &data)
-	// }
 	case Ast_Return:
 		emit_return(gen, &data, node.scope, node.span)
 	case Ast_If:
@@ -88,12 +87,6 @@ emit_var_decl :: proc(gen: ^Generator, s: ^Ast_Var_Decl, scope: ^Scope, span: Sp
 }
 
 emit_function_decl :: proc(gen: ^Generator, s: ^Ast_Function, scope: ^Scope, span: Span) {
-	fmt.println("DECL FUNCTION", s)
-	fmt.println("DECL FUNCTION symbol", s.symbol)
-	for p in s.params {
-		fmt.println("DECL FUNCTION param symbol", p.symbol)
-	}
-
 	param_types: [dynamic]TypeRef
 
 	fn_type: TypeRef
@@ -278,8 +271,10 @@ emit_expr :: proc(gen: ^Generator, expr: ^Expr, scope: ^Scope, span: Span) -> Va
 				"gt",
 			)
 		case .Greater:
+			fmt.printf("%v %p\n", e.left, e.left)
+			fmt.printf("%v %p\n", e.right, e.right)
 			left_type := e.left.type
-			right_type := e.left.type
+			right_type := e.right.type
 			return BuildICmp(
 				gen.builder,
 				left_type.signed || right_type.signed ? .IntSGT : .IntUGT,
@@ -289,7 +284,8 @@ emit_expr :: proc(gen: ^Generator, expr: ^Expr, scope: ^Scope, span: Span) -> Va
 			)
 		case .Lesser:
 			left_type := e.left.type
-			right_type := e.left.type
+			right_type := e.right.type
+			fmt.println(left_type, right_type)
 			return BuildICmp(
 				gen.builder,
 				left_type.signed || right_type.signed ? .IntSLT : .IntULT,
@@ -299,7 +295,7 @@ emit_expr :: proc(gen: ^Generator, expr: ^Expr, scope: ^Scope, span: Span) -> Va
 			)
 		case .GreaterOrEqual:
 			left_type := e.left.type
-			right_type := e.left.type
+			right_type := e.right.type
 			return BuildICmp(
 				gen.builder,
 				left_type.signed || right_type.signed ? .IntSGE : .IntUGE,
@@ -309,7 +305,7 @@ emit_expr :: proc(gen: ^Generator, expr: ^Expr, scope: ^Scope, span: Span) -> Va
 			)
 		case .LesserOrEqual:
 			left_type := e.left.type
-			right_type := e.left.type
+			right_type := e.right.type
 			return BuildICmp(
 				gen.builder,
 				left_type.signed || right_type.signed ? .IntSLE : .IntULE,
@@ -413,9 +409,6 @@ emit_break :: proc(gen: ^Generator, s: ^Ast_Break, scope: ^Scope, span: Span) {
 
 printf_sym: ^Symbol
 
-// This function mainly setup a print() function that will be linked to libc printf() with a only s
-// Calls to this will be exceptionally emited in emit_print_call() for now
-// Also do some house keeping before running codegen
 setup_codegen :: proc(gen: ^Generator) {
 	// Primitive types
 	for _, sym in global_scope.symbols {
@@ -436,31 +429,6 @@ setup_codegen :: proc(gen: ^Generator) {
 			}
 		}
 	}
-
-
-	// // Printf
-	// i32 := Int32TypeInContext(gen.ctx)
-	// i8 := Int8TypeInContext(gen.ctx)
-	// i8p := PointerType(i8, 0)
-
-	// printf_ty := FunctionType(
-	// 	i32, // return type
-	// 	&i8p, // first arg: char *
-	// 	1,
-	// 	true, // variadic
-	// )
-
-	// printf_fn := AddFunction(gen.module, "printf", printf_ty)
-
-	// sym := make_symbol(.Function)
-	// sym.scope = global_scope
-	// sym.type = global_scope.symbols["i32"].type
-	// sym.name = "print"
-
-	// printf_sym = sym
-
-	// gen.values[sym] = printf_fn
-	// gen.types[sym] = printf_ty
 }
 
 generate :: proc(stmts: []^Ast_Node) {

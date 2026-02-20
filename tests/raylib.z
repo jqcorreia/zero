@@ -18,6 +18,7 @@ fn main() {
 
     InitWindow(W, H, "Hello Raylib")
     x: i32 = 0
+
     for {
         if dir == 1 {
             x = x + 1

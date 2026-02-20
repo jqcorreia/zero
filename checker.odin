@@ -30,6 +30,7 @@ check_stmt :: proc(c: ^Checker, node: ^Ast_Node) {
 
 check_assigment :: proc(c: ^Checker, s: ^Ast_Var_Assign, span: Span, scope: ^Scope) {
 	var, ok := resolve_symbol(scope, s.name)
+	fmt.println("########", var.type, s.expr.type)
 	if ok {
 		if var.type != s.expr.type {
 			error_span(span, "Cannot assign %v to %v", s.expr.type.kind, var.type.kind)
@@ -160,9 +161,18 @@ check :: proc(c: ^Checker, nodes: []^Ast_Node) {
 			}
 		}
 	}
+	check_everyone_has_types := proc(node: ^Ast_Node, userdata: rawptr) {
+		if expr_node, ok := node.data.(Ast_Expr); ok {
+			fmt.println("------", expr_node.expr.type)
+		}
+	}
 
 	for node in nodes {
 		traverse_ast(node, check_resolved_symbols)
+	}
+
+	for node in nodes {
+		traverse_ast(node, check_everyone_has_types)
 	}
 
 	for node in nodes {

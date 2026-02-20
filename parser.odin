@@ -61,11 +61,8 @@ parse_statement :: proc(p: ^Parser) -> ^Ast_Node {
 	switch {
 	case t.kind == .External_Keyword:
 		advance(p)
-		// expect(p, .Func_Keyword)
-		// data^ = parse_function_decl(p, external = true)^
 
 		lib_name := expect(p, .QuotedString)
-		fmt.println(lib_name.value.(string))
 		data^ = parse_external_block(p, lib_name.value.(string))^
 
 	case t.kind == .Identifier:

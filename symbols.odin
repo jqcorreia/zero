@@ -156,8 +156,10 @@ resolve_types :: proc(c: ^Checker, node: ^Ast_Node) {
 			resolve_block_types(c, data.body)
 		}
 	case Ast_Expr:
-		resolve_expr_type(data.expr, node.scope, node.span)
+		type := resolve_expr_type(data.expr, node.scope, node.span)
+		data.expr.type = type
 	case Ast_If:
+		resolve_expr_type(data.cond, node.scope, node.span)
 		resolve_block_types(c, data.then_block)
 		if data.else_block != nil {
 			resolve_block_types(c, data.else_block)
@@ -196,6 +198,7 @@ resolve_expr_type :: proc(expr: ^Expr, scope: ^Scope, span: Span) -> ^Type {
 		}
 
 		expr.type = sym.type
+		fmt.printf("Resolve variable type: %v %p\n", expr, expr)
 		return type
 
 	case Expr_Unary:

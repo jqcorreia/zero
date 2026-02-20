@@ -38,12 +38,12 @@ create_primitive_types :: proc(scope: ^Scope) {
 
 	i32_t := new(Type)
 	i32_t.kind = .Int32
-	u8_t.signed = true
+	i32_t.signed = true
 	scope.symbols["i32"] = make_symbol(.Type, i32_t)
 
 	u32_t := new(Type)
 	u32_t.kind = .Uint32
-	u8_t.signed = false
+	u32_t.signed = false
 	scope.symbols["u32"] = make_symbol(.Type, u32_t)
 
 	string_t := new(Type)
