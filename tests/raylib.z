@@ -1,10 +1,14 @@
-external fn InitWindow(width: i32, height: i32, title: str)
-external fn BeginDrawing()
-external fn EndDrawing()
-external fn ClearBackground(color: i32)
-external fn DrawRectangle(x: i32, y: i32, w: i32, h: i32, color: i32)
+external "raylib" {
+    fn InitWindow(width: i32, height: i32, title: str)
+    fn BeginDrawing()
+    fn EndDrawing()
+    fn ClearBackground(color: i32)
+    fn DrawRectangle(x: i32, y: i32, w: i32, h: i32, color: i32)
+}
 
-external fn printf(format: str, ...) -> i32
+external "c" {
+    fn printf(format: str, ...) -> i32
+}
 
 fn main() {
     W := 800
@@ -16,7 +20,7 @@ fn main() {
         a = a + 1
         BeginDrawing()
         ClearBackground(0)
-        DrawRectangle(100, 100, 50, 50, 4294967295)
+        DrawRectangle(100, 100, 50, 50, 4278190335)
         EndDrawing()
     }
 }

@@ -46,6 +46,10 @@ create_global_scope :: proc() -> ^Scope {
 bind_scopes :: proc(node: ^Ast_Node, cur_scope: ^Scope) {
 	node.scope = cur_scope
 	#partial switch &data in node.data {
+	case Ast_Block:
+		for s in data.statements {
+			bind_scopes(s, cur_scope)
+		}
 	case Ast_Var_Decl:
 		sym, ok := resolve_symbol(cur_scope, data.name)
 		if !ok {
@@ -104,6 +108,10 @@ error_type := Type {
 
 resolve_types :: proc(c: ^Checker, node: ^Ast_Node) {
 	#partial switch &data in node.data {
+	case Ast_Block:
+		for n in data.statements {
+			resolve_types(c, n)
+		}
 	case Ast_Var_Assign:
 		// Just tag expr with a type, check it in the checker later
 		resolve_expr_type(data.expr, node.scope, node.span)
@@ -154,9 +162,12 @@ resolve_types :: proc(c: ^Checker, node: ^Ast_Node) {
 		if data.else_block != nil {
 			resolve_block_types(c, data.else_block)
 		}
-
 	case Ast_For:
 		resolve_block_types(c, data.body)
+	case Ast_Return:
+		resolve_expr_type(data.expr, node.scope, node.span)
+	case:
+		unimplemented(fmt.tprintf("Unimplemented resolve for node %v", node))
 	}
 }
 
@@ -228,7 +239,6 @@ resolve_expr_type :: proc(expr: ^Expr, scope: ^Scope, span: Span) -> ^Type {
 			}
 			return sym.type
 		} else {
-			fmt.println("Not found")
 			e.callee.type = &error_type
 		}
 	}

@@ -28,6 +28,7 @@ Potentially this README can look a lot different in a couple of months if this b
 - [ ] User defined types (i.e structs)  
 - [ ] Bound checked arrays  
 - [ ] Bound checked strings  
+- [ ] Make `external` blocks it's own AST node kind
 
 # Try it
 ```

@@ -4,7 +4,6 @@ import "core:container/queue"
 
 Compiler :: struct {
 	current_filepath: string, // Unused for now
-	funcs:            map[string]^Ast_Function,
 	line_starts:      [dynamic]int,
 	scopes:           queue.Queue(Scope),
 	global_scope:     Scope,
@@ -18,18 +17,6 @@ Compiler_Error :: struct {
 	span:    Span,
 	message: string,
 }
-
-// Scopes :: queue.Queue(Scope)
-
-// Scope :: struct {
-// 	vars: map[string]Scope_Var,
-// }
-
-// Scope_Var :: struct {
-// 	type_name: string,
-// 	type:      ^Type,
-// 	ref:       ValueRef,
-// }
 
 Loop :: struct {
 	break_block: BasicBlockRef,

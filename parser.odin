@@ -61,8 +61,13 @@ parse_statement :: proc(p: ^Parser) -> ^Ast_Node {
 	switch {
 	case t.kind == .External_Keyword:
 		advance(p)
-		expect(p, .Func_Keyword)
-		data^ = parse_function_decl(p, external = true)^
+		// expect(p, .Func_Keyword)
+		// data^ = parse_function_decl(p, external = true)^
+
+		lib_name := expect(p, .QuotedString)
+		fmt.println(lib_name.value.(string))
+		data^ = parse_external_block(p, lib_name.value.(string))^
+
 	case t.kind == .Identifier:
 		data^ = parse_identifier(p)
 	case t.kind == .Func_Keyword:
@@ -81,7 +86,6 @@ parse_statement :: proc(p: ^Parser) -> ^Ast_Node {
 		advance(p)
 		data^ = parse_continue(p)^
 	case t.kind == .Return_Keyword:
-		// --- Return statment ---
 		advance(p)
 		expr := parse_expression(p, 0)
 		expect(p, .NewLine)
@@ -411,6 +415,37 @@ parse_block :: proc(p: ^Parser) -> ^Ast_Block {
 
 	sb := new(Ast_Block)
 	sb.statements = res[:]
+
+	return sb
+}
+
+parse_external_block :: proc(p: ^Parser, lib_name: string) -> ^Ast_Block {
+	res: [dynamic]^Ast_Node
+
+	expect(p, .LBrace)
+
+	for current(p).kind != .RBrace {
+		// Ignore empty lines
+		if current(p).kind == .NewLine {
+			advance(p)
+			continue
+		}
+
+		expect(p, .Func_Keyword)
+		data := parse_function_decl(p, external = true)
+		stmt := new(Ast_Node)
+		stmt.data = data^
+		append(&res, stmt)
+	}
+	advance(p)
+
+	if current(p).kind == .NewLine {
+		advance(p)
+	}
+
+	sb := new(Ast_Block)
+	sb.statements = res[:]
+	sb.is_external_functions = true
 
 	return sb
 }

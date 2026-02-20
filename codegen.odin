@@ -14,6 +14,7 @@ Generator :: struct {
 }
 
 emit_stmt :: proc(gen: ^Generator, node: ^Ast_Node) {
+	fmt.println(node.data)
 	#partial switch &data in node.data {
 	case Ast_Expr:
 		emit_expr(gen, data.expr, node.scope, node.span)
@@ -25,6 +26,12 @@ emit_stmt :: proc(gen: ^Generator, node: ^Ast_Node) {
 		if !data.external {
 			emit_function_body(gen, &data, node.scope, node.span)
 		}
+	case Ast_Block:
+		fmt.println("block?")
+	// if data.is_external_functions {
+	// 	fmt.println("is_external", data)
+	// 	// emit_block(gen, &data)
+	// }
 	case Ast_Return:
 		emit_return(gen, &data, node.scope, node.span)
 	case Ast_If:
@@ -81,6 +88,12 @@ emit_var_decl :: proc(gen: ^Generator, s: ^Ast_Var_Decl, scope: ^Scope, span: Sp
 }
 
 emit_function_decl :: proc(gen: ^Generator, s: ^Ast_Function, scope: ^Scope, span: Span) {
+	fmt.println("DECL FUNCTION", s)
+	fmt.println("DECL FUNCTION symbol", s.symbol)
+	for p in s.params {
+		fmt.println("DECL FUNCTION param symbol", p.symbol)
+	}
+
 	param_types: [dynamic]TypeRef
 
 	fn_type: TypeRef

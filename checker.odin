@@ -21,6 +21,7 @@ check_stmt :: proc(c: ^Checker, node: ^Ast_Node) {
 		check_for_loop(c, &data, node.span)
 	case Ast_Break:
 		check_break(c, &data, node.span, node.scope)
+	case Ast_Block:
 	case:
 		unimplemented(fmt.tprint("Unimplement check", node))
 	}

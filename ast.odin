@@ -66,8 +66,9 @@ Ast_Struct_Decl :: struct {
 Struct_Field :: struct {}
 
 Ast_Block :: struct {
-	statements: []^Ast_Node,
-	terminated: bool,
+	statements:            []^Ast_Node,
+	terminated:            bool,
+	is_external_functions: bool,
 }
 
 Ast_Return :: struct {
@@ -169,6 +170,10 @@ traverse_ast :: proc(
 		}
 	case Ast_Break:
 		func(ast, userdata)
+	case Ast_Block:
+		for child in node.statements {
+			traverse_ast(child, func, userdata)
+		}
 	case:
 		unimplemented(fmt.tprint("Unimplement traverse statement", ast))
 	}
