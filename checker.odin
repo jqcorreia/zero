@@ -163,7 +163,15 @@ check :: proc(c: ^Checker, nodes: []^Ast_Node) {
 	}
 	check_everyone_has_types := proc(node: ^Ast_Node, userdata: rawptr) {
 		if expr_node, ok := node.data.(Ast_Expr); ok {
-			fmt.println("------", expr_node.expr.type)
+			if expr_node.expr.type == nil {
+				error_span(
+					node.span,
+					"Ast Node: %v, Expr Node: %v has no resolved type",
+					node,
+					expr_node,
+				)
+
+			}
 		}
 	}
 

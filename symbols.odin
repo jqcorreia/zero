@@ -143,15 +143,14 @@ resolve_types :: proc(c: ^Checker, node: ^Ast_Node) {
 			}
 		}
 
-		if data.ret_type_expr != "" {
-			// Resolve function return type expression
-			return_type_sym, ok := resolve_symbol(node.scope, data.ret_type_expr)
-			if ok {
-				data.symbol.type = return_type_sym.type
-			} else {
-				error_span(node.span, "unresolved type expression '%v'", data.ret_type_expr)
-			}
+		// Resolve function return type expression
+		return_type_sym, ok := resolve_symbol(node.scope, data.ret_type_expr)
+		if ok {
+			data.symbol.type = return_type_sym.type
+		} else {
+			error_span(node.span, "unresolved type expression '%v'", data.ret_type_expr)
 		}
+
 		if !data.external {
 			resolve_block_types(c, data.body)
 		}
@@ -198,7 +197,6 @@ resolve_expr_type :: proc(expr: ^Expr, scope: ^Scope, span: Span) -> ^Type {
 		}
 
 		expr.type = sym.type
-		fmt.printf("Resolve variable type: %v %p\n", expr, expr)
 		return type
 
 	case Expr_Unary:
@@ -231,6 +229,7 @@ resolve_expr_type :: proc(expr: ^Expr, scope: ^Scope, span: Span) -> ^Type {
 		sym, ok := resolve_symbol(scope, func_name)
 		if ok {
 			if sym.type == nil {
+				fmt.println("sym type nil", func_name, sym)
 				// type_sym, _ := resolve_symbol(scope, sym.decl.data.(Ast_Function).ret_type_expr)
 				// e.callee.type = type_sym.type
 

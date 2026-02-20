@@ -4,10 +4,12 @@ external "raylib" {
     fn EndDrawing()
     fn ClearBackground(color: i32)
     fn DrawRectangle(x: i32, y: i32, w: i32, h: i32, color: i32)
+    fn GetKeyPressed() -> i32
 }
 
 external "c" {
     fn printf(format: str, ...) -> i32
+    fn sleep(seconds: u32)
 }
 
 fn main() {
@@ -20,6 +22,12 @@ fn main() {
     x: i32 = 0
 
     for {
+        keypressed := GetKeyPressed()
+
+        if keypressed != 0 {
+            printf("Key pressed: %d\n", keypressed)
+        }
+
         if dir == 1 {
             x = x + 1
         }
@@ -32,11 +40,10 @@ fn main() {
         if x < 0 {
             dir = 1
         }
-        printf("x: %d\n, dir: %d\n", x, dir)
-        
+
         BeginDrawing()
         ClearBackground(0)
-        DrawRectangle(x, 100, 50, 50, 4278190335)
+        DrawRectangle(x, H / 2 - 25, 50, 50, 4278190335)
         EndDrawing()
     }
 }

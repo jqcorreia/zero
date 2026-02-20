@@ -14,6 +14,7 @@ Token_Kind :: enum {
 	QuotedString,
 	Equal,
 	DoubleEqual,
+	NotEqual,
 	Number,
 	Plus,
 	Minus,
@@ -240,8 +241,16 @@ lex :: proc(input: string) -> []Token {
 			append(&tokens, Token{kind = .Star, lexeme = "*", span = one_char_span(lexer)})
 			lexer.pos += 1
 		case c == '!':
-			append(&tokens, Token{kind = .Bang, lexeme = "!", span = one_char_span(lexer)})
-			lexer.pos += 1
+			if lex_peek(&lexer) == '=' {
+				append(
+					&tokens,
+					Token{kind = .NotEqual, lexeme = "!=", span = two_char_span(lexer)},
+				)
+				lexer.pos += 2
+			} else {
+				append(&tokens, Token{kind = .Bang, lexeme = "!", span = one_char_span(lexer)})
+				lexer.pos += 1
+			}
 		case c == '(':
 			append(&tokens, Token{kind = .LParen, lexeme = "(", span = one_char_span(lexer)})
 			lexer.pos += 1

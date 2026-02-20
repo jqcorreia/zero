@@ -91,8 +91,7 @@ emit_function_decl :: proc(gen: ^Generator, s: ^Ast_Function, scope: ^Scope, spa
 
 	fn_type: TypeRef
 
-	ret_type_ref :=
-		s.symbol.type == nil ? VoidTypeInContext(gen.ctx) : gen.primitive_types[s.symbol.type]
+	ret_type_ref := gen.primitive_types[s.symbol.type]
 
 	if len(s.params) > 0 {
 		variadic := false
@@ -139,7 +138,7 @@ emit_function_body :: proc(gen: ^Generator, s: ^Ast_Function, scope: ^Scope, spa
 
 	emit_block(gen, s.body)
 
-	if s.symbol.type == nil {
+	if s.symbol.type.kind == .Void {
 		BuildRetVoid(gen.builder)
 	}
 	PositionBuilderAtEnd(gen.builder, old_pos)
@@ -266,6 +265,14 @@ emit_expr :: proc(gen: ^Generator, expr: ^Expr, scope: ^Scope, span: Span) -> Va
 			return BuildICmp(
 				gen.builder,
 				.IntEQ,
+				emit_expr(gen, e.left, scope, span),
+				emit_expr(gen, e.right, scope, span),
+				"gt",
+			)
+		case .NotEqual:
+			return BuildICmp(
+				gen.builder,
+				.IntNE,
 				emit_expr(gen, e.left, scope, span),
 				emit_expr(gen, e.right, scope, span),
 				"gt",
@@ -414,6 +421,8 @@ setup_codegen :: proc(gen: ^Generator) {
 	for _, sym in global_scope.symbols {
 		if sym.kind == .Type {
 			#partial switch sym.type.kind {
+			case .Void:
+				gen.primitive_types[sym.type] = VoidTypeInContext(gen.ctx)
 			case .Bool:
 				gen.primitive_types[sym.type] = Int1TypeInContext(gen.ctx)
 			case .Uint8:
