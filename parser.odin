@@ -420,6 +420,8 @@ parse_block :: proc(p: ^Parser) -> ^Ast_Block {
 }
 
 parse_external_block :: proc(p: ^Parser, lib_name: string) -> ^Ast_Block {
+	append(&compiler.external_linker_libs, lib_name)
+
 	res: [dynamic]^Ast_Node
 
 	expect(p, .LBrace)

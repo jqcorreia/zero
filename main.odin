@@ -3,6 +3,7 @@ package main
 import "core:flags"
 import "core:fmt"
 import "core:os"
+import "core:strings"
 import "core:sys/posix"
 import "core:time"
 
@@ -63,15 +64,29 @@ main :: proc() {
 		fmt.println("--- Compilation done in", time.diff(start_time, time.now()), "---")
 	}
 
+	compiler_command := "cc"
+	compiler_flags := "-o out calc.o" // Need to change all this 'out' and 'calc.o'
+	linker_libs := strings.builder_make()
+
+	for lib in compiler.external_linker_libs {
+		fmt.sbprintf(&linker_libs, "-l%s ", lib)
+	}
+	build_command := fmt.tprintf(
+		"%s %s %s",
+		compiler_command,
+		compiler_flags,
+		strings.to_string(linker_libs),
+	)
+	fmt.println("Using final build command:", build_command)
 	// Link and run
 	when ODIN_OS == .Linux {
 		if opt.command == "build" {
-			posix.system("cc -o calc calc.o")
+			posix.system(strings.clone_to_cstring(build_command))
 			os.exit(0)
 		}
 		if opt.command == "run" {
-			posix.system("cc -o calc calc.o -lraylib")
-			posix.system("./calc")
+			posix.system(strings.clone_to_cstring(build_command))
+			posix.system("./out")
 			os.exit(0)
 		}
 	} else {

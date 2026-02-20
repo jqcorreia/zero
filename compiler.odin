@@ -3,13 +3,14 @@ package main
 import "core:container/queue"
 
 Compiler :: struct {
-	current_filepath: string, // Unused for now
-	line_starts:      [dynamic]int,
-	scopes:           queue.Queue(Scope),
-	global_scope:     Scope,
-	loops:            queue.Queue(Loop),
-	types:            map[string]^Type,
-	errors:           [dynamic]Compiler_Error,
+	current_filepath:     string, // Unused for now
+	line_starts:          [dynamic]int,
+	scopes:               queue.Queue(Scope),
+	global_scope:         Scope,
+	loops:                queue.Queue(Loop),
+	types:                map[string]^Type,
+	errors:               [dynamic]Compiler_Error,
+	external_linker_libs: [dynamic]string,
 }
 
 Compiler_Error :: struct {
