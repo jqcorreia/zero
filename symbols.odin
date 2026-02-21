@@ -289,6 +289,8 @@ resolve_expr_type :: proc(expr: ^Expr, scope: ^Scope, span: Span) -> ^Type {
 		} else {
 			e.callee.type = &error_type
 		}
+	case Expr_Struct_Literal:
+		unimplemented("Resolve struct literal")
 	}
 	return nil
 }

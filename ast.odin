@@ -102,6 +102,7 @@ Expr :: struct {
 Expr_Data :: union {
 	Expr_Int_Literal,
 	Expr_String_Literal,
+	Expr_Struct_Literal,
 	Expr_Unary,
 	Expr_Binary,
 	Expr_Variable,
@@ -135,6 +136,10 @@ Expr_Call :: struct {
 	args:   []^Expr,
 }
 
+Expr_Struct_Literal :: struct {
+	type_expr: ^Expr,
+	args:      []^Expr,
+}
 
 // Generic AST traverse function
 traverse_ast :: proc(

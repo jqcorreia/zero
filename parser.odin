@@ -288,7 +288,11 @@ parse_expression :: proc(p: ^Parser, min_lbp: int = 0) -> ^Expr {
 	case .QuotedString:
 		left = expr_string_literal(t.value.(string))
 	case .Identifier:
-		left = expr_ident(t.value.(string))
+		if peek(p).kind == .LBrace {
+			left = parse_struct_literal(p)
+		} else {
+			left = expr_ident(t.value.(string))
+		}
 	case .LParen:
 		left = parse_expression(p, 0)
 		expect(p, .RParen)
@@ -409,6 +413,15 @@ parse_function_ret_type :: proc(p: ^Parser) -> string {
 	}
 
 	return ""
+}
+
+parse_struct_literal :: proc(p: ^Parser) -> ^Expr {
+	result := new(Expr)
+
+	lit := Expr_Struct_Literal{}
+	result.data = lit
+
+	return result
 }
 
 parse_block :: proc(p: ^Parser) -> ^Ast_Block {
