@@ -174,6 +174,29 @@ parse_identifier :: proc(p: ^Parser) -> Ast_Data {
 
 parse_struct_decl :: proc(p: ^Parser) -> ^Ast_Struct_Decl {
 	decl := new(Ast_Struct_Decl)
+	name_token := expect(p, .Identifier)
+
+	struct_name := name_token.value.(string)
+	decl.name = struct_name
+
+	expect(p, .LBrace)
+
+	for current(p).kind != .RBrace {
+		// Ignore empty lines
+		if current(p).kind == .NewLine {
+			advance(p)
+			continue
+		}
+		field_name := expect(p, .Identifier).value.(string)
+		expect(p, .Colon)
+		type_expr := expect(p, .Identifier).value.(string)
+		append(&decl.fields, Ast_Struct_Field{name = field_name, type_expr = type_expr})
+	}
+	advance(p)
+
+	if current(p).kind == .NewLine {
+		advance(p)
+	}
 
 	return decl
 }

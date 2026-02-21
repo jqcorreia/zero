@@ -6,6 +6,13 @@ Type :: struct {
 	kind:     Type_Kind,
 	compiled: Compiled_Type,
 	signed:   bool, // not sure if this is the best place or I should have a kind union a be done with it
+	fields:   [dynamic]Struct_Field,
+}
+
+Struct_Field :: struct {
+	name:  string,
+	type:  ^Type,
+	index: int,
 }
 
 
@@ -24,6 +31,7 @@ Type_Kind :: enum {
 	Int32,
 	Uint32,
 	String,
+	Struct,
 }
 
 create_primitive_types :: proc(scope: ^Scope) {

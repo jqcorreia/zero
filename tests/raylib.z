@@ -12,6 +12,13 @@ external "c" {
     fn sleep(seconds: u32)
 }
 
+struct Color {
+    r: u8
+    g: u8
+    b: u8
+    a: u8
+}
+
 fn main() {
     W := 800
     H := 600
@@ -26,6 +33,9 @@ fn main() {
 
         if keypressed != 0 {
             printf("Key pressed: %d\n", keypressed)
+        }
+        if keypressed == 256 { // escape key
+            break
         }
 
         if dir == 1 {

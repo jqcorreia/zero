@@ -60,10 +60,15 @@ Ast_Function :: struct {
 
 Ast_Struct_Decl :: struct {
 	name:   string,
-	fields: []Struct_Field,
+	fields: [dynamic]Ast_Struct_Field,
+	symbol: ^Symbol,
 }
 
-Struct_Field :: struct {}
+Ast_Struct_Field :: struct {
+	name:      string,
+	type_expr: string,
+	symbol:    ^Symbol,
+}
 
 Ast_Block :: struct {
 	statements:            []^Ast_Node,
@@ -151,6 +156,8 @@ traverse_ast :: proc(
 				traverse_ast(child, func, userdata)
 			}
 		}
+	case Ast_Struct_Decl:
+		func(ast, userdata)
 	case Ast_Return:
 		func(ast, userdata)
 	case Ast_If:

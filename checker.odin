@@ -13,6 +13,7 @@ check_stmt :: proc(c: ^Checker, node: ^Ast_Node) {
 		check_assigment(c, &data, node.span, node.scope)
 	case Ast_Function:
 		check_function(c, &data, node.span, node.scope)
+	case Ast_Struct_Decl:
 	case Ast_Return:
 		check_return(c, &data, node.span, node.scope)
 	case Ast_If:

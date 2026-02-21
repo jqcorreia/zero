@@ -15,6 +15,7 @@ Symbol_Kind :: enum {
 	Function,
 	Type,
 	Param,
+	Field,
 }
 
 Symbol_Table :: map[string]^Symbol
@@ -58,6 +59,31 @@ bind_scopes :: proc(node: ^Ast_Node, cur_scope: ^Scope) {
 			data.symbol = sym
 		} else {
 			error_span(node.span, "Re-declaration of variable '%s'", data.name)
+		}
+
+	case Ast_Struct_Decl:
+		sym, ok := resolve_symbol(cur_scope, data.name)
+		if !ok {
+			type := new(Type)
+			type.kind = .Struct
+			type.fields = {}
+
+			sym = make_symbol(.Type)
+			sym.name = data.name
+			sym.type = type
+			cur_scope.symbols[data.name] = sym
+			data.symbol = sym
+
+			for &field, idx in data.fields {
+				// field_sym := make_symbol(.Field)
+				// field_sym.decl = node
+				// field_sym.name = field.name
+				// // cur_scope.symbols[field.name] = field_sym
+				// field.symbol = field_sym
+				append(&sym.type.fields, Struct_Field{name = field.name, index = idx})
+			}
+		} else {
+			error_span(node.span, "Re-declaration of struct '%s'", data.name)
 		}
 
 	case Ast_Function:
@@ -132,6 +158,24 @@ resolve_types :: proc(c: ^Checker, node: ^Ast_Node) {
 
 		// Store the result in the symbol
 		data.symbol.type = resolved_type
+	case Ast_Struct_Decl:
+		type_sym, ok := resolve_symbol(node.scope, data.name)
+		if !ok {
+			error_span(node.span, "Symbol %s not found", data.name)
+		}
+
+		data.symbol.type = type_sym.type
+
+		for &field, idx in data.fields {
+			field_type_sym, field_ok := resolve_symbol(node.scope, field.type_expr)
+			if field_ok {
+				fmt.println(field.symbol, field_type_sym)
+				type_sym.type.fields[idx].type = field_type_sym.type
+			} else {
+				error_span(node.span, "unresolved type expression '%v'", field.type_expr)
+			}
+		}
+
 	case Ast_Function:
 		// Resolve function param type expressions
 		for &param in data.params {
@@ -167,6 +211,7 @@ resolve_types :: proc(c: ^Checker, node: ^Ast_Node) {
 		resolve_block_types(c, data.body)
 	case Ast_Return:
 		resolve_expr_type(data.expr, node.scope, node.span)
+	case Ast_Break:
 	case:
 		unimplemented(fmt.tprintf("Unimplemented resolve for node %v", node))
 	}

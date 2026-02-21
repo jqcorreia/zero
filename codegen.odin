@@ -21,6 +21,7 @@ emit_stmt :: proc(gen: ^Generator, node: ^Ast_Node) {
 		emit_assigment(gen, &data, node.scope, node.span)
 	case Ast_Var_Decl:
 		emit_var_decl(gen, &data, node.scope, node.span)
+	case Ast_Struct_Decl:
 	case Ast_Function:
 		if !data.external {
 			emit_function_body(gen, &data, node.scope, node.span)
