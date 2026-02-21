@@ -22,6 +22,7 @@ emit_stmt :: proc(gen: ^Generator, node: ^Ast_Node) {
 	case Ast_Var_Decl:
 		emit_var_decl(gen, &data, node.scope, node.span)
 	case Ast_Struct_Decl:
+		emit_struct_body(gen, &data, node.scope, node.span)
 	case Ast_Function:
 		if !data.external {
 			emit_function_body(gen, &data, node.scope, node.span)
@@ -92,6 +93,7 @@ emit_function_decl :: proc(gen: ^Generator, s: ^Ast_Function, scope: ^Scope, spa
 
 	fn_type: TypeRef
 
+	//NOTE(quadrado): This must change so a function can return more than primitive types
 	ret_type_ref := gen.primitive_types[s.symbol.type]
 
 	if len(s.params) > 0 {
@@ -114,6 +116,21 @@ emit_function_decl :: proc(gen: ^Generator, s: ^Ast_Function, scope: ^Scope, spa
 
 	gen.values[sym] = fn
 	gen.types[sym] = fn_type
+}
+
+emit_struct_decl :: proc(gen: ^Generator, s: ^Ast_Struct_Decl, scope: ^Scope, span: Span) {
+	llvm_type := StructCreateNamed(gen.ctx, strings.clone_to_cstring(s.name))
+	sym := s.symbol
+	gen.types[sym] = llvm_type
+}
+
+emit_struct_body :: proc(gen: ^Generator, s: ^Ast_Struct_Decl, scope: ^Scope, span: Span) {
+	sym := s.symbol
+	llvm_type := gen.types[sym]
+
+	field_types: []TypeRef = {Int32TypeInContext(gen.ctx)}
+	StructSetBody(llvm_type, raw_data(field_types), 1, false)
+	AddGlobal(gen.module, llvm_type, "dummy_struct_use")
 }
 
 emit_function_body :: proc(gen: ^Generator, s: ^Ast_Function, scope: ^Scope, span: Span) {
@@ -453,6 +470,12 @@ generate :: proc(stmts: []^Ast_Node) {
 	}
 	setup_codegen(&generator)
 
+	emit_struct_decls := proc(node: ^Ast_Node, userdata: rawptr = nil) {
+		if snode, ok := node.data.(Ast_Struct_Decl); ok {
+			gen := cast(^Generator)userdata
+			emit_struct_decl(gen, &snode, node.scope, node.span)
+		}
+	}
 	emit_function_decls := proc(node: ^Ast_Node, userdata: rawptr = nil) {
 		if fnode, ok := node.data.(Ast_Function); ok {
 			gen := cast(^Generator)userdata
@@ -460,6 +483,10 @@ generate :: proc(stmts: []^Ast_Node) {
 		}
 	}
 
+	//NOTE(quadrado): Have a better API for code blocks or whole AST traversals
+	for stmt in stmts {
+		traverse_ast(stmt, emit_struct_decls, &generator)
+	}
 	for stmt in stmts {
 		traverse_ast(stmt, emit_function_decls, &generator)
 	}
