@@ -230,6 +230,11 @@ resolve_expr_type :: proc(expr: ^Expr, scope: ^Scope, span: Span) -> ^Type {
 		expr.type = sym.type
 		return sym.type
 
+	case Expr_Struct_Literal:
+		sym, _ := resolve_symbol(scope, e.type_expr)
+		expr.type = sym.type
+		return sym.type
+
 	case Expr_Variable:
 		sym, ok := resolve_symbol(scope, e.value)
 		type: ^Type
@@ -289,8 +294,6 @@ resolve_expr_type :: proc(expr: ^Expr, scope: ^Scope, span: Span) -> ^Type {
 		} else {
 			e.callee.type = &error_type
 		}
-	case Expr_Struct_Literal:
-		unimplemented("Resolve struct literal")
 	}
 	return nil
 }

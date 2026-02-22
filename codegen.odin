@@ -168,29 +168,6 @@ emit_return :: proc(gen: ^Generator, s: ^Ast_Return, scope: ^Scope, span: Span) 
 	BuildRet(gen.builder, emit_expr(gen, data.expr, scope, span))
 }
 
-// This a hacked printf-type emission until we have proper external functions and string support
-emit_print_call :: proc(gen: ^Generator, e: Expr_Call, scope: ^Scope, span: Span) -> ValueRef {
-	if e.args[0].type.kind == .String {
-		args := []ValueRef{emit_expr(gen, e.args[0], scope, span)}
-
-		ty := gen.types[printf_sym]
-		fn := gen.values[printf_sym]
-
-		call := BuildCall2(gen.builder, ty, fn, &args[0], u32(len(args)), "")
-
-		return call
-	} else {
-		fmt_ptr := BuildGlobalStringPtr(gen.builder, "%d\n", "")
-		args := []ValueRef{fmt_ptr, emit_expr(gen, e.args[0], scope, span)}
-
-		ty := gen.types[printf_sym]
-		fn := gen.values[printf_sym]
-
-		call := BuildCall2(gen.builder, ty, fn, &args[0], u32(len(args)), "")
-
-		return call
-	}
-}
 
 emit_call :: proc(gen: ^Generator, e: Expr_Call, scope: ^Scope, span: Span) -> ValueRef {
 	fn_name := e.callee.data.(Expr_Variable).value
@@ -224,12 +201,7 @@ emit_expr :: proc(gen: ^Generator, expr: ^Expr, scope: ^Scope, span: Span) -> Va
 	case Expr_String_Literal:
 		return BuildGlobalStringPtr(gen.builder, strings.clone_to_cstring(e.value), "")
 	case Expr_Call:
-		data := e
-		if data.callee.data.(Expr_Variable).value == "print" {
-			return emit_print_call(gen, e, scope, span)
-		} else {
-			return emit_call(gen, e, scope, span)
-		}
+		return emit_call(gen, e, scope, span)
 	case Expr_Variable:
 		sym, ok := resolve_symbol(scope, e.value)
 		if !ok {
@@ -431,8 +403,6 @@ emit_break :: proc(gen: ^Generator, s: ^Ast_Break, scope: ^Scope, span: Span) {
 	dead := AppendBasicBlock(fn, "after_break")
 	PositionBuilderAtEnd(gen.builder, dead)
 }
-
-printf_sym: ^Symbol
 
 setup_codegen :: proc(gen: ^Generator) {
 	// Primitive types
