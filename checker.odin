@@ -31,7 +31,6 @@ check_stmt :: proc(c: ^Checker, node: ^Ast_Node) {
 
 check_assigment :: proc(c: ^Checker, s: ^Ast_Var_Assign, span: Span, scope: ^Scope) {
 	var, ok := resolve_symbol(scope, s.name)
-	fmt.println("########", var.type, s.expr.type)
 	if ok {
 		if var.type != s.expr.type {
 			error_span(span, "Cannot assign %v to %v", s.expr.type.kind, var.type.kind)

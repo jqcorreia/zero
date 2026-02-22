@@ -16,7 +16,7 @@ Generator :: struct {
 emit_stmt :: proc(gen: ^Generator, node: ^Ast_Node) {
 	#partial switch &data in node.data {
 	case Ast_Expr:
-		emit_expr(gen, data.expr, node.scope, node.span)
+		emit_value(gen, data.expr, node.scope, node.span)
 	case Ast_Var_Assign:
 		emit_assigment(gen, &data, node.scope, node.span)
 	case Ast_Var_Decl:
@@ -28,11 +28,7 @@ emit_stmt :: proc(gen: ^Generator, node: ^Ast_Node) {
 			emit_function_body(gen, &data, node.scope, node.span)
 		}
 	case Ast_Block:
-		// if data.is_external_functions {
-		// 	fmt.println("is_external", data)
-		// 	// emit_block(gen, &data)
-		// }
-		fmt.println("block?")
+	// Do nothing
 	case Ast_Return:
 		emit_return(gen, &data, node.scope, node.span)
 	case Ast_If:
@@ -46,11 +42,166 @@ emit_stmt :: proc(gen: ^Generator, node: ^Ast_Node) {
 	}
 }
 
+emit_address :: proc(gen: ^Generator, expr: ^Expr, scope: ^Scope, span: Span) -> ValueRef {
+	#partial switch e in expr.data {
+	case Expr_Struct_Literal:
+		sym, _ := resolve_symbol(scope, e.type_expr)
+		struct_llvm_type := gen.primitive_types[sym.type]
+		fmt.println(sym)
+		ptr := BuildAlloca(gen.builder, struct_llvm_type, "")
+
+		for field in sym.type.fields {
+			fmt.println(field)
+
+			//TODO(quadrado): This is just to test that this whole thing works
+			// Change to proper type later
+			type_sym, _ := resolve_symbol(scope, "u8")
+			llvm_type := gen.primitive_types[type_sym.type]
+			field_ptr := BuildStructGEP2(gen.builder, struct_llvm_type, ptr, u32(field.index), "")
+
+			BuildStore(gen.builder, emit_value(gen, e.args[field.name], scope, span), field_ptr)
+		}
+		return ptr
+
+	// implementation goes here
+	case Expr_Variable:
+		sym, ok := resolve_symbol(scope, e.value)
+		if !ok {
+			fatal_span(span, "Symbol not found on expr emit: %s", e.value)
+		}
+		var := gen.values[sym]
+
+		return var
+	}
+	unimplemented(fmt.tprintf("Not addressable expression %v", expr))
+}
+
+emit_value :: proc(gen: ^Generator, expr: ^Expr, scope: ^Scope, span: Span) -> ValueRef {
+	int32 := Int32TypeInContext(gen.ctx)
+	#partial switch e in expr.data {
+	case Expr_Int_Literal:
+		return ConstInt(int32, u64(e.value), false)
+	case Expr_String_Literal:
+		return BuildGlobalStringPtr(gen.builder, strings.clone_to_cstring(e.value), "")
+	case Expr_Struct_Literal:
+		return emit_address(gen, expr, scope, span)
+	// implementation goes here
+	case Expr_Call:
+		return emit_call(gen, e, scope, span)
+	case Expr_Variable:
+		ptr := emit_address(gen, expr, scope, span)
+		sym, _ := resolve_symbol(scope, e.value)
+		return BuildLoad2(gen.builder, gen.primitive_types[sym.type], ptr, "")
+	case Expr_Unary:
+		#partial switch e.op {
+		case .Minus:
+			return BuildSub(
+				gen.builder,
+				ConstInt(int32, 0, false),
+				emit_value(gen, e.expr, scope, span),
+				"subzero",
+			)
+		}
+
+	case Expr_Binary:
+		#partial switch e.op {
+		case .Plus:
+			return BuildAdd(
+				gen.builder,
+				emit_value(gen, e.left, scope, span),
+				emit_value(gen, e.right, scope, span),
+				"add",
+			)
+		case .Minus:
+			return BuildSub(
+				gen.builder,
+				emit_value(gen, e.left, scope, span),
+				emit_value(gen, e.right, scope, span),
+				"sub",
+			)
+		case .Star:
+			return BuildMul(
+				gen.builder,
+				emit_value(gen, e.left, scope, span),
+				emit_value(gen, e.right, scope, span),
+				"mul",
+			)
+		case .Slash:
+			return BuildSDiv(
+				gen.builder,
+				emit_value(gen, e.left, scope, span),
+				emit_value(gen, e.right, scope, span),
+				"div",
+			)
+		case .DoubleEqual:
+			return BuildICmp(
+				gen.builder,
+				.IntEQ,
+				emit_value(gen, e.left, scope, span),
+				emit_value(gen, e.right, scope, span),
+				"gt",
+			)
+		case .NotEqual:
+			return BuildICmp(
+				gen.builder,
+				.IntNE,
+				emit_value(gen, e.left, scope, span),
+				emit_value(gen, e.right, scope, span),
+				"gt",
+			)
+		case .Greater:
+			fmt.printf("%v %p\n", e.left, e.left)
+			fmt.printf("%v %p\n", e.right, e.right)
+			left_type := e.left.type
+			right_type := e.right.type
+			return BuildICmp(
+				gen.builder,
+				left_type.signed || right_type.signed ? .IntSGT : .IntUGT,
+				emit_value(gen, e.left, scope, span),
+				emit_value(gen, e.right, scope, span),
+				"gt",
+			)
+		case .Lesser:
+			left_type := e.left.type
+			right_type := e.right.type
+			fmt.println(left_type, right_type)
+			return BuildICmp(
+				gen.builder,
+				left_type.signed || right_type.signed ? .IntSLT : .IntULT,
+				emit_value(gen, e.left, scope, span),
+				emit_value(gen, e.right, scope, span),
+				"lt",
+			)
+		case .GreaterOrEqual:
+			left_type := e.left.type
+			right_type := e.right.type
+			return BuildICmp(
+				gen.builder,
+				left_type.signed || right_type.signed ? .IntSGE : .IntUGE,
+				emit_value(gen, e.left, scope, span),
+				emit_value(gen, e.right, scope, span),
+				"gte",
+			)
+		case .LesserOrEqual:
+			left_type := e.left.type
+			right_type := e.right.type
+			return BuildICmp(
+				gen.builder,
+				left_type.signed || right_type.signed ? .IntSLE : .IntULE,
+				emit_value(gen, e.left, scope, span),
+				emit_value(gen, e.right, scope, span),
+				"lte",
+			)
+		}
+	}
+	unimplemented(fmt.tprintf("Expression %v emit not implemented", expr))
+}
+
 emit_assigment :: proc(gen: ^Generator, s: ^Ast_Var_Assign, scope: ^Scope, span: Span) {
 	sym, _ := resolve_symbol(scope, s.name)
 	ptr, exists := gen.values[sym]
 	if exists {
-		BuildStore(gen.builder, emit_expr(gen, s.expr, scope, span), ptr)
+		BuildStore(gen.builder, emit_value(gen, s.expr, scope, span), ptr)
 	} else {
 		fatal_span(span, "Variable '%s' doesn't exist yet", s.name)
 	}
@@ -72,7 +223,7 @@ emit_var_decl :: proc(gen: ^Generator, s: ^Ast_Var_Decl, scope: ^Scope, span: Sp
 		ptr = BuildAlloca(gen.builder, gen.primitive_types[sym.type], "")
 		gen.values[sym] = ptr
 		if s.expr != nil {
-			BuildStore(gen.builder, emit_expr(gen, s.expr, scope, span), ptr)
+			BuildStore(gen.builder, emit_value(gen, s.expr, scope, span), ptr)
 		}
 	} else {
 		// Create global variables, only constant for now
@@ -121,15 +272,20 @@ emit_function_decl :: proc(gen: ^Generator, s: ^Ast_Function, scope: ^Scope, spa
 emit_struct_decl :: proc(gen: ^Generator, s: ^Ast_Struct_Decl, scope: ^Scope, span: Span) {
 	llvm_type := StructCreateNamed(gen.ctx, strings.clone_to_cstring(s.name))
 	sym := s.symbol
-	gen.types[sym] = llvm_type
+	gen.primitive_types[sym.type] = llvm_type
 }
 
 emit_struct_body :: proc(gen: ^Generator, s: ^Ast_Struct_Decl, scope: ^Scope, span: Span) {
 	sym := s.symbol
-	llvm_type := gen.types[sym]
+	llvm_type := gen.primitive_types[sym.type]
 
-	field_types: []TypeRef = {Int32TypeInContext(gen.ctx)}
-	StructSetBody(llvm_type, raw_data(field_types), 1, false)
+	field_types: [dynamic]TypeRef
+
+	for field in sym.type.fields {
+		append(&field_types, gen.primitive_types[field.type])
+	}
+
+	StructSetBody(llvm_type, raw_data(field_types), u32(len(field_types)), false)
 	AddGlobal(gen.module, llvm_type, "dummy_struct_use")
 }
 
@@ -165,7 +321,7 @@ emit_function_body :: proc(gen: ^Generator, s: ^Ast_Function, scope: ^Scope, spa
 
 emit_return :: proc(gen: ^Generator, s: ^Ast_Return, scope: ^Scope, span: Span) {
 	data := s
-	BuildRet(gen.builder, emit_expr(gen, data.expr, scope, span))
+	BuildRet(gen.builder, emit_value(gen, data.expr, scope, span))
 }
 
 
@@ -174,7 +330,7 @@ emit_call :: proc(gen: ^Generator, e: Expr_Call, scope: ^Scope, span: Span) -> V
 
 	args: [dynamic]ValueRef
 	for a in e.args {
-		append(&args, emit_expr(gen, a, scope, span))
+		append(&args, emit_value(gen, a, scope, span))
 	}
 
 	sym, ok := resolve_symbol(scope, fn_name)
@@ -193,127 +349,6 @@ emit_call :: proc(gen: ^Generator, e: Expr_Call, scope: ^Scope, span: Span) -> V
 	}
 }
 
-emit_expr :: proc(gen: ^Generator, expr: ^Expr, scope: ^Scope, span: Span) -> ValueRef {
-	int32 := Int32TypeInContext(gen.ctx)
-	#partial switch e in expr.data {
-	case Expr_Int_Literal:
-		return ConstInt(int32, u64(e.value), false)
-	case Expr_String_Literal:
-		return BuildGlobalStringPtr(gen.builder, strings.clone_to_cstring(e.value), "")
-	case Expr_Call:
-		return emit_call(gen, e, scope, span)
-	case Expr_Variable:
-		sym, ok := resolve_symbol(scope, e.value)
-		if !ok {
-			fatal_span(span, "Symbol not found on expr emit: %s", e.value)
-		}
-		var := gen.values[sym]
-
-		return BuildLoad2(gen.builder, gen.primitive_types[sym.type], var, "")
-	case Expr_Unary:
-		#partial switch e.op {
-		case .Minus:
-			return BuildSub(
-				gen.builder,
-				ConstInt(int32, 0, false),
-				emit_expr(gen, e.expr, scope, span),
-				"subzero",
-			)
-		}
-
-	case Expr_Binary:
-		#partial switch e.op {
-		case .Plus:
-			return BuildAdd(
-				gen.builder,
-				emit_expr(gen, e.left, scope, span),
-				emit_expr(gen, e.right, scope, span),
-				"add",
-			)
-		case .Minus:
-			return BuildSub(
-				gen.builder,
-				emit_expr(gen, e.left, scope, span),
-				emit_expr(gen, e.right, scope, span),
-				"sub",
-			)
-		case .Star:
-			return BuildMul(
-				gen.builder,
-				emit_expr(gen, e.left, scope, span),
-				emit_expr(gen, e.right, scope, span),
-				"mul",
-			)
-		case .Slash:
-			return BuildSDiv(
-				gen.builder,
-				emit_expr(gen, e.left, scope, span),
-				emit_expr(gen, e.right, scope, span),
-				"div",
-			)
-		case .DoubleEqual:
-			return BuildICmp(
-				gen.builder,
-				.IntEQ,
-				emit_expr(gen, e.left, scope, span),
-				emit_expr(gen, e.right, scope, span),
-				"gt",
-			)
-		case .NotEqual:
-			return BuildICmp(
-				gen.builder,
-				.IntNE,
-				emit_expr(gen, e.left, scope, span),
-				emit_expr(gen, e.right, scope, span),
-				"gt",
-			)
-		case .Greater:
-			fmt.printf("%v %p\n", e.left, e.left)
-			fmt.printf("%v %p\n", e.right, e.right)
-			left_type := e.left.type
-			right_type := e.right.type
-			return BuildICmp(
-				gen.builder,
-				left_type.signed || right_type.signed ? .IntSGT : .IntUGT,
-				emit_expr(gen, e.left, scope, span),
-				emit_expr(gen, e.right, scope, span),
-				"gt",
-			)
-		case .Lesser:
-			left_type := e.left.type
-			right_type := e.right.type
-			fmt.println(left_type, right_type)
-			return BuildICmp(
-				gen.builder,
-				left_type.signed || right_type.signed ? .IntSLT : .IntULT,
-				emit_expr(gen, e.left, scope, span),
-				emit_expr(gen, e.right, scope, span),
-				"lt",
-			)
-		case .GreaterOrEqual:
-			left_type := e.left.type
-			right_type := e.right.type
-			return BuildICmp(
-				gen.builder,
-				left_type.signed || right_type.signed ? .IntSGE : .IntUGE,
-				emit_expr(gen, e.left, scope, span),
-				emit_expr(gen, e.right, scope, span),
-				"gte",
-			)
-		case .LesserOrEqual:
-			left_type := e.left.type
-			right_type := e.right.type
-			return BuildICmp(
-				gen.builder,
-				left_type.signed || right_type.signed ? .IntSLE : .IntULE,
-				emit_expr(gen, e.left, scope, span),
-				emit_expr(gen, e.right, scope, span),
-				"lte",
-			)
-		}
-	}
-	unimplemented(fmt.tprintf("Expression %v emit not implemented", expr))
-}
 
 emit_block :: proc(gen: ^Generator, block: ^Ast_Block) {
 	for bst in block.statements {
@@ -326,7 +361,7 @@ emit_block :: proc(gen: ^Generator, block: ^Ast_Block) {
 
 emit_if :: proc(gen: ^Generator, s: ^Ast_If, scope: ^Scope, span: Span) {
 	if_stmt := s
-	cond_val := emit_expr(gen, if_stmt.cond, scope, span)
+	cond_val := emit_value(gen, if_stmt.cond, scope, span)
 
 	cond_bool: ValueRef
 	cond_val_type := TypeOf(cond_val)
