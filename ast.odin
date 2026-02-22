@@ -137,8 +137,8 @@ Expr_Call :: struct {
 }
 
 Expr_Struct_Literal :: struct {
-	type_expr: ^Expr,
-	args:      []^Expr,
+	type_expr: string,
+	args:      map[string]^Expr,
 }
 
 // Generic AST traverse function

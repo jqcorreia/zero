@@ -23,6 +23,10 @@ fn main() {
     W := 800
     H := 600
 
+    // color := Color{
+    //     r = 255, g = 0, b = 0, a = 255 
+    // }
+
     dir := 1
 
     InitWindow(W, H, "Hello Raylib")

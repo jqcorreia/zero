@@ -24,9 +24,16 @@ advance :: proc(p: ^Parser) -> Token {
 	return t
 }
 
-expect :: proc(p: ^Parser, kind: Token_Kind) -> Token {
+expect :: proc(p: ^Parser, kind: Token_Kind, loc := #caller_location) -> Token {
 	if current(p).kind != kind {
-		fatal_token(current(p), "Expected %v, got %v", kind, current(p).kind)
+		fmt.println(loc)
+		fatal_token(
+			current(p),
+			"Expected %v, got %v with lexeme '%s'",
+			kind,
+			current(p).kind,
+			current(p).lexeme,
+		)
 	}
 	return advance(p)
 }
@@ -288,8 +295,8 @@ parse_expression :: proc(p: ^Parser, min_lbp: int = 0) -> ^Expr {
 	case .QuotedString:
 		left = expr_string_literal(t.value.(string))
 	case .Identifier:
-		if peek(p).kind == .LBrace {
-			left = parse_struct_literal(p)
+		if current(p).kind == .LBrace {
+			left = parse_struct_literal(p, t.value.(string))
 		} else {
 			left = expr_ident(t.value.(string))
 		}
@@ -415,20 +422,51 @@ parse_function_ret_type :: proc(p: ^Parser) -> string {
 	return ""
 }
 
-parse_struct_literal :: proc(p: ^Parser) -> ^Expr {
+parse_struct_literal :: proc(p: ^Parser, struct_name: string) -> ^Expr {
 	result := new(Expr)
 
 	lit := Expr_Struct_Literal{}
+	lit.type_expr = struct_name
+
+	parse_struct_literal_fields(p, &lit)
 	result.data = lit
 
+	fmt.println(result)
+
 	return result
+}
+
+parse_struct_literal_fields :: proc(p: ^Parser, struct_expr: ^Expr_Struct_Literal) {
+	done := false
+	expect(p, .LBrace)
+	for !done {
+		#partial switch current(p).kind {
+		case .Identifier:
+			field_name := current(p).lexeme
+			advance(p)
+			expect(p, .Equal)
+			fmt.println("here?")
+			struct_expr.args[field_name] = parse_expression(p, 0)
+		case .Comma:
+			if peek(p).kind == .RBrace {
+				unexpected_token(peek(p))
+			}
+			advance(p)
+		case .RBrace:
+			advance(p)
+			done = true
+		case .NewLine:
+			advance(p)
+		case:
+			unexpected_token(current(p))
+		}
+	}
 }
 
 parse_block :: proc(p: ^Parser) -> ^Ast_Block {
 	res: [dynamic]^Ast_Node
 
 	expect(p, .LBrace)
-
 
 	for current(p).kind != .RBrace {
 		// Ignore empty lines
