@@ -41,6 +41,19 @@ emit_stmt :: proc(gen: ^Generator, node: ^Ast_Node) {
 		unimplemented(fmt.tprint("Unimplement emit statement", node))
 	}
 }
+emit_into :: proc(gen: ^Generator, expr: ^Expr, dest: ValueRef, scope: ^Scope, span: Span) {
+	#partial switch e in expr.data {
+	case Expr_Struct_Literal:
+		sym, _ := resolve_symbol(scope, e.type_expr)
+		struct_llvm_type := gen.primitive_types[sym.type]
+
+		for field in sym.type.fields {
+			field_ptr := BuildStructGEP2(gen.builder, struct_llvm_type, dest, u32(field.index), "")
+			field_val := emit_value(gen, e.args[field.name], scope, span)
+			BuildStore(gen.builder, field_val, field_ptr)
+		}
+	}
+}
 
 emit_address :: proc(gen: ^Generator, expr: ^Expr, scope: ^Scope, span: Span) -> ValueRef {
 	#partial switch e in expr.data {
@@ -77,7 +90,10 @@ emit_value :: proc(gen: ^Generator, expr: ^Expr, scope: ^Scope, span: Span) -> V
 	case Expr_String_Literal:
 		return BuildGlobalStringPtr(gen.builder, strings.clone_to_cstring(e.value), "")
 	case Expr_Struct_Literal:
-		return emit_address(gen, expr, scope, span)
+		addr := emit_address(gen, expr, scope, span)
+		sym, _ := resolve_symbol(scope, e.type_expr)
+		return BuildLoad2(gen.builder, gen.primitive_types[sym.type], addr, "")
+	// return emit_address(gen, expr, scope, span)
 	case Expr_Call:
 		return emit_call(gen, e, scope, span)
 	case Expr_Variable:
@@ -217,13 +233,14 @@ emit_var_decl :: proc(gen: ^Generator, s: ^Ast_Var_Decl, scope: ^Scope, span: Sp
 		gen.values[sym] = ptr
 		if s.expr != nil {
 			if sym.type.kind == .Struct {
-				data_layout := GetModuleDataLayout(gen.module)
+				emit_into(gen, s.expr, ptr, scope, span)
+				// data_layout := GetModuleDataLayout(gen.module)
 
-				align := ABIAlignmentOfType(data_layout, compiler_type)
-				size := ABISizeOfType(data_layout, compiler_type)
-				i64_size := ConstInt(Int64Type(), size, false)
-				addr := emit_address(gen, s.expr, scope, span)
-				BuildMemCpy(gen.builder, ptr, align, addr, align, i64_size)
+				// align := ABIAlignmentOfType(data_layout, compiler_type)
+				// size := ABISizeOfType(data_layout, compiler_type)
+				// i64_size := ConstInt(Int64Type(), size, false)
+				// addr := emit_address(gen, s.expr, scope, span)
+				// BuildMemCpy(gen.builder, ptr, align, addr, align, i64_size)
 
 			} else {
 				BuildStore(gen.builder, emit_value(gen, s.expr, scope, span), ptr)
