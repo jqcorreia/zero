@@ -51,14 +51,7 @@ emit_address :: proc(gen: ^Generator, expr: ^Expr, scope: ^Scope, span: Span) ->
 		ptr := BuildAlloca(gen.builder, struct_llvm_type, "")
 
 		for field in sym.type.fields {
-			fmt.println(field)
-
-			//TODO(quadrado): This is just to test that this whole thing works
-			// Change to proper type later
-			type_sym, _ := resolve_symbol(scope, "u8")
-			llvm_type := gen.primitive_types[type_sym.type]
 			field_ptr := BuildStructGEP2(gen.builder, struct_llvm_type, ptr, u32(field.index), "")
-
 			BuildStore(gen.builder, emit_value(gen, e.args[field.name], scope, span), field_ptr)
 		}
 		return ptr
@@ -220,10 +213,22 @@ emit_var_decl :: proc(gen: ^Generator, s: ^Ast_Var_Decl, scope: ^Scope, span: Sp
 
 		if exists do fatal_span(span, "Variable aliasing detected. Fatal error for now")
 
-		ptr = BuildAlloca(gen.builder, gen.primitive_types[sym.type], "")
+		compiler_type := gen.primitive_types[sym.type]
+		ptr = BuildAlloca(gen.builder, compiler_type, "")
 		gen.values[sym] = ptr
 		if s.expr != nil {
-			BuildStore(gen.builder, emit_value(gen, s.expr, scope, span), ptr)
+			if sym.type.kind == .Struct {
+				data_layout := GetModuleDataLayout(gen.module)
+
+				align := ABIAlignmentOfType(data_layout, compiler_type)
+				size := ABISizeOfType(data_layout, compiler_type)
+				i64_size := ConstInt(Int64Type(), size, false)
+				addr := emit_address(gen, s.expr, scope, span)
+				BuildMemCpy(gen.builder, ptr, align, addr, align, i64_size)
+
+			} else {
+				BuildStore(gen.builder, emit_value(gen, s.expr, scope, span), ptr)
+			}
 		}
 	} else {
 		// Create global variables, only constant for now

@@ -2,7 +2,7 @@ external "raylib" {
     fn InitWindow(width: i32, height: i32, title: str)
     fn BeginDrawing()
     fn EndDrawing()
-    fn ClearBackground(color: i32)
+    fn ClearBackground(color: Color)
     fn DrawRectangle(x: i32, y: i32, w: i32, h: i32, color: i32)
     fn GetKeyPressed() -> i32
 }
@@ -23,13 +23,14 @@ fn main() {
     W := 800
     H := 600
 
-    // color := Color{
-    //     r = 255, g = 0, b = 0, a = 255 
-    // }
+    color := Color{
+        r = 128, g = 0, b = 255, a = 255 
+    }
 
     dir := 1
 
     InitWindow(W, H, "Hello Raylib")
+
     x: i32 = 0
 
     for {
@@ -56,7 +57,7 @@ fn main() {
         }
 
         BeginDrawing()
-        ClearBackground(0)
+        ClearBackground(color)
         DrawRectangle(x, H / 2 - 25, 50, 50, 4278190335)
         EndDrawing()
     }
