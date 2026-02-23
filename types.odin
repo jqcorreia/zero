@@ -39,6 +39,10 @@ create_primitive_types :: proc(scope: ^Scope) {
 	void.kind = .Void
 	scope.symbols[""] = make_symbol(.Type, void)
 
+	bool_t := new(Type)
+	bool_t.kind = .Bool
+	scope.symbols["bool"] = make_symbol(.Type, bool_t)
+
 	u8_t := new(Type)
 	u8_t.kind = .Uint8
 	u8_t.signed = false
