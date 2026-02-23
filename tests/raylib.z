@@ -5,6 +5,9 @@ external "raylib" {
     fn ClearBackground(color: Color)
     fn DrawRectangle(x: i32, y: i32, w: i32, h: i32, color: Color)
     fn GetKeyPressed() -> i32
+    fn IsKeyPressed(key: i32) -> bool
+    fn TakeScreenshot(filename: str)
+    fn DrawText(text: str, posX: i32, posY: i32, fontSize: i32, color: Color)    
 }
 
 external "c" {
@@ -32,6 +35,7 @@ fn main() {
     x: i32 = 0
 
     speed := 10
+    text_color := Color { r = 0, g = 128, b = 0, a = 255 }
 
     for {
         keypressed := GetKeyPressed()
@@ -42,27 +46,31 @@ fn main() {
         if keypressed == 256 { // escape key
             break
         }
+        if keypressed == 80 { // escape key
+           TakeScreenshot("screenshot.png")
+        }
         if keypressed == 263 { 
             x = x - speed
         }
         if keypressed == 262 { 
             x = x + speed
         }
-        if dir == 1 {
-            x = x + 1
-        }
-        if dir == 2 {
-            x = x - 1
-        }
-        if x > W - 50 {
-            dir = 2
-        }
-        if x < 0 {
-            dir = 1
-        }
+        // if dir == 1 {
+        //     x = x + 1
+        // }
+        // if dir == 2 {
+        //     x = x - 1
+        // }
+        // if x > W - 50 {
+        //     dir = 2
+        // }
+        // if x < 0 {
+        //     dir = 1
+        // }
 
         BeginDrawing()
         ClearBackground(color)
+        DrawText("Press P for screenshot", 10, 10, 24, text_color)
         DrawRectangle(x, H / 2 - 25, 50, 50, BLUE)
         EndDrawing()
     }
