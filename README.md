@@ -39,3 +39,8 @@ Potentially this README can look a lot different in a couple of months if this b
 odin build .
 ./lang run tests/basic.z 
 ```
+
+# Dependencies
+- `linux` at least until we know properly what we are doing
+- `cc` as the C compiler that does the linking in the end
+- `raylib` in order to run the raylib example in `tests/raylib.z`
