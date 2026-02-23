@@ -1,4 +1,4 @@
-# Lang
+# Zero Lang
 
 Procedural language with basics done right. Straightforward, correct and if possible with some syntatic sugar on top.
 Aims to be explicit but to not sacrifice all the creature comforts of a modern language.
