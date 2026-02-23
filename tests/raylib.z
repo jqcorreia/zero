@@ -43,16 +43,17 @@ fn main() {
         if keypressed != 0 {
             printf("Key pressed: %d\n", keypressed)
         }
-        if keypressed == 256 { // escape key
+        if IsKeyPressed(256) { // escape key
             break
         }
         if keypressed == 80 { // escape key
            TakeScreenshot("screenshot.png")
         }
-        if keypressed == 263 { 
+        if IsKeyPressed(263) { 
+            printf("Hello")
             x = x - speed
         }
-        if keypressed == 262 { 
+        if IsKeyPressed(262) { 
             x = x + speed
         }
         // if dir == 1 {
