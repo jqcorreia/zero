@@ -7,15 +7,18 @@ Already done:
 - Lexing
 - Parsing / AST construction (straightforward Pratt parser)
 - Basic Checker (semantic and basic types)
+- Order-independent declarations
 - Integers and Boolean support
+- C-String support
 - Comments (surprisingly hard to implement well actually)
 - User functions
 - Recursion
+- Structs
 - Unconditional For loop with break and continue
 - Single file, single module
-- Hardcoded `printf` import from libc
-- LLVM codegen (planning to abstract the backend, but one fight at a time)
+- External function interface
 
+Right now this is an LLVM project and it will be for a while. Trying not to tangle the code to much to that.  
 Potentially this README can look a lot different in a couple of months if this becomes a serious project.
 
 # TODO
