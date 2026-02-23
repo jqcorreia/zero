@@ -137,8 +137,11 @@ lex :: proc(input: string) -> []Token {
 		case is_numeric(c):
 			start := lexer.pos
 			value := 0
-			for lexer.pos < len(lexer.input) && is_numeric(lexer.input[lexer.pos]) {
-				value = value * 10 + int(lexer.input[lexer.pos] - '0')
+			for lexer.pos < len(lexer.input) &&
+			    (is_numeric(lexer.input[lexer.pos]) || lexer.input[lexer.pos] == '_') {
+				if lexer.input[lexer.pos] != '_' {
+					value = value * 10 + int(lexer.input[lexer.pos] - '0')
+				}
 				lexer.pos += 1
 			}
 			end := lexer.pos

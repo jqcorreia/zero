@@ -23,13 +23,16 @@ Potentially this README can look a lot different in a couple of months if this b
 - [x] Basic type system
 - [x] Basic External functions system and cleanup the printf mess
 - [x] Implement a really dumb variadic marker
+- [x] User defined types (i.e structs)  
+- [ ] Struct field accessor
+- [x] Implement support for arbitrary "_" character in numbers (e.g for thousands separator)
 - [ ] Check types for function calls. right now is a mess.
 - [ ] Make sure that the available types are synched with the primtive types in codegen 
-- [ ] User defined types (i.e structs)  
-- [ ] Bound checked arrays  
-- [ ] Bound checked strings  
+- [ ] Arrays with bound checked access  
+- [ ] Proper string with bound check and not null-terminated  
 - [ ] Make `external` blocks it's own AST node kind
 - [ ] Make sure that lexer is UTF-8 compliant
+- [ ] Implement float support
 
 # Try it
 ```

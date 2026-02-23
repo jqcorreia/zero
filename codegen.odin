@@ -78,7 +78,6 @@ emit_value :: proc(gen: ^Generator, expr: ^Expr, scope: ^Scope, span: Span) -> V
 		return BuildGlobalStringPtr(gen.builder, strings.clone_to_cstring(e.value), "")
 	case Expr_Struct_Literal:
 		return emit_address(gen, expr, scope, span)
-	// implementation goes here
 	case Expr_Call:
 		return emit_call(gen, e, scope, span)
 	case Expr_Variable:

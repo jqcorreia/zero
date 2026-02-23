@@ -9,7 +9,6 @@ external "raylib" {
 
 external "c" {
     fn printf(format: str, ...) -> i32
-    fn sleep(seconds: u32)
 }
 
 struct Color {
@@ -23,15 +22,15 @@ fn main() {
     W := 800
     H := 600
 
-    color := Color{
-        r = 128, g = 0, b = 255, a = 255 
-    }
+    color := Color{ r = 128, g = 128, b = 128, a = 255 }
 
     dir := 1
 
     InitWindow(W, H, "Hello Raylib")
 
     x: i32 = 0
+
+    speed := 10
 
     for {
         keypressed := GetKeyPressed()
@@ -42,19 +41,24 @@ fn main() {
         if keypressed == 256 { // escape key
             break
         }
-
-        if dir == 1 {
-            x = x + 1
+        if keypressed == 263 { 
+            x = x - speed
         }
-        if dir == 2 {
-            x = x - 1
+        if keypressed == 262 { 
+            x = x + speed
         }
-        if x > W - 50 {
-            dir = 2
-        }
-        if x < 0 {
-            dir = 1
-        }
+        // if dir == 1 {
+        //     x = x + 1
+        // }
+        // if dir == 2 {
+        //     x = x - 1
+        // }
+        // if x > W - 50 {
+        //     dir = 2
+        // }
+        // if x < 0 {
+        //     dir = 1
+        // }
 
         BeginDrawing()
         ClearBackground(color)

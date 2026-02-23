@@ -1,4 +1,6 @@
-external fn printf(format: str, ...) -> i32
+external "c" {
+    fn printf(format: str, ...) -> i32
+}
 
 fn string_test() {
     s: str = "Hello, World\n"
@@ -18,6 +20,8 @@ fn qux(a: i32, b: i32) {
 }
 
 fn main() {
+    y := 1_000_000
+    printf("%d\n", y)
     qux(31, 11)
     string_test()
 }
