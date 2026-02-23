@@ -3,7 +3,7 @@ external "raylib" {
     fn BeginDrawing()
     fn EndDrawing()
     fn ClearBackground(color: Color)
-    fn DrawRectangle(x: i32, y: i32, w: i32, h: i32, color: i32)
+    fn DrawRectangle(x: i32, y: i32, w: i32, h: i32, color: Color)
     fn GetKeyPressed() -> i32
 }
 
@@ -23,6 +23,7 @@ fn main() {
     H := 600
 
     color := Color{ r = 128, g = 128, b = 128, a = 255 }
+    BLUE := Color{ r = 0, g = 121, b = 241, a = 255 }
 
     dir := 1
 
@@ -47,22 +48,22 @@ fn main() {
         if keypressed == 262 { 
             x = x + speed
         }
-        // if dir == 1 {
-        //     x = x + 1
-        // }
-        // if dir == 2 {
-        //     x = x - 1
-        // }
-        // if x > W - 50 {
-        //     dir = 2
-        // }
-        // if x < 0 {
-        //     dir = 1
-        // }
+        if dir == 1 {
+            x = x + 1
+        }
+        if dir == 2 {
+            x = x - 1
+        }
+        if x > W - 50 {
+            dir = 2
+        }
+        if x < 0 {
+            dir = 1
+        }
 
         BeginDrawing()
         ClearBackground(color)
-        DrawRectangle(x, H / 2 - 25, 50, 50, 4278190335)
+        DrawRectangle(x, H / 2 - 25, 50, 50, BLUE)
         EndDrawing()
     }
 }
