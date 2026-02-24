@@ -1,4 +1,6 @@
-external fn printf(format: str, ...) -> i32
+external "c" {
+    fn printf(format: str, ...) -> i32
+}
 
 // Main function must be defined, otherwise it errs
 fn main() -> i32 {
@@ -11,6 +13,11 @@ fn main() -> i32 {
     y: u8 = 10
     param_test(x, y) // Should print "15"
     return 0
+}
+
+// Different parameter types and return values
+fn param_test(x: u8, y: u8) -> u8 {
+    return x + y
 }
 
 // This is a simple test of function definition and recursion
@@ -41,7 +48,3 @@ fn func() -> i32 {
     return a
 }
 
-// Different parameter types and return values
-fn param_test(x: u8, y: u8) -> u8 {
-    return x + y
-}
