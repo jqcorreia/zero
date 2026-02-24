@@ -33,7 +33,7 @@ fn main() {
     x: i32 = 0
     speed := 10
 
-    // field := BLUE.a
+    field := BLUE.a
 
     InitWindow(W, H, "Hello Raylib")
     for {

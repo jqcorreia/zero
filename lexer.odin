@@ -286,18 +286,18 @@ lex :: proc(input: string) -> []Token {
 			if lex_peek(&lexer, 1) == '.' && lex_peek(&lexer, 2) == '.' {
 				append(
 					&tokens,
-					Token{kind = .Ellipsis, lexeme = "==", span = n_char_span(lexer, 3)},
+					Token{kind = .Ellipsis, lexeme = "...", span = n_char_span(lexer, 3)},
 				)
 				lexer.pos += 3
 			} else {
-				append(&tokens, Token{kind = .Period, lexeme = ":", span = one_char_span(lexer)})
+				append(&tokens, Token{kind = .Period, lexeme = ".", span = one_char_span(lexer)})
 				lexer.pos += 1
 			}
 		case c == ':':
 			if lex_peek(&lexer) == '=' {
 				append(
 					&tokens,
-					Token{kind = .ColonEqual, lexeme = "==", span = two_char_span(lexer)},
+					Token{kind = .ColonEqual, lexeme = ":=", span = two_char_span(lexer)},
 				)
 				lexer.pos += 2
 			} else {
@@ -308,7 +308,7 @@ lex :: proc(input: string) -> []Token {
 			if lex_peek(&lexer) == '=' {
 				append(
 					&tokens,
-					Token{kind = .GreaterOrEqual, lexeme = ">", span = two_char_span(lexer)},
+					Token{kind = .GreaterOrEqual, lexeme = ">=", span = two_char_span(lexer)},
 				)
 				lexer.pos += 2
 			} else {
@@ -319,11 +319,11 @@ lex :: proc(input: string) -> []Token {
 			if lex_peek(&lexer) == '=' {
 				append(
 					&tokens,
-					Token{kind = .LesserOrEqual, lexeme = ">", span = two_char_span(lexer)},
+					Token{kind = .LesserOrEqual, lexeme = "<=", span = two_char_span(lexer)},
 				)
 				lexer.pos += 2
 			} else {
-				append(&tokens, Token{kind = .Lesser, lexeme = ">", span = one_char_span(lexer)})
+				append(&tokens, Token{kind = .Lesser, lexeme = "<", span = one_char_span(lexer)})
 				lexer.pos += 1
 			}
 		case:
