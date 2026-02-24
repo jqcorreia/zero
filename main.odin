@@ -3,7 +3,6 @@ package main
 import "core:flags"
 import "core:fmt"
 import "core:os"
-import "core:slice"
 import "core:strings"
 import "core:sys/posix"
 import "core:time"
