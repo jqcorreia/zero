@@ -39,6 +39,7 @@ Token_Kind :: enum {
 	Break_Keyword,
 	Continue_Keyword,
 	Struct_Keyword,
+	Import_Keyword,
 	External_Keyword,
 	EOF,
 }
@@ -91,6 +92,7 @@ Keyword_Map: map[string]Token_Kind = {
 	"break"    = .Break_Keyword,
 	"continue" = .Continue_Keyword,
 	"struct"   = .Struct_Keyword,
+	"import"   = .Import_Keyword,
 	"external" = .External_Keyword,
 }
 

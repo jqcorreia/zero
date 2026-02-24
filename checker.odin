@@ -23,6 +23,8 @@ check_stmt :: proc(c: ^Checker, node: ^Ast_Node) {
 	case Ast_Break:
 		check_break(c, &data, node.span, node.scope)
 	case Ast_Block:
+	case Ast_Import:
+	// Do nothing here
 	case:
 		unimplemented(fmt.tprint("Unimplement check", node))
 	}

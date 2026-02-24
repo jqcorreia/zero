@@ -213,6 +213,8 @@ resolve_types :: proc(c: ^Checker, node: ^Ast_Node) {
 		resolve_expr_type(data.expr, node.scope, node.span)
 	case Ast_Break:
 	// Nothing to do here
+	case Ast_Import:
+	// Nothing to do here
 	case:
 		unimplemented(fmt.tprintf("Unimplemented resolve for node %v", node))
 	}

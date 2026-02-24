@@ -29,6 +29,8 @@ emit_stmt :: proc(gen: ^Generator, node: ^Ast_Node) {
 		}
 	case Ast_Block:
 	// Do nothing
+	case Ast_Import:
+	// Do nothing
 	case Ast_Return:
 		emit_return(gen, &data, node.scope, node.span)
 	case Ast_If:

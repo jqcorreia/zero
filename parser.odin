@@ -66,6 +66,9 @@ parse_statement :: proc(p: ^Parser) -> ^Ast_Node {
 	data := &ast_node.data
 
 	switch {
+	case t.kind == .Import_Keyword:
+		advance(p)
+		data^ = parse_import(p)^
 	case t.kind == .External_Keyword:
 		advance(p)
 
@@ -561,5 +564,18 @@ parse_continue :: proc(p: ^Parser) -> ^Ast_Continue {
 	stmt := new(Ast_Continue)
 
 	expect(p, .NewLine)
+	return stmt
+}
+
+parse_import :: proc(p: ^Parser) -> ^Ast_Import {
+	stmt := new(Ast_Import)
+
+	filepath := expect(p, .QuotedString).value.(string)
+	stmt.path = filepath
+
+	if current(p).kind == .Identifier {
+		stmt.identifier = current(p).value.(string)
+	}
+
 	return stmt
 }

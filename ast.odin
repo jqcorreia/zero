@@ -20,6 +20,7 @@ Ast_Data :: union {
 	Ast_Continue,
 	Ast_Var_Decl,
 	Ast_Struct_Decl,
+	Ast_Import,
 }
 
 Ast_Expr :: struct {
@@ -92,6 +93,11 @@ Ast_For :: struct {
 
 Ast_Break :: struct {}
 Ast_Continue :: struct {}
+
+Ast_Import :: struct {
+	path:       string,
+	identifier: string,
+}
 
 
 Expr :: struct {
@@ -186,6 +192,8 @@ traverse_ast :: proc(
 		for child in node.statements {
 			traverse_ast(child, func, userdata)
 		}
+	case Ast_Import:
+		func(ast, userdata)
 	case:
 		unimplemented(fmt.tprint("Unimplement traverse statement", ast))
 	}
