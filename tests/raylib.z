@@ -19,8 +19,6 @@ struct Color {
     a: u8
 }
 
-fn init() {
-}
 fn main() {
     W := 800
     H := 600
@@ -35,7 +33,6 @@ fn main() {
     x: i32 = 0
     speed := 10
 
-    // init()
     InitWindow(W, H, "Hello Raylib")
     for {
         keypressed := GetKeyPressed()
@@ -70,7 +67,7 @@ fn main() {
         // }
 
         BeginDrawing()
-        ClearBackground(color)
+        ClearBackground(background_color)
         DrawText("Press P for screenshot", 10, 10, 24, text_color)
         DrawRectangle(x, H / 2 - 25, 50, 50, BLUE)
         EndDrawing()
