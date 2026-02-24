@@ -246,10 +246,11 @@ resolve_expr_type :: proc(expr: ^Expr, scope: ^Scope, span: Span) -> ^Type {
 			}
 			type = sym.type
 		} else {
+			error_span(span, "unresolved symbol '%s'", e.value)
 			type = &error_type
 		}
 
-		expr.type = sym.type
+		expr.type = type
 		return type
 
 	case Expr_Unary:

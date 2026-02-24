@@ -19,22 +19,24 @@ struct Color {
     a: u8
 }
 
+fn init() {
+}
 fn main() {
     W := 800
     H := 600
 
-    color := Color{ r = 128, g = 128, b = 128, a = 255 }
+    background_color := Color{ r = 128, g = 128, b = 128, a = 255 }
+    text_color := Color { r = 0, g = 128, b = 0, a = 255 }
+
     BLUE := Color{ r = 0, g = 121, b = 241, a = 255 }
 
     dir := 1
 
-    InitWindow(W, H, "Hello Raylib")
-
     x: i32 = 0
-
     speed := 10
-    text_color := Color { r = 0, g = 128, b = 0, a = 255 }
 
+    // init()
+    InitWindow(W, H, "Hello Raylib")
     for {
         keypressed := GetKeyPressed()
 
