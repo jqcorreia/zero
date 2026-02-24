@@ -17,6 +17,7 @@ Already done:
 - Unconditional For loop with break and continue
 - Single file, single module
 - External function interface
+- Global scope import (a la #include)
 
 Right now this is an LLVM project and it will be for a while. Trying not to tangle the code to much to that.  
 Potentially this README can look a lot different in a couple of months if this becomes a serious project.
@@ -27,6 +28,7 @@ Potentially this README can look a lot different in a couple of months if this b
 - [x] Basic External functions system and cleanup the printf mess
 - [x] Implement a really dumb variadic marker
 - [x] User defined types (i.e structs)  
+- [x] Global scope import mechanism
 - [ ] Struct field accessor
 - [x] Implement support for arbitrary "_" character in numbers (e.g for thousands separator)
 - [ ] Check types for function calls. right now is a mess.
@@ -37,7 +39,7 @@ Potentially this README can look a lot different in a couple of months if this b
 - [ ] Make sure that lexer is UTF-8 compliant
 - [ ] Implement float support
 - [ ] Have the notion of addressable types (?)
-
+- [ ] Add check for cyclic import
 # Try it
 ```
 odin build .

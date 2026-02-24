@@ -7,23 +7,24 @@ Checker :: struct {}
 check_stmt :: proc(c: ^Checker, node: ^Ast_Node) {
 	#partial switch &data in node.data {
 	case Ast_Expr:
-		check_expr(c, data.expr, node.span, node.scope)
+		check_expr(c, data.expr, node.scope, node.span)
 	case Ast_Var_Decl:
 	case Ast_Var_Assign:
-		check_assigment(c, &data, node.span, node.scope)
+		check_assigment(c, &data, node.scope, node.span)
 	case Ast_Function:
-		check_function(c, &data, node.span, node.scope)
+		check_function(c, &data, node.scope, node.span)
 	case Ast_Struct_Decl:
 	case Ast_Return:
-		check_return(c, &data, node.span, node.scope)
+		check_return(c, &data, node.scope, node.span)
 	case Ast_If:
 		check_if(c, &data, node.span)
 	case Ast_For:
 		check_for_loop(c, &data, node.span)
 	case Ast_Break:
-		check_break(c, &data, node.span, node.scope)
+		check_break(c, &data, node.scope, node.span)
 	case Ast_Block:
 	case Ast_Import:
+		check_import(c, &data, node.scope, node.span)
 	// Do nothing here
 	case:
 		unimplemented(fmt.tprint("Unimplement check", node))
@@ -31,7 +32,7 @@ check_stmt :: proc(c: ^Checker, node: ^Ast_Node) {
 }
 
 
-check_assigment :: proc(c: ^Checker, s: ^Ast_Var_Assign, span: Span, scope: ^Scope) {
+check_assigment :: proc(c: ^Checker, s: ^Ast_Var_Assign, scope: ^Scope, span: Span) {
 	var, ok := resolve_symbol(scope, s.name)
 	if ok {
 		if var.type != s.expr.type {
@@ -42,7 +43,7 @@ check_assigment :: proc(c: ^Checker, s: ^Ast_Var_Assign, span: Span, scope: ^Sco
 	}
 }
 
-check_function :: proc(c: ^Checker, s: ^Ast_Function, span: Span, scope: ^Scope) {
+check_function :: proc(c: ^Checker, s: ^Ast_Function, scope: ^Scope, span: Span) {
 	// for p in s.params {
 	// }
 	if !s.external {
@@ -50,7 +51,7 @@ check_function :: proc(c: ^Checker, s: ^Ast_Function, span: Span, scope: ^Scope)
 	}
 }
 
-check_return :: proc(c: ^Checker, s: ^Ast_Return, span: Span, scope: ^Scope) {
+check_return :: proc(c: ^Checker, s: ^Ast_Return, scope: ^Scope, span: Span) {
 	sc := scope
 	inside_function := false
 	for {
@@ -71,11 +72,11 @@ check_call :: proc(c: ^Checker, e: Expr_Call, span: Span) {
 
 }
 
-check_expr :: proc(c: ^Checker, expr: ^Expr, span: Span, scope: ^Scope) -> ^Type {
+check_expr :: proc(c: ^Checker, expr: ^Expr, scope: ^Scope, span: Span) -> ^Type {
 	#partial switch e in expr.data {
 	case Expr_Binary:
-		left := check_expr(c, e.left, span, scope)
-		right := check_expr(c, e.right, span, scope)
+		left := check_expr(c, e.left, scope, span)
+		right := check_expr(c, e.right, scope, span)
 
 		if left != right {
 			error_span(
@@ -126,7 +127,7 @@ check_for_loop :: proc(c: ^Checker, s: ^Ast_For, span: Span) {
 	check_block(c, s.body, span)
 }
 
-check_break :: proc(c: ^Checker, s: ^Ast_Break, span: Span, scope: ^Scope) {
+check_break :: proc(c: ^Checker, s: ^Ast_Break, scope: ^Scope, span: Span) {
 	sc := scope
 	inside_loop := false
 	for {
@@ -140,6 +141,12 @@ check_break :: proc(c: ^Checker, s: ^Ast_Break, span: Span, scope: ^Scope) {
 
 	if !inside_loop {
 		error_span(span, "Break statement outside of loop")
+	}
+}
+
+check_import :: proc(c: ^Checker, node: ^Ast_Import, scope: ^Scope, span: Span) {
+	if scope.kind != .Global {
+		error_span(span, "Import statemens must be at top-level")
 	}
 }
 
@@ -177,13 +184,8 @@ check :: proc(c: ^Checker, nodes: []^Ast_Node) {
 		}
 	}
 
-	for node in nodes {
-		traverse_ast(node, check_resolved_symbols)
-	}
-
-	for node in nodes {
-		traverse_ast(node, check_everyone_has_types)
-	}
+	traverse_block(nodes, check_resolved_symbols)
+	traverse_block(nodes, check_everyone_has_types)
 
 	for node in nodes {
 		check_stmt(c, node)
