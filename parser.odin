@@ -598,6 +598,7 @@ parse_import :: proc(p: ^Parser) -> ^Ast_Import {
 
 	if current(p).kind == .Identifier {
 		stmt.identifier = current(p).value.(string)
+		advance(p)
 	}
 
 	return stmt
