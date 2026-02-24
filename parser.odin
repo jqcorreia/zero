@@ -1,6 +1,8 @@
 package main
 
 import "core:fmt"
+import "core:os"
+import "core:strings"
 
 Parser :: struct {
 	tokens: []Token,
@@ -47,6 +49,28 @@ parse_program :: proc(p: ^Parser) -> []^Ast_Node {
 		// Deal with rogue newlines, like at the beginning of a line
 		if t.kind == .NewLine {
 			advance(p)
+			continue
+		}
+		// Doing this here so I can directly expand the imports and do so recursively
+		// This is the basic implementation of it, this must go somewhere else
+		if t.kind == .Import_Keyword {
+			// Add the parse_statement to the AST preparing for further work on this
+			import_stmt := parse_statement(p)
+			append(&stmts, import_stmt)
+
+			import_node := import_stmt.data.(Ast_Import)
+			path := import_node.path
+			if !strings.ends_with(path, ".z") {
+				path = fmt.tprintf("%s.z", path)
+			}
+			contents := os.read_entire_file(path) or_else panic("No file found")
+			import_tokens := lex(string(contents))
+			import_parser := Parser {
+				tokens = import_tokens,
+			}
+
+			import_stmts := parse_program(&import_parser)
+			for s in import_stmts do append(&stmts, s)
 			continue
 		}
 
