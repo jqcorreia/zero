@@ -160,8 +160,6 @@ emit_value :: proc(gen: ^Generator, expr: ^Expr, scope: ^Scope, span: Span) -> V
 				"gt",
 			)
 		case .Greater:
-			fmt.printf("%v %p\n", e.left, e.left)
-			fmt.printf("%v %p\n", e.right, e.right)
 			left_type := e.left.type
 			right_type := e.right.type
 			return BuildICmp(
@@ -174,7 +172,6 @@ emit_value :: proc(gen: ^Generator, expr: ^Expr, scope: ^Scope, span: Span) -> V
 		case .Lesser:
 			left_type := e.left.type
 			right_type := e.right.type
-			fmt.println(left_type, right_type)
 			return BuildICmp(
 				gen.builder,
 				left_type.signed || right_type.signed ? .IntSLT : .IntULT,

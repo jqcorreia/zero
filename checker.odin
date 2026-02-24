@@ -179,7 +179,6 @@ check :: proc(c: ^Checker, nodes: []^Ast_Node) {
 					node,
 					expr_node,
 				)
-
 			}
 		}
 	}

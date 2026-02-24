@@ -458,8 +458,6 @@ parse_struct_literal :: proc(p: ^Parser, struct_name: string) -> ^Expr {
 	parse_struct_literal_fields(p, &lit)
 	result.data = lit
 
-	fmt.println(result)
-
 	return result
 }
 

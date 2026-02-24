@@ -15,11 +15,6 @@ fn main() -> i32 {
     return 0
 }
 
-// Different parameter types and return values
-fn param_test(x: u8, y: u8) -> u8 {
-    return x + y
-}
-
 // This is a simple test of function definition and recursion
 // Also tests if/then/else statements and variable scope
 fn fib(n: i32) -> i32 {
@@ -48,3 +43,7 @@ fn func() -> i32 {
     return a
 }
 
+// Different parameter types and return values
+fn param_test(x: u8, y: u8) -> u8 {
+    return x + y
+}

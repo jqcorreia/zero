@@ -93,6 +93,7 @@ bind_scopes :: proc(node: ^Ast_Node, cur_scope: ^Scope) {
 		symbol.name = data.name
 		symbol.kind = .Function
 		symbol.decl = node
+		symbol.scope = cur_scope
 
 		cur_scope.symbols[data.name] = symbol
 
@@ -169,7 +170,6 @@ resolve_types :: proc(c: ^Checker, node: ^Ast_Node) {
 		for &field, idx in data.fields {
 			field_type_sym, field_ok := resolve_symbol(node.scope, field.type_expr)
 			if field_ok {
-				fmt.println(field.symbol, field_type_sym)
 				type_sym.type.fields[idx].type = field_type_sym.type
 			} else {
 				error_span(node.span, "unresolved type expression '%v'", field.type_expr)
@@ -281,19 +281,26 @@ resolve_expr_type :: proc(expr: ^Expr, scope: ^Scope, span: Span) -> ^Type {
 	case Expr_Call:
 		func_name := e.callee.data.(Expr_Variable).value
 		sym, ok := resolve_symbol(scope, func_name)
+
 		if ok {
 			if sym.type == nil {
-				fmt.println("sym type nil", func_name, sym)
-				// type_sym, _ := resolve_symbol(scope, sym.decl.data.(Ast_Function).ret_type_expr)
-				// e.callee.type = type_sym.type
-
+				// If we land here it's because function symbol was not type resolved yet.
+				// Do it 'manually' here
+				type_sym, _ := resolve_symbol(scope, sym.decl.data.(Ast_Function).ret_type_expr)
+				e.callee.type = type_sym.type
+				sym.type = type_sym.type
 			} else {
+				// The function symbol exists and it's type resolved, just use that.
 				e.callee.type = sym.type
 			}
+
+			// Resolve argument expressions types
 			for arg in e.args {
 				arg.type = resolve_expr_type(arg, scope, span)
 			}
-			return sym.type
+
+			// Return the already resolved function return type
+			return e.callee.type
 		} else {
 			error_span(span, "Function '%s' not defined", func_name)
 			e.callee.type = &error_type
