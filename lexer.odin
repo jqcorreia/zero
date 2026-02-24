@@ -12,6 +12,7 @@ Token_Kind :: enum {
 	RBrace,
 	Identifier,
 	QuotedString,
+	Dot,
 	Equal,
 	DoubleEqual,
 	NotEqual,
@@ -326,6 +327,9 @@ lex :: proc(input: string) -> []Token {
 				append(&tokens, Token{kind = .Lesser, lexeme = ">", span = one_char_span(lexer)})
 				lexer.pos += 1
 			}
+		case c == '.':
+			append(&tokens, Token{kind = .Dot, lexeme = ".", span = one_char_span(lexer)})
+			lexer.pos += 1
 		case:
 			fatal_span(Span{start = lexer.pos}, "Unrecognized character %c", c)
 		}
