@@ -113,6 +113,7 @@ Expr_Data :: union {
 	Expr_Binary,
 	Expr_Variable,
 	Expr_Call,
+	Expr_Member,
 }
 
 Expr_String_Literal :: struct {
@@ -145,6 +146,18 @@ Expr_Call :: struct {
 Expr_Struct_Literal :: struct {
 	type_expr: string,
 	args:      map[string]^Expr,
+}
+
+Expr_Member :: struct {
+	base:   ^Expr,
+	member: string,
+	kind:   Member_Kind,
+}
+
+Member_Kind :: enum {
+	Field,
+	Method,
+	Swizzle,
 }
 
 // Generic AST traverse function

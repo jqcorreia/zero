@@ -253,6 +253,8 @@ resolve_expr_type :: proc(expr: ^Expr, scope: ^Scope, span: Span) -> ^Type {
 		expr.type = type
 		return type
 
+	case Expr_Member:
+	//TODO
 	case Expr_Unary:
 		operand := resolve_expr_type(e.expr, scope, span)
 		expr.type = operand

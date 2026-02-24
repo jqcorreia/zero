@@ -193,7 +193,6 @@ parse_identifier :: proc(p: ^Parser) -> Ast_Data {
 
 		}
 
-		// fmt.println(type_expr, default_value_expr)
 		return Ast_Var_Decl {
 			name = name_tok.lexeme,
 			type_expr = type_expr,
@@ -288,8 +287,21 @@ expr_call :: proc(callee: ^Expr, args: []^Expr) -> ^Expr {
 	return ret
 }
 
+expr_member :: proc(left: ^Expr, field_name: string) -> ^Expr {
+	ret := new(Expr)
+	ret.data = Expr_Member {
+		base   = left,
+		member = field_name,
+		kind   = .Field,
+	}
+
+	return ret
+}
+
 precedence :: proc(op: Token_Kind) -> int {
 	#partial switch op {
+	case .Period:
+		return 200
 	case .LParen:
 		return 200
 	case .Star, .Slash:
@@ -301,6 +313,7 @@ precedence :: proc(op: Token_Kind) -> int {
 	}
 	return -1
 }
+
 prefix_precedence :: proc(op: Token_Kind) -> int {
 	#partial switch op {
 	case .Minus:
@@ -349,6 +362,9 @@ parse_expression :: proc(p: ^Parser, min_lbp: int = 0) -> ^Expr {
 		case .LParen:
 			args := parse_call_args(p)
 			left = expr_call(left, args)
+		case .Period:
+			field_name := expect(p, .Identifier).value.(string)
+			left = expr_member(left, field_name)
 		case:
 			rbp := lbp + 1
 
