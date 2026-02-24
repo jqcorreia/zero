@@ -12,10 +12,6 @@ external "raylib" {
     fn DrawText(text: str, posX: i32, posY: i32, fontSize: i32, color: Color)    
 }
 
-external "c" {
-    fn printf(format: str, ...) -> i32
-}
-
 struct Color {
     r: u8
     g: u8

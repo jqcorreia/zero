@@ -294,6 +294,7 @@ resolve_expr_type :: proc(expr: ^Expr, scope: ^Scope, span: Span) -> ^Type {
 			}
 			return sym.type
 		} else {
+			error_span(span, "Function '%s' not defined", func_name)
 			e.callee.type = &error_type
 		}
 	}

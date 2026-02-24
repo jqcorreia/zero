@@ -41,6 +41,25 @@ main :: proc() {
 		}
 	}
 
+	// Deal with imports
+	// Just to a scrappy job and dump the statements directly into main program statement list
+	lex_and_parser_imports := proc(node: ^Ast_Node, userdata: rawptr) {
+		if import_node, ok := node.data.(Ast_Import); ok {
+			path := import_node.path
+			if !strings.ends_with(path, ".z") {
+				path = fmt.tprintf("%s.z", path)
+			}
+			contents := os.read_entire_file(path) or_else panic("No file found")
+			import_tokens := lex(string(contents))
+			import_parser := Parser {
+				tokens = import_tokens,
+			}
+			import_stmts := parse_program(&import_parser)
+			fmt.println(import_stmts)
+		}
+	}
+	traverse_block(stmts, lex_and_parser_imports, nil)
+
 	// Semantic and type checker
 	checker := Checker{}
 	check(&checker, stmts)

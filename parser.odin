@@ -448,7 +448,6 @@ parse_struct_literal_fields :: proc(p: ^Parser, struct_expr: ^Expr_Struct_Litera
 			field_name := current(p).lexeme
 			advance(p)
 			expect(p, .Equal)
-			fmt.println("here?")
 			struct_expr.args[field_name] = parse_expression(p, 0)
 		case .Comma:
 			if peek(p).kind == .RBrace {

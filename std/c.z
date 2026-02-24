@@ -1,0 +1,4 @@
+external "c" {
+    fn printf(format: str, ...) -> i32
+}
+

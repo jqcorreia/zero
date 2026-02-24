@@ -198,3 +198,12 @@ traverse_ast :: proc(
 		unimplemented(fmt.tprint("Unimplement traverse statement", ast))
 	}
 }
+traverse_block :: proc(
+	nodes: []^Ast_Node,
+	func: proc(node: ^Ast_Node, userdata: rawptr = nil),
+	userdata: rawptr = nil,
+) {
+	for node in nodes {
+		traverse_ast(node, func, userdata)
+	}
+}
