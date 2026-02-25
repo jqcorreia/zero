@@ -247,13 +247,6 @@ emit_var_decl :: proc(gen: ^Generator, s: ^Ast_Var_Decl, scope: ^Scope, span: Sp
 		if s.expr != nil {
 			if sym.type.kind == .Struct {
 				emit_into(gen, s.expr, ptr, scope, span)
-				// data_layout := GetModuleDataLayout(gen.module)
-
-				// align := ABIAlignmentOfType(data_layout, compiler_type)
-				// size := ABISizeOfType(data_layout, compiler_type)
-				// i64_size := ConstInt(Int64Type(), size, false)
-				// addr := emit_address(gen, s.expr, scope, span)
-				// BuildMemCpy(gen.builder, ptr, align, addr, align, i64_size)
 
 			} else {
 				BuildStore(gen.builder, emit_value(gen, s.expr, scope, span), ptr)
@@ -271,6 +264,18 @@ emit_var_decl :: proc(gen: ^Generator, s: ^Ast_Var_Decl, scope: ^Scope, span: Sp
 			panic("Global variables need to be constants")
 		}
 	}
+}
+
+emit_memcpy :: proc(gen: ^Generator, s: ^Ast_Var_Decl, scope: ^Scope, span: Span) {
+	// NOTE: THis is incomplete but saved for future reference!!
+
+	// data_layout := GetModuleDataLayout(gen.module)
+
+	// align := ABIAlignmentOfType(data_layout, compiler_type)
+	// size := ABISizeOfType(data_layout, compiler_type)
+	// i64_size := ConstInt(Int64Type(), size, false)
+	// addr := emit_address(gen, s.expr, scope, span)
+	// BuildMemCpy(gen.builder, ptr, align, addr, align, i64_size)
 }
 
 emit_function_decl :: proc(gen: ^Generator, s: ^Ast_Function, scope: ^Scope, span: Span) {
@@ -522,13 +527,11 @@ generate :: proc(stmts: []^Ast_Node) {
 		}
 	}
 
-	//NOTE(quadrado): Have a better API for code blocks or whole AST traversals
-	for stmt in stmts {
-		traverse_ast(stmt, emit_struct_decls, &generator)
-	}
-	for stmt in stmts {
-		traverse_ast(stmt, emit_function_decls, &generator)
-	}
+	// Emit first things first
+	// - Structs
+	// - Functions
+	traverse_block(stmts, emit_struct_decls, &generator)
+	traverse_block(stmts, emit_function_decls, &generator)
 
 	for stmt in stmts {
 		emit_stmt(&generator, stmt)

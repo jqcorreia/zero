@@ -31,8 +31,10 @@ fn main() {
     dir := 1
 
     x: i32 = 0
+    col: i32 = 0
     speed := 10
 
+    // Test struct field access (read)
     field := text_color.a
     printf("Text color alpha: %d\n", field)
 
@@ -56,18 +58,21 @@ fn main() {
         if IsKeyPressed(262) { 
             x = x + speed
         }
-        // if dir == 1 {
-        //     x = x + 1
-        // }
-        // if dir == 2 {
-        //     x = x - 1
-        // }
-        // if x > W - 50 {
-        //     dir = 2
-        // }
-        // if x < 0 {
-        //     dir = 1
-        // }
+        if dir == 1 {
+            col = col+ 1
+        }
+        if dir == 2 {
+            col = col- 1
+        }
+        if x >= 255 {
+            dir = 2
+        }
+        if x <= 0 {
+            dir = 1
+        }
+
+        // Test struct field access (write)
+        background_color.r = col
 
         BeginDrawing()
         ClearBackground(background_color)
