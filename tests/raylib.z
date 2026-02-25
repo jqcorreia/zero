@@ -57,22 +57,23 @@ fn main() {
         }
         if IsKeyPressed(262) { 
             x = x + speed
+            col = col + 10
         }
-        if dir == 1 {
-            col = col+ 1
-        }
-        if dir == 2 {
-            col = col- 1
-        }
-        if x >= 255 {
-            dir = 2
-        }
-        if x <= 0 {
-            dir = 1
-        }
+        // if dir == 1 {
+        //     col = col+ 1
+        // }
+        // if dir == 2 {
+        //     col = col- 1
+        // }
+        // if col >= 255 {
+        //     dir = 2
+        // }
+        // if col <= 0 {
+        //     dir = 1
+        // }
 
         // Test struct field access (write)
-        // background_color.r = col
+        background_color.r = col
 
         BeginDrawing()
         ClearBackground(background_color)

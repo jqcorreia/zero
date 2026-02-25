@@ -147,11 +147,25 @@ parse_identifier :: proc(p: ^Parser) -> Ast_Data {
 		expect(p, .Equal)
 
 		data := Ast_Var_Assign {
-			lhs  = name_tok.lexeme,
+			lhs  = expr_ident(name_tok.lexeme),
 			expr = parse_expression(p, 0),
 		}
 
 		expect(p, .NewLine) // This should end with newline
+
+		return data
+
+	case peek(p).kind == .Period:
+		// --- Member assignment: foo.bar = expr ---
+		lhs := parse_expression(p, 0)
+		expect(p, .Equal)
+
+		data := Ast_Var_Assign {
+			lhs  = lhs,
+			expr = parse_expression(p, 0),
+		}
+
+		expect(p, .NewLine)
 
 		return data
 

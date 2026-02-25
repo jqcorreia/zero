@@ -141,6 +141,7 @@ resolve_types :: proc(c: ^Checker, node: ^Ast_Node) {
 		}
 	case Ast_Var_Assign:
 		// Just tag expr with a type, check it in the checker later
+		resolve_expr_type(data.lhs, node.scope, node.span)
 		resolve_expr_type(data.expr, node.scope, node.span)
 	case Ast_Var_Decl:
 		resolved_type: ^Type

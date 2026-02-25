@@ -219,13 +219,8 @@ emit_value :: proc(gen: ^Generator, expr: ^Expr, scope: ^Scope, span: Span) -> V
 }
 
 emit_assigment :: proc(gen: ^Generator, s: ^Ast_Var_Assign, scope: ^Scope, span: Span) {
-	sym, _ := resolve_symbol(scope, s.lhs)
-	ptr, exists := gen.values[sym]
-	if exists {
-		BuildStore(gen.builder, emit_value(gen, s.expr, scope, span), ptr)
-	} else {
-		fatal_span(span, "Variable '%s' doesn't exist yet", s.lhs)
-	}
+	ptr := emit_address(gen, s.lhs, scope, span)
+	BuildStore(gen.builder, emit_value(gen, s.expr, scope, span), ptr)
 }
 
 emit_var_decl :: proc(gen: ^Generator, s: ^Ast_Var_Decl, scope: ^Scope, span: Span) {
