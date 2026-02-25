@@ -33,7 +33,7 @@ check_stmt :: proc(c: ^Checker, node: ^Ast_Node) {
 
 
 check_assigment :: proc(c: ^Checker, s: ^Ast_Var_Assign, scope: ^Scope, span: Span) {
-	var, ok := resolve_symbol(scope, s.lhs)
+	var, ok := resolve_symbol(scope, s.lhs.data.(Expr_Variable).value)
 	if ok {
 		if var.type != s.expr.type {
 			error_span(span, "Cannot assign %v to %v", s.expr.type.kind, var.type.kind)
