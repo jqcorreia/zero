@@ -29,17 +29,19 @@ Potentially this README can look a lot different in a couple of months if this b
 - [x] Implement a really dumb variadic marker
 - [x] User defined types (i.e structs)  
 - [x] Global scope import mechanism
-- [ ] Struct field accessor
+- [x] Struct field accessor
 - [x] Implement support for arbitrary "_" character in numbers (e.g for thousands separator)
 - [ ] Check types for function calls. right now is a mess.
 - [ ] Make sure that the available types are synched with the primtive types in codegen 
 - [ ] Arrays with bound checked access  
 - [ ] Proper string with bound check and not null-terminated  
-- [ ] Make `external` blocks it's own AST node kind
+- [ ] Make `external` blocks it's own AST node kind, in order to have linking rules and prefixes
 - [ ] Make sure that lexer is UTF-8 compliant
 - [ ] Implement float support
 - [ ] Have the notion of addressable types (?)
 - [ ] Add check for cyclic import
+- [ ] API and code cleanups after a first working pass
+
 # Try it
 ```
 odin build .
