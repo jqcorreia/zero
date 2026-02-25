@@ -27,7 +27,6 @@ compiler := Compiler{}
 
 compiler_init :: proc() {
 	setup_native_types(&compiler) // Initialize the native type pointers
-	scope_push({}) // Push the root scope
 }
 
 setup_native_types :: proc(compiler: ^Compiler) {
@@ -54,20 +53,4 @@ setup_native_types :: proc(compiler: ^Compiler) {
 	bool_t := new(Type)
 	bool_t.kind = .Bool
 	compiler.types["bool"] = bool_t
-}
-
-scope_push :: proc(scope: Scope) {
-	queue.push_front(&compiler.scopes, scope)
-}
-
-scope_pop :: proc() -> Scope {
-	return queue.pop_front(&compiler.scopes)
-}
-
-scope_current :: proc() -> ^Scope {
-	return queue.front_ptr(&compiler.scopes)
-}
-
-scope_top_level :: proc() -> bool {
-	return queue.len(compiler.scopes) == 1
 }
