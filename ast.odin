@@ -152,6 +152,7 @@ Expr_Member :: struct {
 	base:   ^Expr,
 	member: string,
 	kind:   Member_Kind,
+	// type field from base would refer to the `member` field type
 }
 
 Member_Kind :: enum {

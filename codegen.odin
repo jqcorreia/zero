@@ -71,7 +71,6 @@ emit_address :: proc(gen: ^Generator, expr: ^Expr, scope: ^Scope, span: Span) ->
 		}
 		return ptr
 
-	// implementation goes here
 	case Expr_Variable:
 		sym, ok := resolve_symbol(scope, e.value)
 		if !ok {
@@ -80,7 +79,20 @@ emit_address :: proc(gen: ^Generator, expr: ^Expr, scope: ^Scope, span: Span) ->
 		var := gen.values[sym]
 
 		return var
+
+	case Expr_Member:
+		base_ptr := emit_address(gen, e.base, scope, span)
+		base_type := gen.primitive_types[e.base.type]
+		field_index := 0
+		for f in e.base.type.fields {
+			if f.name == e.member {
+				field_index = f.index
+				break
+			}
+		}
+		return BuildStructGEP2(gen.builder, base_type, base_ptr, u32(field_index), "")
 	}
+
 	unimplemented(fmt.tprintf("Not addressable expression %v", expr))
 }
 
@@ -95,7 +107,9 @@ emit_value :: proc(gen: ^Generator, expr: ^Expr, scope: ^Scope, span: Span) -> V
 		addr := emit_address(gen, expr, scope, span)
 		sym, _ := resolve_symbol(scope, e.type_expr)
 		return BuildLoad2(gen.builder, gen.primitive_types[sym.type], addr, "")
-	// return emit_address(gen, expr, scope, span)
+	case Expr_Member:
+		ptr := emit_address(gen, expr, scope, span)
+		return BuildLoad2(gen.builder, gen.primitive_types[expr.type], ptr, "")
 	case Expr_Call:
 		return emit_call(gen, e, scope, span)
 	case Expr_Variable:

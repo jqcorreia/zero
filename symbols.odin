@@ -254,7 +254,36 @@ resolve_expr_type :: proc(expr: ^Expr, scope: ^Scope, span: Span) -> ^Type {
 		return type
 
 	case Expr_Member:
-	//TODO
+		struct_name := e.base.data.(Expr_Variable).value
+		struct_sym, ok := resolve_symbol(scope, struct_name)
+		type: ^Type
+
+		if !ok {
+			error_span(span, "Struct variable '%s' not found", struct_name)
+			type = &error_type
+		}
+		if struct_sym.type.kind != .Struct {
+			error_span(span, "'%s' is not a struct", struct_name)
+			type = &error_type
+		}
+
+		field_name := e.member
+
+		for &f in struct_sym.type.fields {
+			if f.name == field_name {
+				type = f.type
+			}
+		}
+		if type == nil {
+			error_span(span, "Struct does not have field '%s'", field_name)
+			type = &error_type
+		}
+		// Set types for both base and member, in this case the 'expr.type' refers to member type
+		e.base.type = struct_sym.type
+		expr.type = type
+
+		return type
+
 	case Expr_Unary:
 		operand := resolve_expr_type(e.expr, scope, span)
 		expr.type = operand
@@ -308,7 +337,7 @@ resolve_expr_type :: proc(expr: ^Expr, scope: ^Scope, span: Span) -> ^Type {
 			e.callee.type = &error_type
 		}
 	}
-	return nil
+	unimplemented("You should not be here at all")
 }
 resolve_block_types :: proc(c: ^Checker, node: ^Ast_Block) {
 	for node in node.statements {
