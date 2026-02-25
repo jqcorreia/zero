@@ -147,7 +147,7 @@ parse_identifier :: proc(p: ^Parser) -> Ast_Data {
 		expect(p, .Equal)
 
 		data := Ast_Var_Assign {
-			name = name_tok.lexeme,
+			lhs  = name_tok.lexeme,
 			expr = parse_expression(p, 0),
 		}
 

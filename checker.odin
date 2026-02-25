@@ -33,13 +33,13 @@ check_stmt :: proc(c: ^Checker, node: ^Ast_Node) {
 
 
 check_assigment :: proc(c: ^Checker, s: ^Ast_Var_Assign, scope: ^Scope, span: Span) {
-	var, ok := resolve_symbol(scope, s.name)
+	var, ok := resolve_symbol(scope, s.lhs)
 	if ok {
 		if var.type != s.expr.type {
 			error_span(span, "Cannot assign %v to %v", s.expr.type.kind, var.type.kind)
 		}
 	} else {
-		error_span(span, "symbol %s not found", s.name)
+		error_span(span, "symbol %s not found", s.lhs)
 	}
 }
 

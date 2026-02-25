@@ -28,7 +28,7 @@ Ast_Expr :: struct {
 }
 
 Ast_Var_Assign :: struct {
-	name:   string,
+	lhs:    string,
 	expr:   ^Expr,
 	symbol: ^Symbol,
 	create: bool,
