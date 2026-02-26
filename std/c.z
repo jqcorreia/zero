@@ -1,4 +1,7 @@
 external "c" {
     fn printf(format: str, ...) -> i32
+    fn fopen(filename: str, mode: str) -> u64
+    fn fputc(char: i32, file: u64) -> i32
+    fn fclose(file: u64) -> u64
 }
 

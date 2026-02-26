@@ -211,7 +211,9 @@ resolve_types :: proc(c: ^Checker, node: ^Ast_Node) {
 	case Ast_For:
 		resolve_block_types(c, data.body)
 	case Ast_Return:
-		resolve_expr_type(data.expr, node.scope, node.span)
+		if data.expr != nil {
+			resolve_expr_type(data.expr, node.scope, node.span)
+		}
 	case Ast_Break:
 	// Nothing to do here
 	case Ast_Import:

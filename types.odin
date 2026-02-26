@@ -29,6 +29,8 @@ Type_Kind :: enum {
 	Int8,
 	Int16,
 	Int32,
+	Int64,
+	Uint64,
 	Uint32,
 	String,
 	Struct,
@@ -57,6 +59,16 @@ create_primitive_types :: proc(scope: ^Scope) {
 	u32_t.kind = .Uint32
 	u32_t.signed = false
 	scope.symbols["u32"] = make_symbol(.Type, u32_t)
+
+	i64_t := new(Type)
+	i64_t.kind = .Int64
+	i64_t.signed = true
+	scope.symbols["i64"] = make_symbol(.Type, i64_t)
+
+	u64_t := new(Type)
+	u64_t.kind = .Uint64
+	u64_t.signed = false
+	scope.symbols["u64"] = make_symbol(.Type, u64_t)
 
 	string_t := new(Type)
 	string_t.kind = .String

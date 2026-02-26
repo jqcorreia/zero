@@ -3,6 +3,7 @@ package main
 import "core:container/queue"
 import "core:fmt"
 import "core:strings"
+import "core:sys/valgrind"
 
 Generator :: struct {
 	values:          map[^Symbol]ValueRef,
@@ -346,16 +347,27 @@ emit_function_body :: proc(gen: ^Generator, s: ^Ast_Function, scope: ^Scope, spa
 
 	emit_block(gen, s.body)
 
-	if s.symbol.type.kind == .Void {
+	/*
+	If function return type is Void and not terminated yet (a explicit return, 
+    which is a valid expression), terminate with a RetVoid
+    NOTE(quadrado): Using the "terminated" field in the Ast is not good but GetBasicBlockTerminator 
+    always returns a value and not nil as expected of a non-terminated block.
+    */
+	if s.symbol.type.kind == .Void && !s.body.terminated {
 		BuildRetVoid(gen.builder)
 	}
+
 	PositionBuilderAtEnd(gen.builder, old_pos)
 	// DumpValue(fn)
 }
 
 emit_return :: proc(gen: ^Generator, s: ^Ast_Return, scope: ^Scope, span: Span) {
 	data := s
-	BuildRet(gen.builder, emit_value(gen, data.expr, scope, span))
+	if data.expr != nil {
+		BuildRet(gen.builder, emit_value(gen, data.expr, scope, span))
+	} else {
+		BuildRetVoid(gen.builder)
+	}
 }
 
 
@@ -490,6 +502,10 @@ setup_codegen :: proc(gen: ^Generator) {
 				gen.primitive_types[sym.type] = Int32TypeInContext(gen.ctx)
 			case .Int32:
 				gen.primitive_types[sym.type] = Int32TypeInContext(gen.ctx)
+			case .Uint64:
+				gen.primitive_types[sym.type] = Int64TypeInContext(gen.ctx)
+			case .Int64:
+				gen.primitive_types[sym.type] = Int64TypeInContext(gen.ctx)
 			case .String:
 				gen.primitive_types[sym.type] = PointerTypeInContext(gen.ctx, 0)
 			}

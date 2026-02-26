@@ -118,7 +118,10 @@ parse_statement :: proc(p: ^Parser) -> ^Ast_Node {
 		data^ = parse_continue(p)^
 	case t.kind == .Return_Keyword:
 		advance(p)
-		expr := parse_expression(p, 0)
+		expr: ^Expr
+		if current(p).kind != .NewLine {
+			expr = parse_expression(p, 0)
+		}
 		expect(p, .NewLine)
 
 		data^ = Ast_Return {
@@ -349,7 +352,15 @@ parse_expression :: proc(p: ^Parser, min_lbp: int = 0) -> ^Expr {
 	case .QuotedString:
 		left = expr_string_literal(t.value.(string))
 	case .Identifier:
-		if current(p).kind == .LBrace {
+		/*
+        Peeking for a newline avoids enterir the parse_struct literal in places like
+        if a > x {
+        }
+        In this case `x {` will try and be parsed as a struct literal.
+        This removes the ability to have inline struct literals spanning multiple
+        used in an expression before the start of a block e.g `if` and `for`
+        */
+		if current(p).kind == .LBrace && peek(p).kind != .NewLine {
 			left = parse_struct_literal(p, t.value.(string))
 		} else {
 			left = expr_ident(t.value.(string))

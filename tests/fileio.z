@@ -1,0 +1,19 @@
+import "std/c"
+
+fn main() {
+    filename := "test.txt"
+    printf("Writing to file: %s\n", filename)
+    mode := "w"
+
+    file := fopen(filename, mode)
+    zero : u64 = 0
+    
+    if file == zero {
+        printf("Error opening file: %s\n", filename)
+        return
+    }
+
+    fputc(72, file) // Write 'H'
+    fputc(105, file) // Write 'i'
+    fclose(file)
+}
