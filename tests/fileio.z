@@ -8,7 +8,7 @@ fn main() {
     file := fopen(filename, mode)
     zero : u64 = 0
     
-    if file == zero {
+    if (file == zero) {
         printf("Error opening file: %s\n", filename)
         return
     }

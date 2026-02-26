@@ -360,7 +360,7 @@ parse_expression :: proc(p: ^Parser, min_lbp: int = 0) -> ^Expr {
         This removes the ability to have inline struct literals spanning multiple
         used in an expression before the start of a block e.g `if` and `for`
         */
-		if current(p).kind == .LBrace && peek(p).kind != .NewLine {
+		if current(p).kind == .LBrace {
 			left = parse_struct_literal(p, t.value.(string))
 		} else {
 			left = expr_ident(t.value.(string))
