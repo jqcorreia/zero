@@ -52,8 +52,8 @@ fn main() {
            TakeScreenshot("screenshot.png")
         }
         if IsKeyPressed(263) { 
-            printf("Hello")
             x = x - speed
+            col = col - 10
         }
         if IsKeyPressed(262) { 
             x = x + speed
@@ -78,6 +78,7 @@ fn main() {
         BeginDrawing()
         ClearBackground(background_color)
         DrawText("Press P for screenshot", 10, 10, 24, text_color)
+        DrawText("Press Left/Right to move box", 10, 30, 24, text_color)
         DrawRectangle(x, H / 2 - 25, 50, 50, BLUE)
         EndDrawing()
     }
