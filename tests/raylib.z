@@ -20,8 +20,8 @@ struct Color {
 }
 
 fn main() {
-    W : i32 = 800
-    H : i32 = 600
+    W: i32 = 800
+    H: i32 = 600
 
     background_color := Color{ r = 128, g = 128, b = 128, a = 255 }
     text_color := Color { r = 0, g = 128, b = 0, a = 255 }
