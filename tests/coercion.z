@@ -1,0 +1,9 @@
+import "std/c"
+
+fn main() { 
+    x: u64= 10
+
+    if x == 0 {
+        printf("Hello!")
+    }
+}

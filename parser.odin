@@ -341,7 +341,7 @@ prefix_precedence :: proc(op: Token_Kind) -> int {
 	return -1
 }
 
-parse_expression :: proc(p: ^Parser, min_lbp: int = 0) -> ^Expr {
+parse_expression :: proc(p: ^Parser, min_lbp: int = 0, allow_struct_literal: bool = true) -> ^Expr {
 	t := advance(p)
 
 	left: ^Expr
@@ -352,25 +352,17 @@ parse_expression :: proc(p: ^Parser, min_lbp: int = 0) -> ^Expr {
 	case .QuotedString:
 		left = expr_string_literal(t.value.(string))
 	case .Identifier:
-		/*
-        Peeking for a newline avoids enterir the parse_struct literal in places like
-        if a > x {
-        }
-        In this case `x {` will try and be parsed as a struct literal.
-        This removes the ability to have inline struct literals spanning multiple
-        used in an expression before the start of a block e.g `if` and `for`
-        */
-		if current(p).kind == .LBrace {
+		if allow_struct_literal && current(p).kind == .LBrace {
 			left = parse_struct_literal(p, t.value.(string))
 		} else {
 			left = expr_ident(t.value.(string))
 		}
 	case .LParen:
-		left = parse_expression(p, 0)
+		left = parse_expression(p, 0, true) // parentheses reset the context
 		expect(p, .RParen)
 	case .Minus, .Bang:
 		rbp := prefix_precedence(t.kind)
-		right := parse_expression(p, rbp)
+		right := parse_expression(p, rbp, allow_struct_literal)
 		left = expr_unary(t.kind, right)
 	case:
 		panic("Invalid expression")
@@ -393,7 +385,7 @@ parse_expression :: proc(p: ^Parser, min_lbp: int = 0) -> ^Expr {
 		case:
 			rbp := lbp + 1
 
-			right := parse_expression(p, rbp)
+			right := parse_expression(p, rbp, allow_struct_literal)
 			left = expr_binary(op.kind, left, right)
 		}
 	}
@@ -589,7 +581,7 @@ parse_external_block :: proc(p: ^Parser, lib_name: string) -> ^Ast_Block {
 }
 
 parse_if :: proc(p: ^Parser) -> ^Ast_If {
-	cond := parse_expression(p)
+	cond := parse_expression(p, 0, false)
 	then_block := parse_block(p)
 	else_block: ^Ast_Block = nil
 

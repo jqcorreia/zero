@@ -146,8 +146,13 @@ resolve_types :: proc(c: ^Checker, node: ^Ast_Node) {
 	case Ast_Var_Decl:
 		resolved_type: ^Type
 		// If no type was provided, try and resolve type from expression
+		initializer_expr_type := resolve_expr_type(data.expr, node.scope, node.span)
 		if data.type_expr == "" {
 			resolved_type = resolve_expr_type(data.expr, node.scope, node.span)
+			if initializer_expr_type.kind == .Untyped_Int {
+				i64_sym, _ := resolve_symbol(node.scope, "i64")
+				resolved_type = i64_sym.type
+			}
 		} else {
 			// If type was provided, resolve the type symbol from type expression
 			type_sym, ok := resolve_symbol(node.scope, data.type_expr)
@@ -159,7 +164,9 @@ resolve_types :: proc(c: ^Checker, node: ^Ast_Node) {
 		}
 
 		// Store the result in the symbol
-		data.symbol.type = resolved_type
+		data.symbol.type = type_coercion(resolved_type, initializer_expr_type, node.scope)
+		data.expr.type = type_coercion(resolved_type, initializer_expr_type, node.scope)
+
 	case Ast_Struct_Decl:
 		type_sym, ok := resolve_symbol(node.scope, data.name)
 		if !ok {
@@ -226,7 +233,7 @@ resolve_types :: proc(c: ^Checker, node: ^Ast_Node) {
 resolve_expr_type :: proc(expr: ^Expr, scope: ^Scope, span: Span) -> ^Type {
 	switch e in expr.data {
 	case Expr_Int_Literal:
-		sym, _ := resolve_symbol(scope, "i32")
+		sym, _ := resolve_symbol(scope, "untyped_int")
 		expr.type = sym.type
 		return sym.type
 
@@ -238,6 +245,18 @@ resolve_expr_type :: proc(expr: ^Expr, scope: ^Scope, span: Span) -> ^Type {
 	case Expr_Struct_Literal:
 		sym, _ := resolve_symbol(scope, e.type_expr)
 		expr.type = sym.type
+		for arg_name, arg in e.args {
+			for field in sym.type.fields {
+				if field.name == arg_name {
+					coerced_type := type_coercion(
+						field.type,
+						resolve_expr_type(arg, scope, span),
+						scope,
+					)
+					arg.type = coerced_type
+				}
+			}
+		}
 		return sym.type
 
 	case Expr_Variable:
@@ -295,6 +314,19 @@ resolve_expr_type :: proc(expr: ^Expr, scope: ^Scope, span: Span) -> ^Type {
 	case Expr_Binary:
 		left := resolve_expr_type(e.left, scope, span)
 		right := resolve_expr_type(e.right, scope, span)
+		coerced_type := type_coercion(left, right, scope)
+
+		if coerced_type == nil {
+			expr.type = &error_type
+			error_span(span, "Type mismatch %s %s %s", left.kind, e.op, right.kind)
+			return &error_type
+		}
+
+		left = type_coercion(left, right, scope)
+		right = type_coercion(left, right, scope)
+
+		e.left.type = left
+		e.right.type = right
 
 		if left == nil || right == nil {
 			scope_print(scope)
@@ -304,23 +336,22 @@ resolve_expr_type :: proc(expr: ^Expr, scope: ^Scope, span: Span) -> ^Type {
 			expr.type = &error_type
 			return &error_type
 		}
-		if left.kind != right.kind {
-			expr.type = &error_type
-			error_span(span, "Type mismatch %s %s %s", left.kind, e.op, right.kind)
-			return &error_type
-		}
+
+
 		expr.type = left
+
 		return left
 
 	case Expr_Call:
 		func_name := e.callee.data.(Expr_Variable).value
 		sym, ok := resolve_symbol(scope, func_name)
 
+		decl := sym.decl.data.(Ast_Function)
 		if ok {
 			if sym.type == nil {
 				// If we land here it's because function symbol was not type resolved yet.
 				// Do it 'manually' here
-				type_sym, _ := resolve_symbol(scope, sym.decl.data.(Ast_Function).ret_type_expr)
+				type_sym, _ := resolve_symbol(scope, decl.ret_type_expr)
 				e.callee.type = type_sym.type
 				sym.type = type_sym.type
 			} else {
@@ -329,8 +360,13 @@ resolve_expr_type :: proc(expr: ^Expr, scope: ^Scope, span: Span) -> ^Type {
 			}
 
 			// Resolve argument expressions types
-			for arg in e.args {
-				arg.type = resolve_expr_type(arg, scope, span)
+			for arg, i in e.args {
+				coerced_type := type_coercion(
+					resolve_expr_type(arg, scope, span),
+					decl.params[i].symbol.type,
+					scope,
+				)
+				arg.type = coerced_type
 			}
 
 			// Return the already resolved function return type

@@ -3,7 +3,6 @@ package main
 import "core:container/queue"
 import "core:fmt"
 import "core:strings"
-import "core:sys/valgrind"
 
 Generator :: struct {
 	values:          map[^Symbol]ValueRef,
@@ -101,7 +100,9 @@ emit_value :: proc(gen: ^Generator, expr: ^Expr, scope: ^Scope, span: Span) -> V
 	int32 := Int32TypeInContext(gen.ctx)
 	#partial switch e in expr.data {
 	case Expr_Int_Literal:
-		return ConstInt(int32, u64(e.value), false)
+		fmt.println("$$$$$$$$$$$", expr, expr.type, span_to_location(span))
+		type := gen.primitive_types[expr.type]
+		return ConstInt(type, u64(e.value), false)
 	case Expr_String_Literal:
 		return BuildGlobalStringPtr(gen.builder, strings.clone_to_cstring(e.value), "")
 	case Expr_Struct_Literal:

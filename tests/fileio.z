@@ -1,14 +1,17 @@
 import "std/c"
 
+struct File {
+    handle: u64
+}
+
 fn main() {
     filename := "test.txt"
     printf("Writing to file: %s\n", filename)
     mode := "w"
 
     file := fopen(filename, mode)
-    zero : u64 = 0
     
-    if (file == zero) {
+    if file == 0 {
         printf("Error opening file: %s\n", filename)
         return
     }
