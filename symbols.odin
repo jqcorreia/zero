@@ -361,12 +361,26 @@ resolve_expr_type :: proc(expr: ^Expr, scope: ^Scope, span: Span) -> ^Type {
 
 			// Resolve argument expressions types
 			for arg, i in e.args {
-				coerced_type := type_coercion(
-					resolve_expr_type(arg, scope, span),
-					decl.params[i].symbol.type,
-					scope,
-				)
-				arg.type = coerced_type
+				param := decl.params[i]
+				arg_type := resolve_expr_type(arg, scope, span)
+				if param.variadic_marker {
+					arg.type = arg_type
+				} else {
+					decl_type := decl.params[i].symbol.type
+					coerced_type := type_coercion(arg_type, decl_type, scope)
+					if coerced_type == nil {
+						expr.type = &error_type
+						error_span(
+							span,
+							"Type mismatch on param '%s': %s vs %s",
+							decl.params[i].name,
+							decl_type.kind,
+							arg_type.kind,
+						)
+						return &error_type
+					}
+					arg.type = coerced_type
+				}
 			}
 
 			// Return the already resolved function return type
