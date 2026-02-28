@@ -186,13 +186,20 @@ resolve_types :: proc(c: ^Checker, node: ^Ast_Node) {
 
 	case Ast_Function:
 		// Resolve function param type expressions
+		fmt.println("SCOPPPPPEEEEE", node.scope.symbols)
+		for s, v in node.scope.symbols {
+			fmt.println(s, v)
+
+		}
 		for &param in data.params {
 			type_sym, ok := resolve_symbol(node.scope, param.type_expr)
+			fmt.println("-----", param.type_expr, node.scope.symbols[param.type_expr], type_sym)
 			if ok {
 				param.symbol.type = type_sym.type
 			} else {
 				error_span(node.span, "unresolved type expression '%v'", param.type_expr)
 			}
+			fmt.println("PARAM TYPE", param.symbol.type)
 		}
 
 		// Resolve function return type expression
@@ -329,7 +336,6 @@ resolve_expr_type :: proc(expr: ^Expr, scope: ^Scope, span: Span) -> ^Type {
 		e.right.type = right
 
 		if left == nil || right == nil {
-			scope_print(scope)
 			fatal_span(span, "left or right are nil. L = %v, R = %v", left, right)
 		}
 		if left.kind == .Error || right.kind == .Error {
@@ -347,6 +353,7 @@ resolve_expr_type :: proc(expr: ^Expr, scope: ^Scope, span: Span) -> ^Type {
 		sym, ok := resolve_symbol(scope, func_name)
 
 		decl := sym.decl.data.(Ast_Function)
+		fmt.println(decl)
 		if ok {
 			if sym.type == nil {
 				// If we land here it's because function symbol was not type resolved yet.
@@ -361,26 +368,34 @@ resolve_expr_type :: proc(expr: ^Expr, scope: ^Scope, span: Span) -> ^Type {
 
 			// Resolve argument expressions types
 			for arg, i in e.args {
-				param := decl.params[i]
+				param := &(decl.params[i])
+				if param.variadic_marker do continue
+
 				arg_type := resolve_expr_type(arg, scope, span)
-				if param.variadic_marker {
-					arg.type = arg_type
-				} else {
-					decl_type := decl.params[i].symbol.type
-					coerced_type := type_coercion(arg_type, decl_type, scope)
-					if coerced_type == nil {
-						expr.type = &error_type
-						error_span(
-							span,
-							"Type mismatch on param '%s': %s vs %s",
-							decl.params[i].name,
-							decl_type.kind,
-							arg_type.kind,
-						)
-						return &error_type
-					}
-					arg.type = coerced_type
+				decl_type := decl.params[i].symbol.type
+				if arg_type == nil {
+					error_span(span, "Can't resolve type for argument: %v", arg)
+					continue
 				}
+				if decl_type == nil {
+					param_type_sym, _ := resolve_symbol(scope, param.type_expr)
+					param.symbol.type = param_type_sym.type
+					decl_type = param_type_sym.type
+				}
+
+				coerced_type := type_coercion(arg_type, decl_type, scope)
+				if coerced_type == nil {
+					expr.type = &error_type
+					error_span(
+						span,
+						"Type mismatch on param '%s': %s vs %s",
+						decl.params[i].name,
+						decl_type.kind,
+						arg_type.kind,
+					)
+					return &error_type
+				}
+				arg.type = coerced_type
 			}
 
 			// Return the already resolved function return type
@@ -406,6 +421,7 @@ make_scope :: proc(kind: ScopeKind, parent: ^Scope) -> ^Scope {
 	return scope
 }
 
+// Missing setting field 'name'
 make_symbol :: proc(kind: Symbol_Kind, type: ^Type = nil) -> ^Symbol {
 	sym := new(Symbol)
 	sym.kind = kind
@@ -424,5 +440,27 @@ resolve_symbol :: proc(current_scope: ^Scope, name: string) -> (^Symbol, bool) {
 		scope = scope.parent
 	}
 
+	return nil, false
+}
+
+// MESS, remove or rewrite
+resolve_symbol_type_or_create :: proc(
+	current_scope: ^Scope,
+	name: string,
+	type_expr: string,
+) -> (
+	^Type,
+	bool,
+) {
+
+	sym, ok := resolve_symbol(current_scope, name)
+	if !ok {
+		return nil, false
+	}
+	if sym.type == nil {
+		type_sym, _ := resolve_symbol(current_scope, name)
+		sym.type = type_sym.type
+		return type_sym.type, true
+	}
 	return nil, false
 }

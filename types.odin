@@ -76,7 +76,6 @@ create_primitive_types :: proc(scope: ^Scope) {
 }
 
 type_coercion :: proc(from: ^Type, to: ^Type, scope: ^Scope) -> ^Type {
-	fmt.println("$$$$", from, to)
 	if from.kind == to.kind {
 		return from
 	}
