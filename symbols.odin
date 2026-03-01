@@ -87,16 +87,25 @@ bind_scopes :: proc(node: ^Ast_Node, cur_scope: ^Scope) {
 		}
 
 	case Ast_Function:
+		// Create new scope for the function
 		new_scope := make_scope(.Function, parent = cur_scope)
 
+		// Create the symbol function
 		symbol := new(Symbol)
 		symbol.name = data.name
 		symbol.kind = .Function
 		symbol.decl = node
 		symbol.scope = cur_scope
 
+		// Set 'function' field in this scope to signal it's a function scope
+		// this is done so it's possible for inside the function (even when several scopes deep)
+		// to know exactly inside which function we are
+		new_scope.function = symbol
+
+		// Add the symbol also to the cur_scope
 		cur_scope.symbols[data.name] = symbol
 
+		// Add param symbols to the new scope
 		for &param in data.params {
 			sym := make_symbol(.Param)
 			sym.decl = node
@@ -105,6 +114,7 @@ bind_scopes :: proc(node: ^Ast_Node, cur_scope: ^Scope) {
 			param.symbol = sym
 		}
 
+		// Add symbol to the Ast also
 		data.symbol = symbol
 		if !data.external {
 			get_block_symbols(data.body, new_scope)
@@ -225,9 +235,22 @@ resolve_types :: proc(c: ^Checker, node: ^Ast_Node) {
 	case Ast_For:
 		resolve_block_types(c, data.body)
 	case Ast_Return:
+		// We need to gather from the scope the current function symbol and get it's
+		// type in order to do type coercion
 		if data.expr != nil {
-			resolve_expr_type(data.expr, node.scope, node.span)
+			sym_value := get_scope_function(node.scope)
+			fmt.println("Found function", sym_value)
+			expr_type := resolve_expr_type(data.expr, node.scope, node.span)
+			sym_type := sym_value.type
+
+			coerced_type := type_coercion(expr_type, sym_type, node.scope)
+			data.expr.type = coerced_type
 		}
+
+	// if data.expr != nil {
+	// 	resolve_expr_type(data.expr, node.scope, node.span)
+	// }
+
 	case Ast_Break:
 	// Nothing to do here
 	case Ast_Import:
@@ -353,57 +376,71 @@ resolve_expr_type :: proc(expr: ^Expr, scope: ^Scope, span: Span) -> ^Type {
 		sym, ok := resolve_symbol(scope, func_name)
 
 		decl := sym.decl.data.(Ast_Function)
-		fmt.println(decl)
-		if ok {
-			if sym.type == nil {
-				// If we land here it's because function symbol was not type resolved yet.
-				// Do it 'manually' here
-				type_sym, _ := resolve_symbol(scope, decl.ret_type_expr)
-				e.callee.type = type_sym.type
-				sym.type = type_sym.type
-			} else {
-				// The function symbol exists and it's type resolved, just use that.
-				e.callee.type = sym.type
-			}
-
-			// Resolve argument expressions types
-			for arg, i in e.args {
-				param := &(decl.params[i])
-				if param.variadic_marker do continue
-
-				arg_type := resolve_expr_type(arg, scope, span)
-				decl_type := decl.params[i].symbol.type
-				if arg_type == nil {
-					error_span(span, "Can't resolve type for argument: %v", arg)
-					continue
-				}
-				if decl_type == nil {
-					param_type_sym, _ := resolve_symbol(scope, param.type_expr)
-					param.symbol.type = param_type_sym.type
-					decl_type = param_type_sym.type
-				}
-
-				coerced_type := type_coercion(arg_type, decl_type, scope)
-				if coerced_type == nil {
-					expr.type = &error_type
-					error_span(
-						span,
-						"Type mismatch on param '%s': %s vs %s",
-						decl.params[i].name,
-						decl_type.kind,
-						arg_type.kind,
-					)
-					return &error_type
-				}
-				arg.type = coerced_type
-			}
-
-			// Return the already resolved function return type
-			return e.callee.type
-		} else {
+		if !ok {
 			error_span(span, "Function '%s' not defined", func_name)
 			e.callee.type = &error_type
+
+			return &error_type
 		}
+
+		if sym.type == nil {
+			// If we land here it's because function symbol was not type resolved yet.
+			// Do it 'manually' here
+			type_sym, _ := resolve_symbol(scope, decl.ret_type_expr)
+			e.callee.type = type_sym.type
+			sym.type = type_sym.type
+		} else {
+			// The function symbol exists and it's type resolved, just use that.
+			e.callee.type = sym.type
+		}
+
+		// Resolve argument expressions types
+		param: ^Param
+		variadic_found: bool = false
+		for arg, i in e.args {
+			if variadic_found {
+				// Dont do type coercion in variadic argument
+				arg.type = resolve_expr_type(arg, scope, span)
+				continue
+			}
+
+			param = &(decl.params[i])
+			if param.variadic_marker {
+				variadic_found = true
+				arg.type = resolve_expr_type(arg, scope, span)
+				continue
+			}
+
+			// Carry on with the args/params pair processing
+			arg_type := resolve_expr_type(arg, scope, span)
+			decl_type := decl.params[i].symbol.type
+			if arg_type == nil {
+				error_span(span, "Can't resolve type for argument: %v", arg)
+				continue
+			}
+			if decl_type == nil {
+				param_type_sym, _ := resolve_symbol(scope, param.type_expr)
+				param.symbol.type = param_type_sym.type
+				decl_type = param_type_sym.type
+			}
+
+			coerced_type := type_coercion(arg_type, decl_type, scope)
+			if coerced_type == nil {
+				expr.type = &error_type
+				error_span(
+					span,
+					"Type mismatch on param '%s': %s vs %s",
+					decl.params[i].name,
+					decl_type.kind,
+					arg_type.kind,
+				)
+				return &error_type
+			}
+			arg.type = coerced_type
+		}
+
+		// Return the already resolved function return type
+		return e.callee.type
 	}
 	unimplemented("You should not be here at all")
 }
@@ -428,6 +465,7 @@ make_symbol :: proc(kind: Symbol_Kind, type: ^Type = nil) -> ^Symbol {
 	sym.type = type
 	return sym
 }
+
 resolve_symbol :: proc(current_scope: ^Scope, name: string) -> (^Symbol, bool) {
 	scope := current_scope
 	for {
@@ -441,6 +479,15 @@ resolve_symbol :: proc(current_scope: ^Scope, name: string) -> (^Symbol, bool) {
 	}
 
 	return nil, false
+}
+
+get_scope_function :: proc(scope: ^Scope) -> ^Symbol {
+	for cur := scope; cur.parent != nil; cur = cur.parent {
+		if cur.function != nil {
+			return cur.function
+		}
+	}
+	return nil
 }
 
 // MESS, remove or rewrite

@@ -98,10 +98,18 @@ emit_address :: proc(gen: ^Generator, expr: ^Expr, scope: ^Scope, span: Span) ->
 
 emit_value :: proc(gen: ^Generator, expr: ^Expr, scope: ^Scope, span: Span) -> ValueRef {
 	int32 := Int32TypeInContext(gen.ctx)
+	int64 := Int64TypeInContext(gen.ctx)
 	#partial switch e in expr.data {
 	case Expr_Int_Literal:
 		fmt.println("$$$$$$$$$$$", expr, expr.type, span_to_location(span))
-		type := gen.primitive_types[expr.type]
+		type, _ := gen.primitive_types[expr.type]
+		if type == nil {
+			type = int64
+		}
+		// if !ok {
+		// 	error_span(span, "Type for literal is nil")
+		// 	return nil
+		// }
 		return ConstInt(type, u64(e.value), false)
 	case Expr_String_Literal:
 		return BuildGlobalStringPtr(gen.builder, strings.clone_to_cstring(e.value), "")
@@ -341,7 +349,8 @@ emit_function_body :: proc(gen: ^Generator, s: ^Ast_Function, scope: ^Scope, spa
 		param_sym := ast_param.symbol
 		param := GetParam(fn, u32(i))
 
-		alloca := BuildAlloca(gen.builder, int32, strings.clone_to_cstring(ast_param.name))
+		param_type := gen.primitive_types[param_sym.type]
+		alloca := BuildAlloca(gen.builder, param_type, strings.clone_to_cstring(ast_param.name))
 		BuildStore(gen.builder, param, alloca)
 		gen.values[param_sym] = alloca
 	}

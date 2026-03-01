@@ -1,0 +1,5 @@
+import "std/c"
+
+fn main() {
+    printf("Hello %s, the answer is %d\n", "world", 42)
+}

@@ -341,7 +341,11 @@ prefix_precedence :: proc(op: Token_Kind) -> int {
 	return -1
 }
 
-parse_expression :: proc(p: ^Parser, min_lbp: int = 0, allow_struct_literal: bool = true) -> ^Expr {
+parse_expression :: proc(
+	p: ^Parser,
+	min_lbp: int = 0,
+	allow_struct_literal: bool = true,
+) -> ^Expr {
 	t := advance(p)
 
 	left: ^Expr

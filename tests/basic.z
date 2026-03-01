@@ -11,7 +11,7 @@ fn main() -> i32 {
 
     x: u8 = 5
     y: u8 = 10
-    param_test(x, y) // Should print "15"
+    printf("%d\n", param_test(x, y)) // Should print "15"
     return 0
 }
 
@@ -47,3 +47,4 @@ fn func() -> i32 {
 fn param_test(x: u8, y: u8) -> u8 {
     return x + y
 }
+
