@@ -1,6 +1,4 @@
-external "c" {
-    fn printf(format: str, ...) -> i32
-}
+import "std/c"
 
 // Main function must be defined, otherwise it errs
 fn main() -> i32 {

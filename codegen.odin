@@ -62,7 +62,6 @@ emit_address :: proc(gen: ^Generator, expr: ^Expr, scope: ^Scope, span: Span) ->
 	case Expr_Struct_Literal:
 		sym, _ := resolve_symbol(scope, e.type_expr)
 		struct_llvm_type := gen.primitive_types[sym.type]
-		fmt.println(sym)
 		ptr := BuildAlloca(gen.builder, struct_llvm_type, "")
 
 		for field in sym.type.fields {
@@ -101,7 +100,6 @@ emit_value :: proc(gen: ^Generator, expr: ^Expr, scope: ^Scope, span: Span) -> V
 	int64 := Int64TypeInContext(gen.ctx)
 	#partial switch e in expr.data {
 	case Expr_Int_Literal:
-		fmt.println("$$$$$$$$$$$", expr, expr.type, span_to_location(span))
 		type, _ := gen.primitive_types[expr.type]
 		if type == nil {
 			type = int64
@@ -395,9 +393,7 @@ emit_call :: proc(gen: ^Generator, e: Expr_Call, scope: ^Scope, span: Span) -> V
 	}
 	sym_type := gen.types[sym]
 	sym_value := gen.values[sym]
-	if sym_type == nil || sym_value == nil {
-		fmt.println(sym_type, sym_value)
-	}
+
 	if len(args) == 0 {
 		return BuildCall2(gen.builder, sym_type, sym_value, nil, 0, "")
 	} else {

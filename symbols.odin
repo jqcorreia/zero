@@ -196,20 +196,13 @@ resolve_types :: proc(c: ^Checker, node: ^Ast_Node) {
 
 	case Ast_Function:
 		// Resolve function param type expressions
-		fmt.println("SCOPPPPPEEEEE", node.scope.symbols)
-		for s, v in node.scope.symbols {
-			fmt.println(s, v)
-
-		}
 		for &param in data.params {
 			type_sym, ok := resolve_symbol(node.scope, param.type_expr)
-			fmt.println("-----", param.type_expr, node.scope.symbols[param.type_expr], type_sym)
 			if ok {
 				param.symbol.type = type_sym.type
 			} else {
 				error_span(node.span, "unresolved type expression '%v'", param.type_expr)
 			}
-			fmt.println("PARAM TYPE", param.symbol.type)
 		}
 
 		// Resolve function return type expression
@@ -239,7 +232,6 @@ resolve_types :: proc(c: ^Checker, node: ^Ast_Node) {
 		// type in order to do type coercion
 		if data.expr != nil {
 			sym_value := get_scope_function(node.scope)
-			fmt.println("Found function", sym_value)
 			expr_type := resolve_expr_type(data.expr, node.scope, node.span)
 			sym_type := sym_value.type
 
