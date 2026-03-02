@@ -76,9 +76,6 @@ create_primitive_types :: proc(scope: ^Scope) {
 }
 
 type_coercion :: proc(from: ^Type, to: ^Type, scope: ^Scope) -> ^Type {
-	if from.kind == to.kind {
-		return from
-	}
 
 	if from.kind == .Untyped_Int && to.numeric_integer {
 		return to
@@ -91,6 +88,10 @@ type_coercion :: proc(from: ^Type, to: ^Type, scope: ^Scope) -> ^Type {
 	if to.kind == .Untyped_Int && from.kind == .Untyped_Int {
 		sym, _ := resolve_symbol(scope, "i64")
 		return sym.type
+	}
+
+	if from.kind == to.kind {
+		return from
 	}
 
 	return nil
