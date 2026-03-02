@@ -98,17 +98,21 @@ emit_address :: proc(gen: ^Generator, expr: ^Expr, scope: ^Scope, span: Span) ->
 emit_value :: proc(gen: ^Generator, expr: ^Expr, scope: ^Scope, span: Span) -> ValueRef {
 	int32 := Int32TypeInContext(gen.ctx)
 	int64 := Int64TypeInContext(gen.ctx)
+	float64 := DoubleTypeInContext(gen.ctx)
 	#partial switch e in expr.data {
 	case Expr_Int_Literal:
 		type, _ := gen.primitive_types[expr.type]
 		if type == nil {
 			type = int64
 		}
-		// if !ok {
-		// 	error_span(span, "Type for literal is nil")
-		// 	return nil
-		// }
 		return ConstInt(type, u64(e.value), false)
+
+	case Expr_Float_Literal:
+		type, _ := gen.primitive_types[expr.type]
+		if type == nil {
+			type = float64
+		}
+		return ConstReal(type, f64(e.value))
 	case Expr_String_Literal:
 		return BuildGlobalStringPtr(gen.builder, strings.clone_to_cstring(e.value), "")
 	case Expr_Struct_Literal:
@@ -502,16 +506,26 @@ setup_codegen :: proc(gen: ^Generator) {
 				gen.primitive_types[sym.type] = Int1TypeInContext(gen.ctx)
 			case .Uint8:
 				gen.primitive_types[sym.type] = Int8TypeInContext(gen.ctx)
-			case .Int8:
-				gen.primitive_types[sym.type] = Int8TypeInContext(gen.ctx)
+			case .Uint16:
+				gen.primitive_types[sym.type] = Int16TypeInContext(gen.ctx)
 			case .Uint32:
-				gen.primitive_types[sym.type] = Int32TypeInContext(gen.ctx)
-			case .Int32:
 				gen.primitive_types[sym.type] = Int32TypeInContext(gen.ctx)
 			case .Uint64:
 				gen.primitive_types[sym.type] = Int64TypeInContext(gen.ctx)
+			case .Int8:
+				gen.primitive_types[sym.type] = Int8TypeInContext(gen.ctx)
+			case .Int16:
+				gen.primitive_types[sym.type] = Int16TypeInContext(gen.ctx)
+			case .Int32:
+				gen.primitive_types[sym.type] = Int32TypeInContext(gen.ctx)
 			case .Int64:
 				gen.primitive_types[sym.type] = Int64TypeInContext(gen.ctx)
+			case .Float16:
+				gen.primitive_types[sym.type] = HalfTypeInContext(gen.ctx)
+			case .Float32:
+				gen.primitive_types[sym.type] = FloatTypeInContext(gen.ctx)
+			case .Float64:
+				gen.primitive_types[sym.type] = DoubleTypeInContext(gen.ctx)
 			case .String:
 				gen.primitive_types[sym.type] = PointerTypeInContext(gen.ctx, 0)
 			}

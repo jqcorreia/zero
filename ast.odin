@@ -107,6 +107,7 @@ Expr :: struct {
 
 Expr_Data :: union {
 	Expr_Int_Literal,
+	Expr_Float_Literal,
 	Expr_String_Literal,
 	Expr_Struct_Literal,
 	Expr_Unary,
@@ -123,6 +124,11 @@ Expr_String_Literal :: struct {
 Expr_Int_Literal :: struct {
 	value: i64,
 }
+
+Expr_Float_Literal :: struct {
+	value: f64,
+}
+
 Expr_Unary :: struct {
 	op:   Token_Kind,
 	expr: ^Expr,

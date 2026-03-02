@@ -30,6 +30,7 @@ Type_Kind :: enum {
 	Void,
 	Bool,
 	Untyped_Int,
+	Untyped_Float,
 	Uint8,
 	Uint16,
 	Uint64,
@@ -38,6 +39,9 @@ Type_Kind :: enum {
 	Int16,
 	Int32,
 	Int64,
+	Float16,
+	Float32,
+	Float64,
 	String,
 	Struct,
 }
@@ -53,6 +57,7 @@ create_type :: proc(
 	t := new(Type)
 	t.kind = kind
 	t.numeric_integer = numeric_integer
+	t.numeric_float = numeric_float
 	t.signed = signed
 	scope.symbols[type_name] = make_symbol(.Type, t)
 }
@@ -63,6 +68,7 @@ create_primitive_types :: proc(scope: ^Scope) {
 	create_type(.Bool, "bool", scope)
 
 	create_type(.Untyped_Int, "untyped_int", scope)
+	create_type(.Untyped_Float, "untyped_float", scope)
 	create_type(.Uint8, "u8", scope, numeric_integer = true)
 	create_type(.Uint16, "u16", scope, numeric_integer = true)
 	create_type(.Uint32, "u32", scope, numeric_integer = true)
@@ -71,12 +77,15 @@ create_primitive_types :: proc(scope: ^Scope) {
 	create_type(.Int16, "i16", scope, signed = true, numeric_integer = true)
 	create_type(.Int32, "i32", scope, signed = true, numeric_integer = true)
 	create_type(.Int64, "i64", scope, signed = true, numeric_integer = true)
+	create_type(.Float16, "f16", scope, signed = true, numeric_float = true)
+	create_type(.Float32, "f32", scope, signed = true, numeric_float = true)
+	create_type(.Float64, "f64", scope, signed = true, numeric_float = true)
 
 	create_type(.String, "str", scope)
 }
 
 type_coercion :: proc(from: ^Type, to: ^Type, scope: ^Scope) -> ^Type {
-
+	fmt.println(from, to)
 	if from.kind == .Untyped_Int && to.numeric_integer {
 		return to
 	}
@@ -87,6 +96,19 @@ type_coercion :: proc(from: ^Type, to: ^Type, scope: ^Scope) -> ^Type {
 
 	if to.kind == .Untyped_Int && from.kind == .Untyped_Int {
 		sym, _ := resolve_symbol(scope, "i64")
+		return sym.type
+	}
+
+	if from.kind == .Untyped_Float && to.numeric_float {
+		return to
+	}
+
+	if to.kind == .Untyped_Float && from.numeric_float {
+		return from
+	}
+
+	if to.kind == .Untyped_Float && from.kind == .Untyped_Float {
+		sym, _ := resolve_symbol(scope, "f64")
 		return sym.type
 	}
 

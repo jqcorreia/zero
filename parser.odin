@@ -258,6 +258,13 @@ expr_int_literal :: proc(value: i64) -> ^Expr {
 	}
 	return ret
 }
+expr_float_literal :: proc(value: f64) -> ^Expr {
+	ret := new(Expr)
+	ret.data = Expr_Float_Literal {
+		value = value,
+	}
+	return ret
+}
 
 expr_string_literal :: proc(value: string) -> ^Expr {
 	ret := new(Expr)
@@ -352,7 +359,14 @@ parse_expression :: proc(
 
 	#partial switch t.kind {
 	case .Number:
-		left = expr_int_literal(i64(t.value.(int)))
+		#partial switch v in t.value {
+		case int:
+			left = expr_int_literal(i64(v))
+		case f64:
+			left = expr_float_literal(v)
+		case:
+			panic("Number token can't have other types than int or f64")
+		}
 	case .QuotedString:
 		left = expr_string_literal(t.value.(string))
 	case .Identifier:

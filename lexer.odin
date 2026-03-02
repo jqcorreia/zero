@@ -2,6 +2,8 @@
 
 package main
 
+import "core:fmt"
+import "core:math"
 import "core:strings"
 
 Token_Kind :: enum {
@@ -110,19 +112,26 @@ lex_number :: proc(lexer: ^Lexer, tokens: ^[dynamic]Token) {
 	value: f64 = 0
 	is_integer: bool = true
 	is_float: bool = false
+	decimal_points: int = 0
 
 	for lexer.pos < len(lexer.input) &&
 	    (is_numeric(lexer.input[lexer.pos]) ||
 			    lexer.input[lexer.pos] == '_' ||
 			    lexer.input[lexer.pos] == '.') {
 		if lexer.input[lexer.pos] == '.' {
+			if is_float do break
 			is_float = true
-		}
-		if lexer.input[lexer.pos] != '_' {
+			is_integer = false
+		} else if lexer.input[lexer.pos] != '_' {
+			if is_float {
+				decimal_points += 1
+			}
 			value = value * 10 + f64(lexer.input[lexer.pos] - '0')
 		}
 		lexer.pos += 1
 	}
+	value = value / math.pow(10, f64(decimal_points))
+
 	end := lexer.pos
 	append(
 		tokens,
