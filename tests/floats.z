@@ -1,3 +1,11 @@
+import "std/c"
+
+fn add(a: f64, b: f64) -> f64 {
+    return a + b
+}
+
 fn main() {
-    f: f32 = 1.5
+    f: f64 = 1.5
+
+    printf("f: %f", add(f, 2.75))
 }

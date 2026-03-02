@@ -131,100 +131,72 @@ emit_value :: proc(gen: ^Generator, expr: ^Expr, scope: ^Scope, span: Span) -> V
 	case Expr_Unary:
 		#partial switch e.op {
 		case .Minus:
-			return BuildSub(
-				gen.builder,
-				ConstInt(int32, 0, false),
-				emit_value(gen, e.expr, scope, span),
-				"subzero",
-			)
+			operand := emit_value(gen, e.expr, scope, span)
+			if e.expr.type.numeric_float {
+				return BuildFNeg(gen.builder, operand, "fneg")
+			}
+			zero := ConstInt(gen.primitive_types[e.expr.type], 0, false)
+			return BuildSub(gen.builder, zero, operand, "subzero")
 		}
 
 	case Expr_Binary:
+		left := emit_value(gen, e.left, scope, span)
+		right := emit_value(gen, e.right, scope, span)
 		#partial switch e.op {
 		case .Plus:
-			return BuildAdd(
-				gen.builder,
-				emit_value(gen, e.left, scope, span),
-				emit_value(gen, e.right, scope, span),
-				"add",
-			)
+			if expr.type.numeric_float {
+				return BuildFAdd(gen.builder, left, right, "fadd")
+			}
+			return BuildAdd(gen.builder, left, right, "add")
 		case .Minus:
-			return BuildSub(
-				gen.builder,
-				emit_value(gen, e.left, scope, span),
-				emit_value(gen, e.right, scope, span),
-				"sub",
-			)
+			if expr.type.numeric_float {
+				return BuildFSub(gen.builder, left, right, "fsub")
+			}
+			return BuildSub(gen.builder, left, right, "sub")
 		case .Star:
-			return BuildMul(
-				gen.builder,
-				emit_value(gen, e.left, scope, span),
-				emit_value(gen, e.right, scope, span),
-				"mul",
-			)
+			if expr.type.numeric_float {
+				return BuildFMul(gen.builder, left, right, "fmul")
+			}
+			return BuildMul(gen.builder, left, right, "mul")
 		case .Slash:
-			return BuildSDiv(
-				gen.builder,
-				emit_value(gen, e.left, scope, span),
-				emit_value(gen, e.right, scope, span),
-				"div",
-			)
+			if expr.type.numeric_float {
+				return BuildFDiv(gen.builder, left, right, "fdiv")
+			}
+			return BuildSDiv(gen.builder, left, right, "div")
 		case .DoubleEqual:
-			return BuildICmp(
-				gen.builder,
-				.IntEQ,
-				emit_value(gen, e.left, scope, span),
-				emit_value(gen, e.right, scope, span),
-				"gt",
-			)
+			if e.left.type.numeric_float {
+				return BuildFCmp(gen.builder, .RealOEQ, left, right, "feq")
+			}
+			return BuildICmp(gen.builder, .IntEQ, left, right, "eq")
 		case .NotEqual:
-			return BuildICmp(
-				gen.builder,
-				.IntNE,
-				emit_value(gen, e.left, scope, span),
-				emit_value(gen, e.right, scope, span),
-				"gt",
-			)
+			if e.left.type.numeric_float {
+				return BuildFCmp(gen.builder, .RealONE, left, right, "fne")
+			}
+			return BuildICmp(gen.builder, .IntNE, left, right, "ne")
 		case .Greater:
-			left_type := e.left.type
-			right_type := e.right.type
-			return BuildICmp(
-				gen.builder,
-				left_type.signed || right_type.signed ? .IntSGT : .IntUGT,
-				emit_value(gen, e.left, scope, span),
-				emit_value(gen, e.right, scope, span),
-				"gt",
-			)
+			if e.left.type.numeric_float {
+				return BuildFCmp(gen.builder, .RealOGT, left, right, "fgt")
+			}
+			pred := e.left.type.signed || e.right.type.signed ? IntPredicate.IntSGT : .IntUGT
+			return BuildICmp(gen.builder, pred, left, right, "gt")
 		case .Lesser:
-			left_type := e.left.type
-			right_type := e.right.type
-			return BuildICmp(
-				gen.builder,
-				left_type.signed || right_type.signed ? .IntSLT : .IntULT,
-				emit_value(gen, e.left, scope, span),
-				emit_value(gen, e.right, scope, span),
-				"lt",
-			)
+			if e.left.type.numeric_float {
+				return BuildFCmp(gen.builder, .RealOLT, left, right, "flt")
+			}
+			pred := e.left.type.signed || e.right.type.signed ? IntPredicate.IntSLT : .IntULT
+			return BuildICmp(gen.builder, pred, left, right, "lt")
 		case .GreaterOrEqual:
-			left_type := e.left.type
-			right_type := e.right.type
-			return BuildICmp(
-				gen.builder,
-				left_type.signed || right_type.signed ? .IntSGE : .IntUGE,
-				emit_value(gen, e.left, scope, span),
-				emit_value(gen, e.right, scope, span),
-				"gte",
-			)
+			if e.left.type.numeric_float {
+				return BuildFCmp(gen.builder, .RealOGE, left, right, "fge")
+			}
+			pred := e.left.type.signed || e.right.type.signed ? IntPredicate.IntSGE : .IntUGE
+			return BuildICmp(gen.builder, pred, left, right, "gte")
 		case .LesserOrEqual:
-			left_type := e.left.type
-			right_type := e.right.type
-			return BuildICmp(
-				gen.builder,
-				left_type.signed || right_type.signed ? .IntSLE : .IntULE,
-				emit_value(gen, e.left, scope, span),
-				emit_value(gen, e.right, scope, span),
-				"lte",
-			)
+			if e.left.type.numeric_float {
+				return BuildFCmp(gen.builder, .RealOLE, left, right, "fle")
+			}
+			pred := e.left.type.signed || e.right.type.signed ? IntPredicate.IntSLE : .IntULE
+			return BuildICmp(gen.builder, pred, left, right, "lte")
 		}
 	}
 	unimplemented(fmt.tprintf("Expression %v emit not implemented", expr))
@@ -386,15 +358,28 @@ emit_return :: proc(gen: ^Generator, s: ^Ast_Return, scope: ^Scope, span: Span) 
 emit_call :: proc(gen: ^Generator, e: Expr_Call, scope: ^Scope, span: Span) -> ValueRef {
 	fn_name := e.callee.data.(Expr_Variable).value
 
-	args: [dynamic]ValueRef
-	for a in e.args {
-		append(&args, emit_value(gen, a, scope, span))
-	}
-
 	sym, ok := resolve_symbol(scope, fn_name)
 	if !ok {
 		fatal_span(span, "Unresolved function %s in function call", fn_name)
 	}
+
+	decl := sym.decl.data.(Ast_Function)
+	args: [dynamic]ValueRef
+	variadic_found := false
+	for a, i in e.args {
+		val := emit_value(gen, a, scope, span)
+		is_variadic := variadic_found || i >= len(decl.params)
+		if !is_variadic && decl.params[i].variadic_marker {
+			variadic_found = true
+			is_variadic = true
+		}
+		// C variadic ABI: float args must be promoted to double
+		if is_variadic && a.type != nil && a.type.numeric_float && a.type.kind != .Float64 {
+			val = BuildFPExt(gen.builder, val, DoubleTypeInContext(gen.ctx), "fpext")
+		}
+		append(&args, val)
+	}
+
 	sym_type := gen.types[sym]
 	sym_value := gen.values[sym]
 
