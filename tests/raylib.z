@@ -31,7 +31,7 @@ fn main() {
     dir := 1
 
     x: i32 = 0
-    col: i32 = 0
+    col: u8 = 0
     speed: i32 = 10
 
     // Test struct field access (read)

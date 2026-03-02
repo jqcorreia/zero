@@ -2,18 +2,37 @@ package main
 
 import "core:fmt"
 
-Checker :: struct {}
+Checker :: struct {
+	current_function: ^Symbol,
+}
+
+global_scope: ^Scope
+
+check :: proc(c: ^Checker, nodes: []^Ast_Node) {
+	global_scope = create_global_scope()
+	for node in nodes {
+		bind_scopes(node, global_scope)
+	}
+	for node in nodes {
+		resolve_types(node)
+	}
+	for node in nodes {
+		check_stmt(c, node)
+	}
+}
 
 check_stmt :: proc(c: ^Checker, node: ^Ast_Node) {
 	#partial switch &data in node.data {
 	case Ast_Expr:
 		check_expr(c, data.expr, node.scope, node.span)
 	case Ast_Var_Decl:
+		check_var_decl(c, &data, node.scope, node.span)
 	case Ast_Var_Assign:
-		check_assigment(c, &data, node.scope, node.span)
+		check_assignment(c, &data, node.scope, node.span)
 	case Ast_Function:
 		check_function(c, &data, node.scope, node.span)
 	case Ast_Struct_Decl:
+		check_struct_decl(c, &data, node.scope, node.span)
 	case Ast_Return:
 		check_return(c, &data, node.scope, node.span)
 	case Ast_If:
@@ -25,89 +44,192 @@ check_stmt :: proc(c: ^Checker, node: ^Ast_Node) {
 	case Ast_Block:
 	case Ast_Import:
 		check_import(c, &data, node.scope, node.span)
-	// Do nothing here
 	case:
-		unimplemented(fmt.tprint("Unimplement check", node))
+		unimplemented(fmt.tprint("Unimplemented check", node))
 	}
 }
 
+check_expr :: proc(c: ^Checker, expr: ^Expr, scope: ^Scope, span: Span) {
+	#partial switch e in expr.data {
+	case Expr_Int_Literal, Expr_String_Literal:
+	// Nothing to check
 
-check_assigment :: proc(c: ^Checker, s: ^Ast_Var_Assign, scope: ^Scope, span: Span) {
-	// var, ok := resolve_symbol(scope, s.lhs.data.(Expr_Variable).value)
-	// if ok {
-	// 	if var.type != s.expr.type {
-	// 		error_span(span, "Cannot assign %v to %v", s.expr.type.kind, var.type.kind)
-	// 	}
-	// } else {
-	// 	error_span(span, "symbol %s not found", s.lhs)
-	// }
+	case Expr_Variable:
+		if expr.type.kind == .Error {
+			error_span(span, "Undefined symbol '%s'", e.value)
+		}
+
+	case Expr_Unary:
+		check_expr(c, e.expr, scope, span)
+
+	case Expr_Binary:
+		check_expr(c, e.left, scope, span)
+		check_expr(c, e.right, scope, span)
+		if e.left.type.kind != .Error && e.right.type.kind != .Error && expr.type.kind == .Error {
+			error_span(
+				span,
+				"Type mismatch: '%s' %s '%s'",
+				e.left.type.kind,
+				e.op,
+				e.right.type.kind,
+			)
+		}
+
+	case Expr_Call:
+		check_call(c, e, expr, scope, span)
+
+	case Expr_Member:
+		if expr.type.kind == .Error {
+			struct_name := e.base.data.(Expr_Variable).value
+			struct_sym, ok := resolve_symbol(scope, struct_name)
+			if !ok {
+				error_span(span, "Undefined variable '%s'", struct_name)
+			} else if struct_sym.type.kind != .Struct {
+				error_span(span, "'%s' is not a struct", struct_name)
+			} else {
+				error_span(span, "Struct '%s' has no field '%s'", struct_name, e.member)
+			}
+		}
+
+	case Expr_Struct_Literal:
+		if expr.type.kind == .Error {
+			error_span(span, "Undefined struct type '%s'", e.type_expr)
+		}
+	}
+}
+
+check_call :: proc(c: ^Checker, e: Expr_Call, call_expr: ^Expr, scope: ^Scope, span: Span) {
+	func_name := e.callee.data.(Expr_Variable).value
+	sym, ok := resolve_symbol(scope, func_name)
+	if !ok {
+		error_span(span, "Undefined function '%s'", func_name)
+		return
+	}
+	decl := sym.decl.data.(Ast_Function)
+	variadic_found := false
+	for arg, i in e.args {
+		check_expr(c, arg, scope, span)
+		if variadic_found || arg.type.kind == .Error {
+			continue
+		}
+		if i >= len(decl.params) {
+			error_span(span, "Too many arguments for '%s'", func_name)
+			continue
+		}
+		param := decl.params[i]
+		if param.variadic_marker {
+			variadic_found = true
+			continue
+		}
+		decl_type := param.symbol.type
+		if decl_type == nil || decl_type.kind == .Error {
+			continue
+		}
+		if type_coercion(arg.type, decl_type, scope) == nil {
+			error_span(
+				span,
+				"Argument %d of '%s': expected '%s', got '%s'",
+				i + 1,
+				func_name,
+				decl_type.kind,
+				arg.type.kind,
+			)
+		}
+	}
+}
+
+check_var_decl :: proc(c: ^Checker, s: ^Ast_Var_Decl, scope: ^Scope, span: Span) {
+	if s.symbol.type == nil || s.symbol.type.kind == .Error {
+		if s.type_expr != "" {
+			error_span(span, "Unresolved type '%s' for '%s'", s.type_expr, s.name)
+		} else {
+			error_span(span, "Cannot infer type for '%s'", s.name)
+		}
+		return
+	}
+	if s.expr != nil {
+		check_expr(c, s.expr, scope, span)
+		if s.expr.type != nil &&
+		   s.expr.type.kind != .Error &&
+		   type_coercion(s.expr.type, s.symbol.type, scope) == nil {
+			error_span(
+				span,
+				"Type mismatch in '%s': expected '%s', got '%s'",
+				s.name,
+				s.symbol.type.kind,
+				s.expr.type.kind,
+			)
+		}
+	}
+}
+
+check_assignment :: proc(c: ^Checker, s: ^Ast_Var_Assign, scope: ^Scope, span: Span) {
+	check_expr(c, s.lhs, scope, span)
+	check_expr(c, s.expr, scope, span)
+	if s.lhs.type.kind == .Error || s.expr.type.kind == .Error {
+		return
+	}
+	if type_coercion(s.expr.type, s.lhs.type, scope) == nil {
+		error_span(span, "Cannot assign '%s' to '%s'", s.expr.type.kind, s.lhs.type.kind)
+	}
 }
 
 check_function :: proc(c: ^Checker, s: ^Ast_Function, scope: ^Scope, span: Span) {
-	// for p in s.params {
-	// }
+	for param in s.params {
+		if !param.variadic_marker &&
+		   (param.symbol.type == nil || param.symbol.type.kind == .Error) {
+			error_span(
+				span,
+				"Unresolved type '%s' for parameter '%s'",
+				param.type_expr,
+				param.name,
+			)
+		}
+	}
+	if s.symbol.type == nil || s.symbol.type.kind == .Error {
+		error_span(span, "Unresolved return type '%s' for '%s'", s.ret_type_expr, s.name)
+	}
 	if !s.external {
+		old_function := c.current_function
+		c.current_function = s.symbol
 		check_block(c, s.body, span)
+		c.current_function = old_function
+	}
+}
+
+check_struct_decl :: proc(c: ^Checker, s: ^Ast_Struct_Decl, scope: ^Scope, span: Span) {
+	for field in s.symbol.type.fields {
+		if field.type == nil || field.type.kind == .Error {
+			error_span(span, "Unresolved type for field '%s' in '%s'", field.name, s.name)
+		}
 	}
 }
 
 check_return :: proc(c: ^Checker, s: ^Ast_Return, scope: ^Scope, span: Span) {
-	sc := scope
-	inside_function := false
-	for {
-		if sc.kind == .Function {
-			inside_function = true
-			break
-		}
-		if sc.parent == nil do break
-		sc = sc.parent
-	}
-
-	if !inside_function {
+	if c.current_function == nil {
 		error_span(span, "Return statement outside of function")
+		return
 	}
-}
-
-check_call :: proc(c: ^Checker, e: Expr_Call, span: Span) {
-
-}
-
-check_expr :: proc(c: ^Checker, expr: ^Expr, scope: ^Scope, span: Span) -> ^Type {
-	#partial switch e in expr.data {
-	case Expr_Binary:
-		left := check_expr(c, e.left, scope, span)
-		right := check_expr(c, e.right, scope, span)
-
-		if left != right {
-			error_span(
-				span,
-				"Operation '%s' cannot be done on different types: %s vs %s",
-				e.op,
-				left.kind,
-				right.kind,
-			)
-			return nil
-		} else {
-			return left
-		}
-	case Expr_Int_Literal:
-		return expr.type
+	if s.expr == nil {
+		return
 	}
-
-	// case Expr_Variable:
-	// 	sym, _ := resolve_symbol(scope, e.value)
-	// 	return sym.type
-
-	// case Expr_Call:
-	// 	func_name := e.callee.(Expr_Variable).value
-	// 	sym, ok := resolve_symbol(scope, func_name)
-	// 	if !ok {
-	// 		error_span(span, "Function '%s' not found", func_name)
-	// 		return nil
-	// 	}
-	// 	return sym.type
-	// }
-	return nil
+	check_expr(c, s.expr, scope, span)
+	if s.expr.type.kind == .Error {
+		return
+	}
+	fn_type := c.current_function.type
+	if fn_type == nil || fn_type.kind == .Error {
+		return
+	}
+	if type_coercion(s.expr.type, fn_type, scope) == nil {
+		error_span(
+			span,
+			"Return type mismatch in '%s': expected '%s', got '%s'",
+			c.current_function.name,
+			fn_type.kind,
+			s.expr.type.kind,
+		)
+	}
 }
 
 check_block :: proc(c: ^Checker, block: ^Ast_Block, span: Span) {
@@ -129,64 +251,18 @@ check_for_loop :: proc(c: ^Checker, s: ^Ast_For, span: Span) {
 
 check_break :: proc(c: ^Checker, s: ^Ast_Break, scope: ^Scope, span: Span) {
 	sc := scope
-	inside_loop := false
 	for {
 		if sc.kind == .Loop {
-			inside_loop = true
-			break
+			return
 		}
 		if sc.parent == nil do break
 		sc = sc.parent
 	}
-
-	if !inside_loop {
-		error_span(span, "Break statement outside of loop")
-	}
+	error_span(span, "Break statement outside of loop")
 }
 
 check_import :: proc(c: ^Checker, node: ^Ast_Import, scope: ^Scope, span: Span) {
 	if scope.kind != .Global {
-		error_span(span, "Import statemens must be at top-level")
-	}
-}
-
-global_scope: ^Scope
-
-check :: proc(c: ^Checker, nodes: []^Ast_Node) {
-	global_scope = create_global_scope()
-	for node in nodes {
-		bind_scopes(node, global_scope)
-	}
-
-	for node in nodes {
-		resolve_types(c, node)
-	}
-
-	// Debug traverse to make sure that no symbol in untyped
-	check_resolved_symbols := proc(node: ^Ast_Node, userdata: rawptr) {
-		for _, symbol in node.scope.symbols {
-			if symbol.type == nil && symbol.kind != .Function {
-				error_span(node.span, "nil typed symbol %v", symbol)
-			}
-		}
-	}
-	check_everyone_has_types := proc(node: ^Ast_Node, userdata: rawptr) {
-		if expr_node, ok := node.data.(Ast_Expr); ok {
-			if expr_node.expr.type == nil {
-				error_span(
-					node.span,
-					"Ast Node: %v, Expr Node: %v has no resolved type",
-					node,
-					expr_node,
-				)
-			}
-		}
-	}
-
-	traverse_block(nodes, check_resolved_symbols)
-	traverse_block(nodes, check_everyone_has_types)
-
-	for node in nodes {
-		check_stmt(c, node)
+		error_span(span, "Import statements must be at top-level")
 	}
 }
