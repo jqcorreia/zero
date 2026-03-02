@@ -23,9 +23,13 @@ main :: proc() {
 
 	source := os.read_entire_file(opt.file) or_else panic("No file found")
 
-	stmts, ok := compile(string(source))
+	ok: bool
+	if opt.command == "check" {
+		_, ok = compile(string(source))
+	} else {
+		ok = build(string(source))
+	}
 
-	// Compilation errors should appear before codegen phase
 	if !ok {
 		fmt.printf("Compilation failed with %d errors:\n", len(compiler.errors))
 		for error in compiler.errors {
@@ -36,9 +40,6 @@ main :: proc() {
 	if opt.command == "check" {
 		os.exit(0)
 	}
-
-	// Code generation
-	generate(stmts)
 
 	if ODIN_DEBUG {
 		fmt.println("--- Compilation done in", time.diff(start_time, time.now()), "---")

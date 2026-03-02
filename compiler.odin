@@ -44,7 +44,9 @@ compile :: proc(source: string) -> (stmts: []^Ast_Node, ok: bool) {
 		tokens_print(tokens)
 	}
 
-	parser := Parser{tokens = tokens}
+	parser := Parser {
+		tokens = tokens,
+	}
 	stmts = parse_program(&parser)
 	when ODIN_DEBUG {
 		for stmt in stmts {
@@ -56,6 +58,16 @@ compile :: proc(source: string) -> (stmts: []^Ast_Node, ok: bool) {
 	check(&checker, stmts)
 
 	ok = len(compiler.errors) == 0
+	return
+}
+
+build :: proc(source: string) -> (ok: bool) {
+	stmts: []^Ast_Node
+	stmts, ok = compile(source)
+	if !ok {
+		return
+	}
+	generate(stmts)
 	return
 }
 
