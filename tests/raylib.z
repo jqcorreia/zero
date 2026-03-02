@@ -30,8 +30,8 @@ fn main() {
 
     dir := 1
 
-    x: i32 = 0
-    col: u8 = 0
+    x: i32 = W / 2
+    col: u8 = background_color.r
     speed: i32 = 10
 
     // Test struct field access (read)
