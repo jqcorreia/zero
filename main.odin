@@ -21,32 +21,12 @@ main :: proc() {
 
 	start_time := time.now()
 
-	// Read file
-	expr := os.read_entire_file(opt.file) or_else panic("No file found")
+	source := os.read_entire_file(opt.file) or_else panic("No file found")
 
-	// Lex
-	tokens := lex(string(expr))
-	if ODIN_DEBUG {
-		tokens_print(tokens)
-	}
-
-	// Parse
-	parser := Parser {
-		tokens = tokens,
-	}
-	stmts := parse_program(&parser)
-	if ODIN_DEBUG {
-		for stmt in stmts {
-			statement_print(stmt)
-		}
-	}
-
-	// Semantic and type checker
-	checker := Checker{}
-	check(&checker, stmts)
+	stmts, ok := compile(string(source))
 
 	// Compilation errors should appear before codegen phase
-	if len(compiler.errors) > 0 {
+	if !ok {
 		fmt.printf("Compilation failed with %d errors:\n", len(compiler.errors))
 		for error in compiler.errors {
 			fmt.println(error.message)

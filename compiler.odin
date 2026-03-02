@@ -29,6 +29,36 @@ compiler_init :: proc() {
 	setup_native_types(&compiler) // Initialize the native type pointers
 }
 
+compiler_reset :: proc() {
+	compiler.errors = {}
+	compiler.line_starts = {}
+	compiler.loops = {}
+	compiler.external_linker_libs = {}
+}
+
+compile :: proc(source: string) -> (stmts: []^Ast_Node, ok: bool) {
+	compiler_reset()
+
+	tokens := lex(source)
+	when ODIN_DEBUG {
+		tokens_print(tokens)
+	}
+
+	parser := Parser{tokens = tokens}
+	stmts = parse_program(&parser)
+	when ODIN_DEBUG {
+		for stmt in stmts {
+			statement_print(stmt)
+		}
+	}
+
+	checker := Checker{}
+	check(&checker, stmts)
+
+	ok = len(compiler.errors) == 0
+	return
+}
+
 setup_native_types :: proc(compiler: ^Compiler) {
 	u8_t := new(Type)
 	u8_t.kind = .Uint8
