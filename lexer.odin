@@ -47,6 +47,7 @@ Token_Kind :: enum {
 Token_Val :: union {
 	int,
 	string,
+	f64,
 }
 
 
@@ -104,6 +105,36 @@ lex_peek :: proc(lexer: ^Lexer, n: int = 1) -> u8 {
 	return lexer.input[lexer.pos + n]
 }
 
+lex_number :: proc(lexer: ^Lexer, tokens: ^[dynamic]Token) {
+	start := lexer.pos
+	value: f64 = 0
+	is_integer: bool = true
+	is_float: bool = false
+
+	for lexer.pos < len(lexer.input) &&
+	    (is_numeric(lexer.input[lexer.pos]) ||
+			    lexer.input[lexer.pos] == '_' ||
+			    lexer.input[lexer.pos] == '.') {
+		if lexer.input[lexer.pos] == '.' {
+			is_float = true
+		}
+		if lexer.input[lexer.pos] != '_' {
+			value = value * 10 + f64(lexer.input[lexer.pos] - '0')
+		}
+		lexer.pos += 1
+	}
+	end := lexer.pos
+	append(
+		tokens,
+		Token {
+			kind = .Number,
+			lexeme = lexer.input[start:end],
+			value = is_integer ? int(value) : f64(value),
+			span = Span{start = start, end = end},
+		},
+	)
+}
+
 lex :: proc(input: string) -> []Token {
 	tokens: [dynamic]Token
 	lexer := Lexer {
@@ -137,25 +168,7 @@ lex :: proc(input: string) -> []Token {
 				append(&compiler.line_starts, lexer.pos)
 			}
 		case is_numeric(c):
-			start := lexer.pos
-			value := 0
-			for lexer.pos < len(lexer.input) &&
-			    (is_numeric(lexer.input[lexer.pos]) || lexer.input[lexer.pos] == '_') {
-				if lexer.input[lexer.pos] != '_' {
-					value = value * 10 + int(lexer.input[lexer.pos] - '0')
-				}
-				lexer.pos += 1
-			}
-			end := lexer.pos
-			append(
-				&tokens,
-				Token {
-					kind = .Number,
-					lexeme = lexer.input[start:end],
-					value = value,
-					span = Span{start = start, end = end},
-				},
-			)
+			lex_number(&lexer, &tokens)
 		case is_alphanumeric(c):
 			start := lexer.pos
 			for lexer.pos < len(lexer.input) &&
