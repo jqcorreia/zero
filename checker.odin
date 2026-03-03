@@ -140,7 +140,7 @@ check_call :: proc(c: ^Checker, e: Expr_Call, call_expr: ^Expr, scope: ^Scope, s
 
 check_var_decl :: proc(c: ^Checker, s: ^Ast_Var_Decl, scope: ^Scope, span: Span) {
 	if s.symbol.type == nil || s.symbol.type.kind == .Error {
-		if s.type_expr != "" {
+		if s.type_expr != nil {
 			error_span(span, "Unresolved type '%s' for '%s'", s.type_expr, s.name)
 		} else {
 			error_span(span, "Cannot infer type for '%s'", s.name)

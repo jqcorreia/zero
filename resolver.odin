@@ -23,7 +23,7 @@ resolve_types :: proc(node: ^Ast_Node) {
 			initializer_expr_type = resolve_expr_type(data.expr, node.scope, node.span)
 		}
 
-		if data.type_expr == "" {
+		if data.type_expr == nil {
 			if initializer_expr_type == nil {
 				data.symbol.type = &error_type
 				return
