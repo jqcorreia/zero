@@ -1,60 +1,83 @@
- This is a classic ambiguity that every language with both struct literals and block-opening { has to solve. There are a few real approaches:
+  ---
+  Phase 1 — Lexer
+
+  Add LBracket ([) and RBracket (]) tokens. Straightforward, same as the other single-char tokens.
 
   ---
-  Option A — Context flag on parse_expression (minimal change)
+  Phase 2 — Structured type expressions
 
-  Add a parameter allow_struct_literal: bool = true to parse_expression. In the identifier nud, only check for { when the flag is true. Call it with false from parse_if and parse_for.
-
-  parse_expression :: proc(p: ^Parser, min_lbp: int = 0, allow_struct_literal: bool = true) -> ^Expr {
-      ...
-      case .Identifier:
-          if allow_struct_literal && current(p).kind == .LBrace {
-              left = parse_struct_literal(...)
-          } else {
-              left = expr_ident(...)
-          }
-
-  No syntax change for the user. This is essentially what Go does at the parser level.
+  type_expr: string can't represent [4]i32. Replace it with a union:
+  Type_Expr :: union {
+      string,           // "i32", "f32", "MyStruct"
+      Array_Type_Expr,  // [4]i32
+  }
+  Array_Type_Expr :: struct {
+      size: int,
+      elem: ^Type_Expr,
+  }
+  This touches Ast_Var_Decl, function params, ret_type_expr, and struct field declarations. The resolver then switches on the union instead of doing a plain resolve_symbol string lookup.
 
   ---
-  Option B — Change struct literal syntax (Zig-style)
+  Phase 3 — Parser
 
-  Use .{ field = val } instead of Type{ field = val }. The type is inferred from context.
-
-  x := Color.{ r = 255, g = 0, b = 0 }
-
-  Since .{ is an unambiguous two-token sequence that never appears in a condition, the problem disappears entirely. Cleaner language design but a syntax breaking change.
-
-  ---
-  Option C — Require parentheses in conditions (C-style)
-
-  if (x < y) {
-
-  Simple parser fix — remove the { check from the identifier nud entirely and only handle struct literals where they're explicitly expected. But it changes the feel of the language.
+  Three new things to parse:
+  - Type expressions: [4]i32 when parsing a type annotation
+  - Array literals: [1, 2, 3] as an expression
+  - Index expressions: arr[i] — needs to slot into the existing expression parser at the right precedence level (postfix, same as member access)
 
   ---
-  Recommendation
+  Phase 4 — AST & Type system
 
-  Option A is the fastest fix with zero syntax impact. Option B is the better long-term language design — it also solves the ambiguity of what type a struct literal is when the name precedes it, which becomes relevant when you add type
-  inference. Zig chose it for exactly these reasons.
+  New expression nodes:
+  - Expr_Array_Literal { elements: []^Expr }
+  - Expr_Index { array: ^Expr, index: ^Expr }
 
-❯ I've just checked Odin and there the following happens: If you have a named struct literal in an if there's a syntax error *unless* you wrap it in parenthesis. I want to implement the same thing.
+  Type gains two new fields:
+  elem_type:  ^Type
+  array_size: int
+  And a new Type_Kind value: .Array.
 
-● That's Option A then, just slightly reframed — instead of a flag called allow_struct_literal, it's more accurately described as parentheses reset the context. In Odin, wrapping in () makes struct literals valid again because
-  parse_expression is called fresh inside the parentheses group.
+  ---
+  Phase 5 — Resolver
 
-  The way it works:
+  - Resolving Array_Type_Expr: look up the element type recursively, create an .Array type with elem_type and array_size
+  - Expr_Index resolves to array.type.elem_type
+  - Expr_Array_Literal resolves each element, infers the array type from context or the first element
 
-  - parse_if and parse_for call parse_expression with allow_struct_literal = false
-  - In the identifier nud, only try { if allow_struct_literal is true
-  - In the ( nud (grouped expression), recurse with allow_struct_literal = true — this is the key, parentheses "reset" the flag
+  ---
+  Phase 6 — Checker
 
-  case .LParen:
-      left = parse_expression(p, 0, true)  // reset — struct literals allowed inside ()
-      expect(p, .RParen)
+  - Verify the index expression is an integer type
+  - If the index is a compile-time literal, emit a compile-time bounds error
+  - For runtime indices, the checker just validates types — the bounds check is emitted in codegen
 
-  So if (MyStruct{ x = 1 }) { would parse fine because the inner call gets true, but if MyStruct{ x = 1 } { would not — the { after the identifier would be ignored and MyStruct parsed as a plain variable, then { would be consumed by
-  parse_block as the body opener.
+  ---
+  Phase 7 — Codegen
 
-  Want me to make the changes?
+  - Type: ArrayType(elem_llvm_type, size)
+  - Alloca: same as structs, allocate the whole array
+  - Literal: GEP + store for each element
+  - Index: two-index GEP — [0, i] because the array is behind a pointer
+  - Bounds check: emit before every index operation:
+  %oob = icmp uge i64 %i, <size>   ; unsigned: catches negatives too
+  br i1 %oob, trap_bb, ok_bb
+  trap_bb:
+    call void @llvm.trap()
+    unreachable
+  ok_bb:
+    ; GEP proceeds
+  - @llvm.trap() is an LLVM intrinsic that lowers to a hardware trap — cleaner than calling abort and gives you a crash with a useful signal.
+
+  ---
+  Order of attack
+
+  1. Lexer brackets
+  2. Type_Expr union + parser for type annotations
+  3. Resolver handles array types
+  4. Expr_Index through the full pipeline (resolver → checker → codegen) without literals first
+  5. Array literals
+  6. Bounds check insertion in codegen
+
+  The Type_Expr union change in phase 2 is the most invasive since it touches several structs and every place the resolver calls resolve_symbol on a type. Worth doing cleanly before moving on to the rest.
+
 
