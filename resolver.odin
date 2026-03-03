@@ -34,16 +34,8 @@ resolve_types :: proc(node: ^Ast_Node) {
 				resolved_type = i64_sym.type
 			}
 		} else {
-			type_sym, ok := resolve_symbol(node.scope, data.type_expr)
-			if ok {
-				resolved_type = type_sym.type
-			} else {
-				data.symbol.type = &error_type
-				if data.expr != nil {
-					data.expr.type = &error_type
-				}
-				return
-			}
+			var_type := resolve_type_expr(&data.type_expr, node.scope)
+			resolved_type = var_type
 		}
 
 		if data.expr != nil {
@@ -67,27 +59,14 @@ resolve_types :: proc(node: ^Ast_Node) {
 		}
 		data.symbol.type = type_sym.type
 		for &field, idx in data.fields {
-			if field_type_sym, field_ok := resolve_symbol(node.scope, field.type_expr); field_ok {
-				type_sym.type.fields[idx].type = field_type_sym.type
-			} else {
-				type_sym.type.fields[idx].type = &error_type
-			}
+			type_sym.type.fields[idx].type = resolve_type_expr(&field.type_expr, node.scope)
 		}
 
 	case Ast_Function:
 		for &param in data.params {
-			type_sym, ok := resolve_symbol(node.scope, param.type_expr)
-			if ok {
-				param.symbol.type = type_sym.type
-			} else {
-				param.symbol.type = &error_type
-			}
+			param.symbol.type = resolve_type_expr(&param.type_expr, node.scope)
 		}
-		if return_type_sym, ok := resolve_symbol(node.scope, data.ret_type_expr); ok {
-			data.symbol.type = return_type_sym.type
-		} else {
-			data.symbol.type = &error_type
-		}
+		data.symbol.type = resolve_type_expr(&data.ret_type_expr, node.scope)
 
 		if !data.external {
 			resolve_block_types(data.body)
@@ -128,7 +107,7 @@ resolve_types :: proc(node: ^Ast_Node) {
 }
 
 resolve_expr_type :: proc(expr: ^Expr, scope: ^Scope, span: Span) -> ^Type {
-	switch e in expr.data {
+	switch &e in expr.data {
 	case Expr_Int_Literal:
 		sym, _ := resolve_symbol(scope, "untyped_int")
 		expr.type = sym.type
@@ -145,14 +124,15 @@ resolve_expr_type :: proc(expr: ^Expr, scope: ^Scope, span: Span) -> ^Type {
 		return sym.type
 
 	case Expr_Struct_Literal:
-		sym, ok := resolve_symbol(scope, e.type_expr)
-		if !ok {
+		type := resolve_type_expr(&e.type_expr, scope)
+		if type == &error_type {
 			expr.type = &error_type
 			return &error_type
 		}
-		expr.type = sym.type
+
+		expr.type = type
 		for arg_name, arg in e.args {
-			for field in sym.type.fields {
+			for field in type.fields {
 				if field.name == arg_name {
 					arg_type := resolve_expr_type(arg, scope, span)
 					coerced_type := type_coercion(arg_type, field.type, scope)
@@ -164,7 +144,7 @@ resolve_expr_type :: proc(expr: ^Expr, scope: ^Scope, span: Span) -> ^Type {
 				}
 			}
 		}
-		return sym.type
+		return type
 
 	case Expr_Variable:
 		sym, ok := resolve_symbol(scope, e.value)
@@ -219,14 +199,10 @@ resolve_expr_type :: proc(expr: ^Expr, scope: ^Scope, span: Span) -> ^Type {
 		}
 		decl := sym.decl.data.(Ast_Function)
 		if sym.type == nil {
-			type_sym, type_ok := resolve_symbol(scope, decl.ret_type_expr)
-			if type_ok {
-				e.callee.type = type_sym.type
-				sym.type = type_sym.type
-			} else {
-				e.callee.type = &error_type
-				sym.type = &error_type
-			}
+			// Not resolved yet, do it here
+			type := resolve_type_expr(&decl.ret_type_expr, scope)
+			e.callee.type = type
+			sym.type = type
 		} else {
 			e.callee.type = sym.type
 		}
@@ -249,11 +225,10 @@ resolve_expr_type :: proc(expr: ^Expr, scope: ^Scope, span: Span) -> ^Type {
 			arg_type := resolve_expr_type(arg, scope, span)
 			decl_type := param.symbol.type
 			if decl_type == nil {
-				param_type_sym, _ := resolve_symbol(scope, param.type_expr)
-				if param_type_sym != nil {
-					param.symbol.type = param_type_sym.type
-					decl_type = param_type_sym.type
-				}
+				// Not resolved yet, do it here
+				param_type := resolve_type_expr(&param.type_expr, scope)
+				param.symbol.type = param_type
+				decl_type = param_type
 			}
 			if decl_type != nil {
 				coerced_type := type_coercion(arg_type, decl_type, scope)

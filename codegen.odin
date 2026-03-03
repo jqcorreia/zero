@@ -44,12 +44,12 @@ emit_stmt :: proc(gen: ^Generator, node: ^Ast_Node) {
 	}
 }
 emit_into :: proc(gen: ^Generator, expr: ^Expr, dest: ValueRef, scope: ^Scope, span: Span) {
-	#partial switch e in expr.data {
+	#partial switch &e in expr.data {
 	case Expr_Struct_Literal:
-		sym, _ := resolve_symbol(scope, e.type_expr)
-		struct_llvm_type := gen.primitive_types[sym.type]
+		type := resolve_type_expr(&e.type_expr, scope)
+		struct_llvm_type := gen.primitive_types[type]
 
-		for field in sym.type.fields {
+		for field in type.fields {
 			field_ptr := BuildStructGEP2(gen.builder, struct_llvm_type, dest, u32(field.index), "")
 			field_val := emit_value(gen, e.args[field.name], scope, span)
 			BuildStore(gen.builder, field_val, field_ptr)
@@ -58,13 +58,13 @@ emit_into :: proc(gen: ^Generator, expr: ^Expr, dest: ValueRef, scope: ^Scope, s
 }
 
 emit_address :: proc(gen: ^Generator, expr: ^Expr, scope: ^Scope, span: Span) -> ValueRef {
-	#partial switch e in expr.data {
+	#partial switch &e in expr.data {
 	case Expr_Struct_Literal:
-		sym, _ := resolve_symbol(scope, e.type_expr)
-		struct_llvm_type := gen.primitive_types[sym.type]
+		type := resolve_type_expr(&e.type_expr, scope)
+		struct_llvm_type := gen.primitive_types[type]
 		ptr := BuildAlloca(gen.builder, struct_llvm_type, "")
 
-		for field in sym.type.fields {
+		for field in type.fields {
 			field_ptr := BuildStructGEP2(gen.builder, struct_llvm_type, ptr, u32(field.index), "")
 			BuildStore(gen.builder, emit_value(gen, e.args[field.name], scope, span), field_ptr)
 		}
@@ -99,7 +99,7 @@ emit_value :: proc(gen: ^Generator, expr: ^Expr, scope: ^Scope, span: Span) -> V
 	int32 := Int32TypeInContext(gen.ctx)
 	int64 := Int64TypeInContext(gen.ctx)
 	float64 := DoubleTypeInContext(gen.ctx)
-	#partial switch e in expr.data {
+	#partial switch &e in expr.data {
 	case Expr_Int_Literal:
 		type, _ := gen.primitive_types[expr.type]
 		if type == nil {
@@ -117,8 +117,8 @@ emit_value :: proc(gen: ^Generator, expr: ^Expr, scope: ^Scope, span: Span) -> V
 		return BuildGlobalStringPtr(gen.builder, strings.clone_to_cstring(e.value), "")
 	case Expr_Struct_Literal:
 		addr := emit_address(gen, expr, scope, span)
-		sym, _ := resolve_symbol(scope, e.type_expr)
-		return BuildLoad2(gen.builder, gen.primitive_types[sym.type], addr, "")
+		type := resolve_type_expr(&e.type_expr, scope)
+		return BuildLoad2(gen.builder, gen.primitive_types[type], addr, "")
 	case Expr_Member:
 		ptr := emit_address(gen, expr, scope, span)
 		return BuildLoad2(gen.builder, gen.primitive_types[expr.type], ptr, "")

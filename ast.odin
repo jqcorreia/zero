@@ -23,6 +23,16 @@ Ast_Data :: union {
 	Ast_Import,
 }
 
+Type_Expr :: union {
+	string,
+	Array_Type_Expr,
+}
+
+Array_Type_Expr :: struct {
+	size: u64,
+	elem: ^Type_Expr,
+}
+
 Ast_Expr :: struct {
 	expr: ^Expr,
 }
@@ -38,13 +48,13 @@ Ast_Var_Decl :: struct {
 	name:      string, // var name
 	expr:      ^Expr, // nil if default value, whatever that is
 	symbol:    ^Symbol, // symbol to be bound
-	type_expr: string, // Type expression to be resolved
+	type_expr: Type_Expr, // Type expression to be resolved
 }
 
 
 Param :: struct {
 	name:            string,
-	type_expr:       string,
+	type_expr:       Type_Expr,
 	symbol:          ^Symbol,
 	variadic_marker: bool,
 }
@@ -53,7 +63,7 @@ Ast_Function :: struct {
 	name:          string,
 	params:        []Param,
 	body:          ^Ast_Block,
-	ret_type_expr: string,
+	ret_type_expr: Type_Expr,
 	symbol:        ^Symbol,
 	external:      bool,
 }
@@ -67,7 +77,7 @@ Ast_Struct_Decl :: struct {
 
 Ast_Struct_Field :: struct {
 	name:      string,
-	type_expr: string,
+	type_expr: Type_Expr,
 	symbol:    ^Symbol,
 }
 
@@ -150,7 +160,7 @@ Expr_Call :: struct {
 }
 
 Expr_Struct_Literal :: struct {
-	type_expr: string,
+	type_expr: Type_Expr,
 	args:      map[string]^Expr,
 }
 

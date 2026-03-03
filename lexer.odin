@@ -2,7 +2,6 @@
 
 package main
 
-import "core:fmt"
 import "core:math"
 import "core:strings"
 
@@ -12,6 +11,8 @@ Token_Kind :: enum {
 	RParen,
 	LBrace,
 	RBrace,
+	LBracket,
+	RBracket,
 	Identifier,
 	QuotedString,
 	Equal,
@@ -289,6 +290,12 @@ lex :: proc(input: string) -> []Token {
 			lexer.pos += 1
 		case c == '}':
 			append(&tokens, Token{kind = .RBrace, lexeme = "}", span = one_char_span(lexer)})
+			lexer.pos += 1
+		case c == '[':
+			append(&tokens, Token{kind = .LBracket, lexeme = "[", span = one_char_span(lexer)})
+			lexer.pos += 1
+		case c == ']':
+			append(&tokens, Token{kind = .RBracket, lexeme = "]", span = one_char_span(lexer)})
 			lexer.pos += 1
 		case c == '=':
 			if lex_peek(&lexer) == '=' {

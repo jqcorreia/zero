@@ -11,6 +11,8 @@ Type :: struct {
 	numeric_integer: bool,
 	numeric_float:   bool,
 	fields:          [dynamic]Struct_Field,
+	size:            u64,
+	elem_type:       ^Type,
 }
 
 Struct_Field :: struct {
@@ -44,6 +46,7 @@ Type_Kind :: enum {
 	Float64,
 	String,
 	Struct,
+	Array,
 }
 
 create_type :: proc(
@@ -85,7 +88,6 @@ create_primitive_types :: proc(scope: ^Scope) {
 }
 
 type_coercion :: proc(from: ^Type, to: ^Type, scope: ^Scope) -> ^Type {
-	fmt.println(from, to)
 	if from.kind == .Untyped_Int && to.numeric_integer {
 		return to
 	}
@@ -116,5 +118,29 @@ type_coercion :: proc(from: ^Type, to: ^Type, scope: ^Scope) -> ^Type {
 		return from
 	}
 
+	return nil
+}
+
+resolve_type_expr :: proc(type_expr: ^Type_Expr, scope: ^Scope) -> ^Type {
+	switch te in type_expr {
+	case string:
+		sym, ok := resolve_symbol(scope, te)
+		if !ok {
+			return &error_type
+		}
+		return sym.type
+
+	case Array_Type_Expr:
+		elem_type := resolve_type_expr(te.elem, scope)
+		if elem_type == &error_type {
+			return &error_type
+		}
+		type := new(Type)
+		type.kind = .Array
+		type.size = te.size
+		type.elem_type = elem_type
+
+		return type
+	}
 	return nil
 }
