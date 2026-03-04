@@ -67,7 +67,7 @@ emit_into :: proc(gen: ^Generator, expr: ^Expr, dest: ValueRef, scope: ^Scope, s
 		}
 	case Expr_Struct_Literal:
 		type := resolve_type_expr(&e.type_expr, scope)
-		struct_llvm_type := gen.primitive_types[type]
+		struct_llvm_type := get_llvm_type(gen, type)
 
 		for field in type.fields {
 			field_ptr := BuildStructGEP2(gen.builder, struct_llvm_type, dest, u32(field.index), "")
@@ -81,7 +81,7 @@ emit_address :: proc(gen: ^Generator, expr: ^Expr, scope: ^Scope, span: Span) ->
 	#partial switch &e in expr.data {
 	case Expr_Struct_Literal:
 		type := resolve_type_expr(&e.type_expr, scope)
-		struct_llvm_type := gen.primitive_types[type]
+		struct_llvm_type := get_llvm_type(gen, type)
 		ptr := BuildAlloca(gen.builder, struct_llvm_type, "")
 
 		for field in type.fields {
@@ -101,7 +101,7 @@ emit_address :: proc(gen: ^Generator, expr: ^Expr, scope: ^Scope, span: Span) ->
 
 	case Expr_Member:
 		base_ptr := emit_address(gen, e.base, scope, span)
-		base_type := gen.primitive_types[e.base.type]
+		base_type := get_llvm_type(gen, e.base.type)
 		field_index := 0
 		for f in e.base.type.fields {
 			if f.name == e.member {
@@ -130,14 +130,14 @@ emit_value :: proc(gen: ^Generator, expr: ^Expr, scope: ^Scope, span: Span) -> V
 	float64 := DoubleTypeInContext(gen.ctx)
 	#partial switch &e in expr.data {
 	case Expr_Int_Literal:
-		type, _ := gen.primitive_types[expr.type]
+		type := get_llvm_type(gen, expr.type)
 		if type == nil {
 			type = int64
 		}
 		return ConstInt(type, u64(e.value), false)
 
 	case Expr_Float_Literal:
-		type, _ := gen.primitive_types[expr.type]
+		type := get_llvm_type(gen, expr.type)
 		if type == nil {
 			type = float64
 		}
@@ -147,10 +147,10 @@ emit_value :: proc(gen: ^Generator, expr: ^Expr, scope: ^Scope, span: Span) -> V
 	case Expr_Struct_Literal:
 		addr := emit_address(gen, expr, scope, span)
 		type := resolve_type_expr(&e.type_expr, scope)
-		return BuildLoad2(gen.builder, gen.primitive_types[type], addr, "")
+		return BuildLoad2(gen.builder, get_llvm_type(gen, type), addr, "")
 	case Expr_Member:
 		ptr := emit_address(gen, expr, scope, span)
-		return BuildLoad2(gen.builder, gen.primitive_types[expr.type], ptr, "")
+		return BuildLoad2(gen.builder, get_llvm_type(gen, expr.type), ptr, "")
 	case Expr_Index:
 		ptr := emit_address(gen, expr, scope, span)
 		llvm_type := get_llvm_type(gen, expr.type)
@@ -168,7 +168,7 @@ emit_value :: proc(gen: ^Generator, expr: ^Expr, scope: ^Scope, span: Span) -> V
 			if e.expr.type.numeric_float {
 				return BuildFNeg(gen.builder, operand, "fneg")
 			}
-			zero := ConstInt(gen.primitive_types[e.expr.type], 0, false)
+			zero := ConstInt(get_llvm_type(gen, e.expr.type), 0, false)
 			return BuildSub(gen.builder, zero, operand, "subzero")
 		}
 
@@ -298,7 +298,7 @@ emit_function_decl :: proc(gen: ^Generator, s: ^Ast_Function, scope: ^Scope, spa
 	fn_type: TypeRef
 
 	//NOTE(quadrado): This must change so a function can return more than primitive types
-	ret_type_ref := gen.primitive_types[s.symbol.type]
+	ret_type_ref := get_llvm_type(gen, s.symbol.type)
 
 	if len(s.params) > 0 {
 		variadic := false
@@ -306,7 +306,7 @@ emit_function_decl :: proc(gen: ^Generator, s: ^Ast_Function, scope: ^Scope, spa
 			if param.variadic_marker {
 				variadic = true
 			} else {
-				append(&param_types, gen.primitive_types[param.symbol.type])
+				append(&param_types, get_llvm_type(gen, param.symbol.type))
 			}
 		}
 		fn_type = FunctionType(ret_type_ref, &param_types[0], u32(len(param_types)), i32(variadic))
@@ -335,7 +335,7 @@ emit_struct_body :: proc(gen: ^Generator, s: ^Ast_Struct_Decl, scope: ^Scope, sp
 	field_types: [dynamic]TypeRef
 
 	for field in sym.type.fields {
-		append(&field_types, gen.primitive_types[field.type])
+		append(&field_types, get_llvm_type(gen, field.type))
 	}
 
 	StructSetBody(llvm_type, raw_data(field_types), u32(len(field_types)), false)
@@ -358,7 +358,7 @@ emit_function_body :: proc(gen: ^Generator, s: ^Ast_Function, scope: ^Scope, spa
 		param_sym := ast_param.symbol
 		param := GetParam(fn, u32(i))
 
-		param_type := gen.primitive_types[param_sym.type]
+		param_type := get_llvm_type(gen, param_sym.type)
 		alloca := BuildAlloca(gen.builder, param_type, strings.clone_to_cstring(ast_param.name))
 		BuildStore(gen.builder, param, alloca)
 		gen.values[param_sym] = alloca

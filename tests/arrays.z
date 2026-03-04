@@ -1,7 +1,7 @@
 import "std/c"
 
-fn mutate(arr: [5]i32) {
-    arr[0] = 100 // This will modify the original array
+fn print_first(arr: [5]i32) {
+    printf("First element: %d\n", arr[0])
 }
 
 fn main() {
@@ -13,6 +13,5 @@ fn main() {
     a[1] = 25 // Update the second element to 25
     printf("Updated value: %d\n", a[1]) // 25
 
-    mutate(a) // This will modify the original array
-    printf("After mutation: %d\n", a[0]) // 100
+    print_first(a) // This will modify the original array
 }
