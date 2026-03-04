@@ -146,6 +146,20 @@ resolve_expr_type :: proc(expr: ^Expr, scope: ^Scope, span: Span) -> ^Type {
 		}
 		return type
 
+	case Expr_Array_Literal:
+		elem_type: ^Type
+		for &elem in e.elements {
+			elem.type = resolve_expr_type(elem, scope, span)
+			elem_type = elem.type
+		}
+		array_type := new(Type)
+		array_type.kind = .Array
+		array_type.size = u64(len(e.elements))
+		array_type.elem_type = elem_type
+		expr.type = array_type
+
+		return array_type == nil ? &error_type : array_type
+
 	case Expr_Variable:
 		sym, ok := resolve_symbol(scope, e.value)
 		if !ok || sym.type == nil {

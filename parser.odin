@@ -71,7 +71,6 @@ parse_program :: proc(p: ^Parser) -> []^Ast_Node {
 
 			import_stmts := parse_program(&import_parser)
 			for s in import_stmts do append(&stmts, s)
-			continue
 		}
 
 		stmt := parse_statement(p)
@@ -202,12 +201,12 @@ parse_identifier :: proc(p: ^Parser) -> Ast_Data {
 		advance(p)
 		expect(p, .Colon)
 
-		type_expr := expect(p, .Identifier).lexeme
+		// type_expr := expect(p, .Identifier).lexeme
+		type_expr := parse_type_expr(p)
 		default_value_expr: ^Expr
 		if current(p).kind == .Equal {
 			advance(p)
 			default_value_expr = parse_expression(p, 0)
-
 		}
 
 		return Ast_Var_Decl {
@@ -220,6 +219,28 @@ parse_identifier :: proc(p: ^Parser) -> Ast_Data {
 		fatal_token(next_token, "Unexpected token %s", next_token.kind)
 	}
 	panic("Should be unreachable")
+}
+
+parse_type_expr :: proc(p: ^Parser) -> Type_Expr {
+	#partial switch current(p).kind {
+	case .Identifier:
+		return advance(p).value.(string)
+	case .LBracket:
+		advance(p)
+		size_token := expect(p, .Number)
+		expect(p, .RBracket)
+		elem_expr := new(Type_Expr)
+		elem_expr^ = parse_type_expr(p)
+		expr := Type_Expr_Array {
+			size = u64(size_token.value.(int)),
+			elem = elem_expr,
+		}
+		fmt.println(expr)
+		return expr
+	case:
+		fatal_token(current(p), "Unexpected token")
+	}
+	return Type_Expr{}
 }
 
 parse_struct_decl :: proc(p: ^Parser) -> ^Ast_Struct_Decl {
@@ -382,6 +403,15 @@ parse_expression :: proc(
 		rbp := prefix_precedence(t.kind)
 		right := parse_expression(p, rbp, allow_struct_literal)
 		left = expr_unary(t.kind, right)
+	case .LBracket:
+		elements: [dynamic]^Expr
+		for current(p).kind != .RBracket {
+			append(&elements, parse_expression(p, 0))
+			if current(p).kind == .Comma do advance(p)
+		}
+		expect(p, .RBracket)
+		left = new(Expr)
+		left.data = Expr_Array_Literal{elements = elements[:]}
 	case:
 		panic("Invalid expression")
 	}

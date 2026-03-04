@@ -13,6 +13,14 @@ Generator :: struct {
 	primitive_types: map[^Type]TypeRef,
 }
 
+get_llvm_type :: proc(gen: ^Generator, type: ^Type) -> TypeRef {
+	if type.kind == .Array {
+		elem_type := get_llvm_type(gen, type.elem_type)
+		return ArrayType2(elem_type, type.size)
+	}
+	return gen.primitive_types[type]
+}
+
 emit_stmt :: proc(gen: ^Generator, node: ^Ast_Node) {
 	#partial switch &data in node.data {
 	case Ast_Expr:
@@ -45,6 +53,18 @@ emit_stmt :: proc(gen: ^Generator, node: ^Ast_Node) {
 }
 emit_into :: proc(gen: ^Generator, expr: ^Expr, dest: ValueRef, scope: ^Scope, span: Span) {
 	#partial switch &e in expr.data {
+	case Expr_Array_Literal:
+		array_llvm_type := get_llvm_type(gen, expr.type)
+
+		for elem, i in e.elements {
+			indices: []ValueRef = {
+				ConstInt(Int32TypeInContext(gen.ctx), 0, false),
+				ConstInt(Int32TypeInContext(gen.ctx), u64(i), false),
+			}
+			elem_ptr := BuildGEP2(gen.builder, array_llvm_type, dest, raw_data(indices), 2, "")
+			elem_val := emit_value(gen, elem, scope, span)
+			BuildStore(gen.builder, elem_val, elem_ptr)
+		}
 	case Expr_Struct_Literal:
 		type := resolve_type_expr(&e.type_expr, scope)
 		struct_llvm_type := gen.primitive_types[type]
@@ -96,7 +116,6 @@ emit_address :: proc(gen: ^Generator, expr: ^Expr, scope: ^Scope, span: Span) ->
 }
 
 emit_value :: proc(gen: ^Generator, expr: ^Expr, scope: ^Scope, span: Span) -> ValueRef {
-	int32 := Int32TypeInContext(gen.ctx)
 	int64 := Int64TypeInContext(gen.ctx)
 	float64 := DoubleTypeInContext(gen.ctx)
 	#partial switch &e in expr.data {
@@ -220,11 +239,12 @@ emit_var_decl :: proc(gen: ^Generator, s: ^Ast_Var_Decl, scope: ^Scope, span: Sp
 
 		if exists do fatal_span(span, "Variable aliasing detected. Fatal error for now")
 
-		compiler_type := gen.primitive_types[sym.type]
+		// compiler_type := gen.primitive_types[sym.type]
+		compiler_type := get_llvm_type(gen, sym.type)
 		ptr = BuildAlloca(gen.builder, compiler_type, "")
 		gen.values[sym] = ptr
 		if s.expr != nil {
-			if sym.type.kind == .Struct {
+			if sym.type.kind == .Struct || sym.type.kind == .Array {
 				emit_into(gen, s.expr, ptr, scope, span)
 
 			} else {
@@ -233,6 +253,7 @@ emit_var_decl :: proc(gen: ^Generator, s: ^Ast_Var_Decl, scope: ^Scope, span: Sp
 		}
 	} else {
 		// Create global variables, only constant for now
+		// NOTE: need to rewrite all this, it's hardcoded for i32 literals
 		if _, ok := s.expr.data.(Expr_Int_Literal); ok {
 			ptr := AddGlobal(gen.module, Int32Type(), strings.clone_to_cstring(s.name))
 			SetInitializer(

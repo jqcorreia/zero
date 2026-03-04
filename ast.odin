@@ -24,11 +24,13 @@ Ast_Data :: union {
 }
 
 Type_Expr :: union {
-	string,
-	Array_Type_Expr,
+	Type_Expr_Name,
+	Type_Expr_Array,
 }
 
-Array_Type_Expr :: struct {
+Type_Expr_Name :: string
+
+Type_Expr_Array :: struct {
 	size: u64,
 	elem: ^Type_Expr,
 }
@@ -120,6 +122,7 @@ Expr_Data :: union {
 	Expr_Float_Literal,
 	Expr_String_Literal,
 	Expr_Struct_Literal,
+	Expr_Array_Literal,
 	Expr_Unary,
 	Expr_Binary,
 	Expr_Variable,
@@ -162,6 +165,10 @@ Expr_Call :: struct {
 Expr_Struct_Literal :: struct {
 	type_expr: Type_Expr,
 	args:      map[string]^Expr,
+}
+
+Expr_Array_Literal :: struct {
+	elements: []^Expr,
 }
 
 Expr_Member :: struct {

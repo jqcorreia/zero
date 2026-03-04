@@ -2,8 +2,6 @@
 
 package main
 
-import "core:fmt"
-
 Type :: struct {
 	kind:            Type_Kind,
 	compiled:        Compiled_Type,
@@ -88,6 +86,12 @@ create_primitive_types :: proc(scope: ^Scope) {
 }
 
 type_coercion :: proc(from: ^Type, to: ^Type, scope: ^Scope) -> ^Type {
+	if from.kind == .Array && to.kind == .Array {
+		if from.size == to.size && type_coercion(from.elem_type, to.elem_type, scope) != nil {
+			return to
+		}
+	}
+
 	if from.kind == .Untyped_Int && to.numeric_integer {
 		return to
 	}
@@ -130,7 +134,7 @@ resolve_type_expr :: proc(type_expr: ^Type_Expr, scope: ^Scope) -> ^Type {
 		}
 		return sym.type
 
-	case Array_Type_Expr:
+	case Type_Expr_Array:
 		elem_type := resolve_type_expr(te.elem, scope)
 		if elem_type == &error_type {
 			return &error_type
