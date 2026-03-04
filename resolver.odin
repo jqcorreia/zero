@@ -19,10 +19,12 @@ resolve_types :: proc(node: ^Ast_Node) {
 		resolved_type: ^Type
 		initializer_expr_type: ^Type
 
+		// Get the initializer expression type
 		if data.expr != nil {
 			initializer_expr_type = resolve_expr_type(data.expr, node.scope, node.span)
 		}
 
+		// Deal with both cases of having types defined or not
 		if data.type_expr == nil {
 			if initializer_expr_type == nil {
 				data.symbol.type = &error_type
@@ -32,17 +34,29 @@ resolve_types :: proc(node: ^Ast_Node) {
 			if initializer_expr_type.kind == .Untyped_Int {
 				i64_sym, _ := resolve_symbol(node.scope, "i64")
 				resolved_type = i64_sym.type
+			} else if initializer_expr_type.kind == .Untyped_Float {
+				f64_sym, _ := resolve_symbol(node.scope, "f64")
+				resolved_type = f64_sym.type
 			}
 		} else {
 			var_type := resolve_type_expr(&data.type_expr, node.scope)
 			resolved_type = var_type
 		}
 
+		// Deal with type coercion
 		if data.expr != nil {
 			coerced_type := type_coercion(initializer_expr_type, resolved_type, node.scope)
 			if coerced_type != nil {
 				data.symbol.type = coerced_type
 				data.expr.type = coerced_type
+				if lit, ok := &data.expr.data.(Expr_Array_Literal); ok {
+					for elem in lit.elements {
+						elem_coerced := type_coercion(elem.type, coerced_type.elem_type, node.scope)
+						if elem_coerced != nil {
+							elem.type = elem_coerced
+						}
+					}
+				}
 			} else {
 				// Keep natural types so the checker can report a meaningful mismatch
 				data.symbol.type = resolved_type
