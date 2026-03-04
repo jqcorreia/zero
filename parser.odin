@@ -529,8 +529,8 @@ parse_function_decl_params :: proc(p: ^Parser) -> []Param {
 			param_name := current(p).lexeme
 			advance(p)
 			expect(p, .Colon)
-			type_ident := expect(p, .Identifier)
-			append(&params, Param{name = param_name, type_expr = type_ident.lexeme})
+			type_expr := parse_type_expr(p)
+			append(&params, Param{name = param_name, type_expr = type_expr})
 
 		case .Ellipsis:
 			append(&params, Param{variadic_marker = true})

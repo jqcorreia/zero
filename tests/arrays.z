@@ -1,11 +1,18 @@
 import "std/c"
 
+fn mutate(arr: [5]i32) {
+    arr[0] = 100 // This will modify the original array
+}
+
 fn main() {
     a: [5]i32 = [10, 20, 30, 40, 50]
+
     b := a[2] // b is 30
-
     printf("b: %d\n", b)
-    a[1] = 25 // Update the second element to 25
 
+    a[1] = 25 // Update the second element to 25
     printf("Updated value: %d\n", a[1]) // 25
+
+    mutate(a) // This will modify the original array
+    printf("After mutation: %d\n", a[0]) // 100
 }
