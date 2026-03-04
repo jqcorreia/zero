@@ -110,6 +110,16 @@ emit_address :: proc(gen: ^Generator, expr: ^Expr, scope: ^Scope, span: Span) ->
 			}
 		}
 		return BuildStructGEP2(gen.builder, base_type, base_ptr, u32(field_index), "")
+	case Expr_Index:
+		array_ptr := emit_address(gen, e.array, scope, span)
+		index_val := emit_value(gen, e.index, scope, span)
+		indices: []ValueRef = {ConstInt(Int32TypeInContext(gen.ctx), 0, false), index_val}
+
+		llvm_type := get_llvm_type(gen, e.array.type)
+
+		ptr := BuildGEP2(gen.builder, llvm_type, array_ptr, raw_data(indices), 2, "")
+
+		return ptr
 	}
 
 	unimplemented(fmt.tprintf("Not addressable expression %v", expr))
@@ -141,12 +151,16 @@ emit_value :: proc(gen: ^Generator, expr: ^Expr, scope: ^Scope, span: Span) -> V
 	case Expr_Member:
 		ptr := emit_address(gen, expr, scope, span)
 		return BuildLoad2(gen.builder, gen.primitive_types[expr.type], ptr, "")
+	case Expr_Index:
+		ptr := emit_address(gen, expr, scope, span)
+		llvm_type := get_llvm_type(gen, expr.type)
+		return BuildLoad2(gen.builder, llvm_type, ptr, "")
 	case Expr_Call:
 		return emit_call(gen, e, scope, span)
 	case Expr_Variable:
 		ptr := emit_address(gen, expr, scope, span)
 		sym, _ := resolve_symbol(scope, e.value)
-		return BuildLoad2(gen.builder, gen.primitive_types[sym.type], ptr, "")
+		return BuildLoad2(gen.builder, get_llvm_type(gen, sym.type), ptr, "")
 	case Expr_Unary:
 		#partial switch e.op {
 		case .Minus:

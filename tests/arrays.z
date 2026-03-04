@@ -1,3 +1,11 @@
+import "std/c"
+
 fn main() {
     a: [5]i32 = [10, 20, 30, 40, 50]
+    b := a[2] // b is 30
+
+    printf("b: %d\n", b)
+    a[1] = 25 // Update the second element to 25
+
+    printf("Updated value: %d\n", a[1]) // 25
 }

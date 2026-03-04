@@ -128,6 +128,7 @@ Expr_Data :: union {
 	Expr_Variable,
 	Expr_Call,
 	Expr_Member,
+	Expr_Index,
 }
 
 Expr_String_Literal :: struct {
@@ -176,6 +177,11 @@ Expr_Member :: struct {
 	member: string,
 	kind:   Member_Kind,
 	// type field from base would refer to the `member` field type
+}
+
+Expr_Index :: struct {
+	array: ^Expr,
+	index: ^Expr,
 }
 
 Member_Kind :: enum {

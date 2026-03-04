@@ -51,7 +51,11 @@ resolve_types :: proc(node: ^Ast_Node) {
 				data.expr.type = coerced_type
 				if lit, ok := &data.expr.data.(Expr_Array_Literal); ok {
 					for elem in lit.elements {
-						elem_coerced := type_coercion(elem.type, coerced_type.elem_type, node.scope)
+						elem_coerced := type_coercion(
+							elem.type,
+							coerced_type.elem_type,
+							node.scope,
+						)
 						if elem_coerced != nil {
 							elem.type = elem_coerced
 						}
@@ -199,6 +203,17 @@ resolve_expr_type :: proc(expr: ^Expr, scope: ^Scope, span: Span) -> ^Type {
 		}
 		expr.type = &error_type
 		return &error_type
+
+	case Expr_Index:
+		type := resolve_expr_type(e.array, scope, span)
+		resolve_expr_type(e.index, scope, span)
+
+		if type.kind != .Array {
+			expr.type = &error_type
+			return &error_type
+		}
+		expr.type = type.elem_type
+		return type.elem_type
 
 	case Expr_Unary:
 		operand := resolve_expr_type(e.expr, scope, span)

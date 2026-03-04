@@ -71,6 +71,7 @@ parse_program :: proc(p: ^Parser) -> []^Ast_Node {
 
 			import_stmts := parse_program(&import_parser)
 			for s in import_stmts do append(&stmts, s)
+			continue
 		}
 
 		stmt := parse_statement(p)
@@ -214,6 +215,20 @@ parse_identifier :: proc(p: ^Parser) -> Ast_Data {
 			type_expr = type_expr,
 			expr = default_value_expr,
 		}
+	case peek(p).kind == .LBracket:
+		// --- Member assignment: foo.bar = expr ---
+		lhs := parse_expression(p, 0)
+		expect(p, .Equal)
+
+		data := Ast_Var_Assign {
+			lhs  = lhs,
+			expr = parse_expression(p, 0),
+		}
+
+		expect(p, .NewLine)
+
+		return data
+
 	case:
 		next_token := peek(p)
 		fatal_token(next_token, "Unexpected token %s", next_token.kind)
@@ -343,11 +358,22 @@ expr_member :: proc(left: ^Expr, field_name: string) -> ^Expr {
 	return ret
 }
 
+expr_index :: proc(left: ^Expr, index: ^Expr) -> ^Expr {
+	ret := new(Expr)
+	ret.data = Expr_Index {
+		array = left,
+		index = index,
+	}
+
+	return ret
+}
 precedence :: proc(op: Token_Kind) -> int {
 	#partial switch op {
-	case .Period:
-		return 200
 	case .LParen:
+		return 200
+	case .LBracket:
+		return 200
+	case .Period:
 		return 200
 	case .Star, .Slash:
 		return 20
@@ -411,7 +437,9 @@ parse_expression :: proc(
 		}
 		expect(p, .RBracket)
 		left = new(Expr)
-		left.data = Expr_Array_Literal{elements = elements[:]}
+		left.data = Expr_Array_Literal {
+			elements = elements[:],
+		}
 	case:
 		panic("Invalid expression")
 	}
@@ -424,6 +452,10 @@ parse_expression :: proc(
 		advance(p)
 
 		#partial switch op.kind {
+		case .LBracket:
+			index := parse_expression(p, 0)
+			expect(p, .RBracket)
+			left = expr_index(left, index)
 		case .LParen:
 			args := parse_call_args(p)
 			left = expr_call(left, args)
