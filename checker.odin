@@ -41,6 +41,8 @@ check_stmt :: proc(c: ^Checker, node: ^Ast_Node) {
 		check_for_loop(c, &data, node.span)
 	case Ast_Break:
 		check_break(c, &data, node.scope, node.span)
+	case Ast_Continue:
+		check_continue(c, &data, node.scope, node.span)
 	case Ast_Block:
 	case Ast_Import:
 		check_import(c, &data, node.scope, node.span)
@@ -51,8 +53,34 @@ check_stmt :: proc(c: ^Checker, node: ^Ast_Node) {
 
 check_expr :: proc(c: ^Checker, expr: ^Expr, scope: ^Scope, span: Span) {
 	#partial switch e in expr.data {
-	case Expr_Int_Literal, Expr_String_Literal:
+	case Expr_Int_Literal, Expr_Float_Literal, Expr_String_Literal:
 	// Nothing to check
+
+	case Expr_Array_Literal:
+		for elem in e.elements {
+			check_expr(c, elem, scope, span)
+		}
+
+	case Expr_Index:
+		check_expr(c, e.array, scope, span)
+		check_expr(c, e.index, scope, span)
+		if e.array.type.kind == .Error || e.index.type.kind == .Error {
+			return
+		}
+		if e.array.type.kind != .Array {
+			error_span(span, "'%s' is not an array", e.array.type.kind)
+		} else if !e.index.type.numeric_integer && e.index.type.kind != .Untyped_Int {
+			error_span(span, "Array index must be an integer, got '%s'", e.index.type.kind)
+		} else if lit, ok := e.index.data.(Expr_Int_Literal); ok {
+			if u64(lit.value) >= e.array.type.size {
+				error_span(
+					span,
+					"Index %d out of bounds for array of size %d",
+					lit.value,
+					e.array.type.size,
+				)
+			}
+		}
 
 	case Expr_Variable:
 		if expr.type.kind == .Error {
@@ -259,6 +287,18 @@ check_break :: proc(c: ^Checker, s: ^Ast_Break, scope: ^Scope, span: Span) {
 		sc = sc.parent
 	}
 	error_span(span, "Break statement outside of loop")
+}
+
+check_continue :: proc(c: ^Checker, s: ^Ast_Continue, scope: ^Scope, span: Span) {
+	sc := scope
+	for {
+		if sc.kind == .Loop {
+			return
+		}
+		if sc.parent == nil do break
+		sc = sc.parent
+	}
+	error_span(span, "Continue statement outside of loop")
 }
 
 check_import :: proc(c: ^Checker, node: ^Ast_Import, scope: ^Scope, span: Span) {
