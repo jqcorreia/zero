@@ -131,6 +131,11 @@ emit_address :: proc(gen: ^Generator, expr: ^Expr, scope: ^Scope, span: Span) ->
 		ptr := BuildGEP2(gen.builder, llvm_type, array_ptr, raw_data(indices), 2, "")
 
 		return ptr
+
+	case Expr_Unary:
+		if e.op == .Star {
+			return emit_value(gen, e.expr, scope, span)
+		}
 	}
 
 	unimplemented(fmt.tprintf("Not addressable expression %v", expr))

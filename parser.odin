@@ -105,9 +105,10 @@ parse_statement :: proc(p: ^Parser) -> ^Ast_Node {
 
 		lib_name := expect(p, .QuotedString)
 		data^ = parse_external_block(p, lib_name.value.(string))^
-
 	case t.kind == .Identifier:
 		data^ = parse_identifier(p)
+	case t.kind == .Star:
+		data^ = parse_deref(p)
 	case t.kind == .Func_Keyword:
 		advance(p)
 		data^ = parse_function_decl(p, external = false)^
@@ -145,19 +146,20 @@ parse_statement :: proc(p: ^Parser) -> ^Ast_Node {
 	return ast_node
 }
 
+
 parse_identifier :: proc(p: ^Parser) -> Ast_Data {
 	switch {
 	case peek(p).kind == .Equal:
 		// --- Assignment ---
 		// Get variable name
-		name_tok := current(p)
+		lhs := parse_expression(p, 0)
 
 		// Advance and expect an '='
-		advance(p)
+		// advance(p)
 		expect(p, .Equal)
 
 		data := Ast_Var_Assign {
-			lhs  = expr_ident(name_tok.lexeme),
+			lhs  = lhs,
 			expr = parse_expression(p, 0),
 		}
 
@@ -241,6 +243,17 @@ parse_identifier :: proc(p: ^Parser) -> Ast_Data {
 		fatal_token(next_token, "Unexpected token %s", next_token.kind)
 	}
 	panic("Should be unreachable")
+}
+
+parse_deref :: proc(p: ^Parser) -> Ast_Data {
+	lhs := parse_expression(p, 0)
+	expect(p, .Equal)
+	data := Ast_Var_Assign {
+		lhs  = lhs,
+		expr = parse_expression(p, 0),
+	}
+	expect(p, .NewLine)
+	return data
 }
 
 parse_type_expr :: proc(p: ^Parser) -> Type_Expr {

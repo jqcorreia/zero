@@ -4,5 +4,6 @@ fn main() {
     a := 10
     b := &a // b is a pointer to a
 
+    *b = 20 // Update the value of a through the pointer b
     printf("Value of b: %d\n", *b) // Dereference b to get the value of a
 }
