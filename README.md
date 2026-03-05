@@ -20,6 +20,7 @@ Already done:
 - Single file, single module
 - External function interface
 - Global scope import (a la #include)
+- Pointer (address-of, derefence and dereference-assign)
 
 Right now this is an LLVM project and it will be for a while. Trying not to tangle the code to much to that.
 Potentially this README can look a lot different in a couple of months if this becomes a serious project.
