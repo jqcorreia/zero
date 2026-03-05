@@ -62,8 +62,12 @@ emit_into :: proc(gen: ^Generator, expr: ^Expr, dest: ValueRef, scope: ^Scope, s
 				ConstInt(Int32TypeInContext(gen.ctx), u64(i), false),
 			}
 			elem_ptr := BuildGEP2(gen.builder, array_llvm_type, dest, raw_data(indices), 2, "")
-			elem_val := emit_value(gen, elem, scope, span)
-			BuildStore(gen.builder, elem_val, elem_ptr)
+			if elem.type.kind == .Array {
+				emit_into(gen, elem, elem_ptr, scope, span)
+			} else {
+				elem_val := emit_value(gen, elem, scope, span)
+				BuildStore(gen.builder, elem_val, elem_ptr)
+			}
 		}
 	case Expr_Struct_Literal:
 		type := resolve_type_expr(&e.type_expr, scope)

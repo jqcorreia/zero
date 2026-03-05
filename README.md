@@ -9,46 +9,55 @@ Already done:
 - Basic Checker (semantic and basic types)
 - Order-independent declarations
 - Integers and Boolean support
+- Float support (f16, f32, f64)
 - C-String support
 - Comments (surprisingly hard to implement well actually)
 - User functions
 - Recursion
-- Structs
+- Structs (including nested structs)
+- Arrays (declarations, literals, indexed read/write, nested in structs, compile-time bounds check)
 - Unconditional For loop with break and continue
 - Single file, single module
 - External function interface
 - Global scope import (a la #include)
 
-Right now this is an LLVM project and it will be for a while. Trying not to tangle the code to much to that.  
+Right now this is an LLVM project and it will be for a while. Trying not to tangle the code to much to that.
 Potentially this README can look a lot different in a couple of months if this becomes a serious project.
 
 # TODO
-- [x] Do not need forward declaration with symbol table pass and LLVM function declaration  
+- [x] Do not need forward declaration with symbol table pass and LLVM function declaration
 - [x] Basic type system
 - [x] Basic External functions system and cleanup the printf mess
 - [x] Implement a really dumb variadic marker
-- [x] User defined types (i.e structs)  
+- [x] User defined types (i.e structs)
 - [x] Global scope import mechanism
 - [x] Struct field accessor
 - [x] Implement support for arbitrary "_" character in numbers (e.g for thousands separator)
-- [ ] Check types for function calls. right now is a mess.
-- [ ] Make sure that the available types are synched with the primtive types in codegen 
-- [ ] Arrays with bound checked access  
-- [ ] Proper string with bound check and not null-terminated  
-- [ ] Make `external` blocks it's own AST node kind, in order to have linking rules and prefixes
+- [x] Check types for function calls
+- [x] Implement float support
+- [x] Arrays with compile-time bound checked access
+- [ ] Make sure that the available types are synched with the primitive types in codegen
+- [ ] Pointer types (address-of, dereference)
+- [ ] For-range loops (iterate over arrays)
+- [ ] Proper string with bound check and not null-terminated
+- [ ] Make `external` blocks its own AST node kind, in order to have linking rules and prefixes
 - [ ] Make sure that lexer is UTF-8 compliant
-- [ ] Implement float support
 - [ ] Have the notion of addressable types (?)
 - [ ] Add check for cyclic import
+- [ ] Runtime bounds checking for array access
 - [ ] API and code cleanups after a first working pass
 
 # Try it
 ```
 odin build .
-./lang run tests/basic.z 
+./zero run tests/basic.z 
 ```
 
+# Testing
+All the compiler tests reside in `tests/` and adding a file there will automatically add it to the test suite
+Run the tests by simply calling `odin test .`
+
 # Dependencies
-- `linux` at least until we know properly what we are doing
+- `linux` at least until we properly know what we are doing
 - `cc` as the C compiler that does the linking in the end
 - `raylib` in order to run the raylib example in `tests/raylib.z`
