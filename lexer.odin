@@ -32,6 +32,7 @@ Token_Kind :: enum {
 	Colon,
 	Period,
 	Ellipsis,
+	Ampersand,
 	ColonEqual,
 	RightArrow,
 	Func_Keyword,
@@ -355,6 +356,9 @@ lex :: proc(input: string) -> []Token {
 				append(&tokens, Token{kind = .Lesser, lexeme = "<", span = one_char_span(lexer)})
 				lexer.pos += 1
 			}
+		case c == '&':
+			append(&tokens, Token{kind = .Ampersand, lexeme = "&", span = one_char_span(lexer)})
+			lexer.pos += 1
 		case:
 			fatal_span(Span{start = lexer.pos}, "Unrecognized character %c", c)
 		}

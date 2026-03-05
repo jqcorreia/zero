@@ -216,8 +216,25 @@ resolve_expr_type :: proc(expr: ^Expr, scope: ^Scope, span: Span) -> ^Type {
 
 	case Expr_Unary:
 		operand := resolve_expr_type(e.expr, scope, span)
-		expr.type = operand
-		return operand
+		#partial switch e.op {
+		case .Ampersand:
+			pointer_type := new(Type)
+			pointer_type.kind = .Pointer
+			pointer_type.pointee_type = operand
+			expr.type = pointer_type
+			return pointer_type
+		case .Star:
+			if operand.kind == .Pointer {
+				expr.type = operand.pointee_type
+				return operand.pointee_type
+			} else {
+				expr.type = &error_type
+				return &error_type
+			}
+		case:
+			expr.type = operand
+			return operand
+		}
 
 	case Expr_Binary:
 		left := resolve_expr_type(e.left, scope, span)

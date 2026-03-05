@@ -18,6 +18,9 @@ get_llvm_type :: proc(gen: ^Generator, type: ^Type) -> TypeRef {
 		elem_type := get_llvm_type(gen, type.elem_type)
 		return ArrayType2(elem_type, type.size)
 	}
+	if type.kind == .Pointer {
+		return PointerTypeInContext(gen.ctx, 0)
+	}
 	return gen.primitive_types[type]
 }
 
@@ -178,8 +181,13 @@ emit_value :: proc(gen: ^Generator, expr: ^Expr, scope: ^Scope, span: Span) -> V
 			}
 			zero := ConstInt(get_llvm_type(gen, e.expr.type), 0, false)
 			return BuildSub(gen.builder, zero, operand, "subzero")
+		case .Ampersand:
+			ptr := emit_address(gen, e.expr, scope, span)
+			return ptr
+		case .Star:
+			ptr := emit_value(gen, e.expr, scope, span)
+			return BuildLoad2(gen.builder, get_llvm_type(gen, e.expr.type.pointee_type), ptr, "")
 		}
-
 	case Expr_Binary:
 		left := emit_value(gen, e.left, scope, span)
 		right := emit_value(gen, e.right, scope, span)
