@@ -188,15 +188,14 @@ resolve_expr_type :: proc(expr: ^Expr, scope: ^Scope, span: Span) -> ^Type {
 		return sym.type
 
 	case Expr_Member:
-		struct_name := e.base.data.(Expr_Variable).value
-		struct_sym, ok := resolve_symbol(scope, struct_name)
-		if !ok || struct_sym.type.kind != .Struct {
+		type := resolve_expr_type(e.base, scope, span)
+		if type == nil || type.kind != .Struct {
 			expr.type = &error_type
 			return &error_type
 		}
-		for &f in struct_sym.type.fields {
+		for &f in type.fields {
 			if f.name == e.member {
-				e.base.type = struct_sym.type
+				e.base.type = type
 				expr.type = f.type
 				return f.type
 			}

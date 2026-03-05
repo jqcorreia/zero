@@ -1,0 +1,19 @@
+import "std/c"
+
+struct Point {
+    coords: Coords
+}
+
+struct Coords {
+    x: f64
+    y: f64
+}
+// struct Triangle {
+//     points: [3]Point
+// }
+
+fn main() {
+    p := Point { coords = Coords{x= 1.0, y= 2.0 }}
+
+    printf("Point: (%.2f, %.2f)\n", p.coords.x, p.coords.y)
+}
