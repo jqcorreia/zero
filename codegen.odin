@@ -71,8 +71,12 @@ emit_into :: proc(gen: ^Generator, expr: ^Expr, dest: ValueRef, scope: ^Scope, s
 
 		for field in type.fields {
 			field_ptr := BuildStructGEP2(gen.builder, struct_llvm_type, dest, u32(field.index), "")
-			field_val := emit_value(gen, e.args[field.name], scope, span)
-			BuildStore(gen.builder, field_val, field_ptr)
+			arg := e.args[field.name]
+			if field.type.kind == .Struct || field.type.kind == .Array {
+				emit_into(gen, arg, field_ptr, scope, span)
+			} else {
+				BuildStore(gen.builder, emit_value(gen, arg, scope, span), field_ptr)
+			}
 		}
 	}
 }

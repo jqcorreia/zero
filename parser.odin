@@ -26,6 +26,13 @@ advance :: proc(p: ^Parser) -> Token {
 	return t
 }
 
+skip_newlines :: proc(p: ^Parser) {
+	for {
+		if current(p).kind == .NewLine do advance(p)
+		else do break
+	}
+}
+
 expect :: proc(p: ^Parser, kind: Token_Kind, loc := #caller_location) -> Token {
 	if current(p).kind != kind {
 		fmt.println(loc)
@@ -275,7 +282,7 @@ parse_struct_decl :: proc(p: ^Parser) -> ^Ast_Struct_Decl {
 		}
 		field_name := expect(p, .Identifier).value.(string)
 		expect(p, .Colon)
-		type_expr := expect(p, .Identifier).value.(string)
+		type_expr := parse_type_expr(p)
 		append(&decl.fields, Ast_Struct_Field{name = field_name, type_expr = type_expr})
 	}
 	advance(p)
@@ -432,6 +439,8 @@ parse_expression :: proc(
 	case .LBracket:
 		elements: [dynamic]^Expr
 		for current(p).kind != .RBracket {
+			skip_newlines(p)
+			if current(p).kind == .RBracket do break // Skip newlines can land on rbracket
 			append(&elements, parse_expression(p, 0))
 			if current(p).kind == .Comma do advance(p)
 		}
@@ -441,7 +450,7 @@ parse_expression :: proc(
 			elements = elements[:],
 		}
 	case:
-		panic("Invalid expression")
+		fatal_token(current(p), "Invalid token in expression")
 	}
 
 	for {
