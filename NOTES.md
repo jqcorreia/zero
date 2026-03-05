@@ -1,83 +1,38 @@
-  ---
-  Phase 1 — Lexer
+Pointers.
 
-  Add LBracket ([) and RBracket (]) tokens. Straightforward, same as the other single-char tokens.
+Here's the full breakdown:
 
-  ---
-  Phase 2 — Structured type expressions
+  1. Lexer
+  Add & as an Ampersand token. * already exists as Star.
 
-  type_expr: string can't represent [4]i32. Replace it with a union:
-  Type_Expr :: union {
-      string,           // "i32", "f32", "MyStruct"
-      Array_Type_Expr,  // [4]i32
-  }
-  Array_Type_Expr :: struct {
-      size: int,
-      elem: ^Type_Expr,
-  }
-  This touches Ast_Var_Decl, function params, ret_type_expr, and struct field declarations. The resolver then switches on the union instead of doing a plain resolve_symbol string lookup.
+  2. Type_Expr
+  Add Type_Expr_Pointer :: struct { pointee: ^Type_Expr } to the union. Then parse_type_expr handles & prefix → recurses for the pointee type, same pattern as arrays.
 
-  ---
-  Phase 3 — Parser
+  3. Types
+  Add .Pointer to Type_Kind and a pointee_type: ^Type field to Type (already has elem_type for arrays — could reuse it or add a dedicated field for clarity).
 
-  Three new things to parse:
-  - Type expressions: [4]i32 when parsing a type annotation
-  - Array literals: [1, 2, 3] as an expression
-  - Index expressions: arr[i] — needs to slot into the existing expression parser at the right precedence level (postfix, same as member access)
+  4. resolve_type_expr
+  Handle Type_Expr_Pointer → resolve the pointee, create a new Type with .Pointer kind.
 
-  ---
-  Phase 4 — AST & Type system
+  5. Codegen — get_llvm_type
+  .Pointer maps to PointerTypeInContext(gen.ctx, 0) — LLVM opaque pointer, same as strings already use.
 
-  New expression nodes:
-  - Expr_Array_Literal { elements: []^Expr }
-  - Expr_Index { array: ^Expr, index: ^Expr }
+  6. Parser — expressions
+  - Unary & in prefix position → address-of. No conflict since & has no infix meaning.
+  - Unary * in prefix position → dereference. * in infix position stays as multiplication. The Pratt parser already handles this distinction (prefix vs infix).
 
-  Type gains two new fields:
-  elem_type:  ^Type
-  array_size: int
-  And a new Type_Kind value: .Array.
+  7. Resolver — Expr_Unary
+  - &expr → type is pointer to expr.type
+  - *expr → check expr.type is .Pointer, type is expr.type.pointee_type
 
-  ---
-  Phase 5 — Resolver
+  8. Codegen — Expr_Unary
+  - &expr → call emit_address(expr) instead of emit_value — returns the pointer directly without loading
+  - *expr → emit_value(expr) gets the pointer value, then BuildLoad2 with the pointee type
 
-  - Resolving Array_Type_Expr: look up the element type recursively, create an .Array type with elem_type and array_size
-  - Expr_Index resolves to array.type.elem_type
-  - Expr_Array_Literal resolves each element, infers the array type from context or the first element
+  9. Checker
+  - *expr: verify expr.type is .Pointer, error otherwise
+  - &expr: verify expr is addressable (variable, member, index — not a literal or call result)
 
-  ---
-  Phase 6 — Checker
-
-  - Verify the index expression is an integer type
-  - If the index is a compile-time literal, emit a compile-time bounds error
-  - For runtime indices, the checker just validates types — the bounds check is emitted in codegen
-
-  ---
-  Phase 7 — Codegen
-
-  - Type: ArrayType(elem_llvm_type, size)
-  - Alloca: same as structs, allocate the whole array
-  - Literal: GEP + store for each element
-  - Index: two-index GEP — [0, i] because the array is behind a pointer
-  - Bounds check: emit before every index operation:
-  %oob = icmp uge i64 %i, <size>   ; unsigned: catches negatives too
-  br i1 %oob, trap_bb, ok_bb
-  trap_bb:
-    call void @llvm.trap()
-    unreachable
-  ok_bb:
-    ; GEP proceeds
-  - @llvm.trap() is an LLVM intrinsic that lowers to a hardware trap — cleaner than calling abort and gives you a crash with a useful signal.
-
-  ---
-  Order of attack
-
-  1. Lexer brackets
-  2. Type_Expr union + parser for type annotations
-  3. Resolver handles array types
-  4. Expr_Index through the full pipeline (resolver → checker → codegen) without literals first
-  5. Array literals
-  6. Bounds check insertion in codegen
-
-  The Type_Expr union change in phase 2 is the most invasive since it touches several structs and every place the resolver calls resolve_symbol on a type. Worth doing cleanly before moving on to the rest.
-
+  The tricky part is & vs * in the resolver's Expr_Unary — you need to distinguish address-of from dereference when both use Expr_Unary. Either add .Ampersand as a separate Token_Kind, or check op == .Ampersand vs op == .Star (with Star
+  already meaning multiply in binary context, that's fine since they're separate AST nodes).
 
