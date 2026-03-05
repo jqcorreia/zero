@@ -1,8 +1,13 @@
 import "std/c"
 
 fn main() {
+    x: u32 = 32
+    y: &u32 = &x // y is explicitly typed pointer to x
+
+    printf("Value of y: %d\n", *y) // Dereference y to get the value of x
+
     a := 10
-    b := &a // b is a pointer to a
+    b := &a // b is a pointer to a implicitly typed as &i64
 
     *b = 20 // Update the value of a through the pointer b
     printf("Value of b: %d\n", *b) // Dereference b to get the value of a

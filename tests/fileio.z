@@ -11,11 +11,12 @@ fn main() {
 
     file := fopen(filename, mode)
     
-    if file == 0 {
-        printf("Error opening file: %s\n", filename)
-        return
-    }
+    // if file == 0 {
+    //     printf("Error opening file: %s\n", filename)
+    //     return
+    // }
 
+    fputs("Hello, World!\n", file) // Write a string to the file
     fputc(72, file) // Write 'H'
     fputc(105, file) // Write 'i'
     fclose(file)

@@ -258,6 +258,15 @@ parse_deref :: proc(p: ^Parser) -> Ast_Data {
 
 parse_type_expr :: proc(p: ^Parser) -> Type_Expr {
 	#partial switch current(p).kind {
+	case .Ampersand:
+		advance(p)
+		elem_expr := new(Type_Expr)
+		elem_expr^ = parse_type_expr(p)
+
+		expr := Type_Expr_Pointer {
+			pointee = elem_expr,
+		}
+		return expr
 	case .Identifier:
 		return advance(p).value.(string)
 	case .LBracket:
@@ -273,7 +282,7 @@ parse_type_expr :: proc(p: ^Parser) -> Type_Expr {
 		fmt.println(expr)
 		return expr
 	case:
-		fatal_token(current(p), "Unexpected token")
+		fatal_token(current(p), "Unexpected token in type expression")
 	}
 	return Type_Expr{}
 }
@@ -578,12 +587,13 @@ parse_function_decl_params :: proc(p: ^Parser) -> []Param {
 	return params[:]
 }
 
-parse_function_ret_type :: proc(p: ^Parser) -> string {
+parse_function_ret_type :: proc(p: ^Parser) -> Type_Expr {
 	if current(p).kind == .RightArrow {
 		advance(p)
-		type_token := expect(p, .Identifier)
 
-		return type_token.lexeme
+		type_token := parse_type_expr(p)
+
+		return type_token
 	}
 
 	return ""
