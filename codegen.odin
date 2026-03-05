@@ -343,8 +343,6 @@ emit_struct_body :: proc(gen: ^Generator, s: ^Ast_Struct_Decl, scope: ^Scope, sp
 }
 
 emit_function_body :: proc(gen: ^Generator, s: ^Ast_Function, scope: ^Scope, span: Span) {
-	int32 := Int32TypeInContext(gen.ctx)
-
 	sym := s.symbol
 	fn := gen.values[sym]
 
