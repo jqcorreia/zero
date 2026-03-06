@@ -1,0 +1,9 @@
+import "std/c"
+
+fn main() {
+    for i in 0..300 {
+        for j in 0..200 {
+            printf("i: %d, j: %d\n", i, j)
+        }
+    }
+}

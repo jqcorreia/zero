@@ -24,6 +24,21 @@ get_llvm_type :: proc(gen: ^Generator, type: ^Type) -> TypeRef {
 	return gen.primitive_types[type]
 }
 
+build_entry_alloca :: proc(gen: ^Generator, type: TypeRef, name: cstring) -> ValueRef {
+	cur_bb := GetInsertBlock(gen.builder)
+	function := GetBasicBlockParent(cur_bb)
+	entry_bb := GetEntryBasicBlock(function)
+	first_instr := GetFirstInstruction(entry_bb)
+	if first_instr != nil {
+		PositionBuilderBefore(gen.builder, first_instr)
+	} else {
+		PositionBuilderAtEnd(gen.builder, entry_bb)
+	}
+	ptr := BuildAlloca(gen.builder, type, name)
+	PositionBuilderAtEnd(gen.builder, cur_bb)
+	return ptr
+}
+
 emit_stmt :: proc(gen: ^Generator, node: ^Ast_Node) {
 	#partial switch &data in node.data {
 	case Ast_Expr:
@@ -93,7 +108,7 @@ emit_address :: proc(gen: ^Generator, expr: ^Expr, scope: ^Scope, span: Span) ->
 	case Expr_Struct_Literal:
 		type := resolve_type_expr(&e.type_expr, scope)
 		struct_llvm_type := get_llvm_type(gen, type)
-		ptr := BuildAlloca(gen.builder, struct_llvm_type, "")
+		ptr := build_entry_alloca(gen, struct_llvm_type, "")
 
 		for field in type.fields {
 			field_ptr := BuildStructGEP2(gen.builder, struct_llvm_type, ptr, u32(field.index), "")
@@ -276,7 +291,7 @@ emit_var_decl :: proc(gen: ^Generator, s: ^Ast_Var_Decl, scope: ^Scope, span: Sp
 
 		// compiler_type := gen.primitive_types[sym.type]
 		compiler_type := get_llvm_type(gen, sym.type)
-		ptr = BuildAlloca(gen.builder, compiler_type, "")
+		ptr = build_entry_alloca(gen, compiler_type, "")
 		gen.values[sym] = ptr
 		if s.expr != nil {
 			if sym.type.kind == .Struct || sym.type.kind == .Array {
@@ -533,7 +548,7 @@ emit_for_loop :: proc(gen: ^Generator, s: ^Ast_For, scope: ^Scope, span: Span) {
 	iter_type := get_llvm_type(gen, s.symbol.type)
 
 	// Store the initial value of the range
-	iter_ptr := BuildAlloca(gen.builder, iter_type, strings.clone_to_cstring(s.iterator))
+	iter_ptr := build_entry_alloca(gen, iter_type, strings.clone_to_cstring(s.iterator))
 	start_val := emit_value(gen, range.start, scope, span)
 	BuildStore(gen.builder, start_val, iter_ptr)
 	gen.values[s.symbol] = iter_ptr

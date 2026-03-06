@@ -5,8 +5,9 @@ fn main() {
     W: i32 = 600
     H: i32 = 800
 
-    background_color := Color{ r = 128, g = 128, b = 128, a = 255 }
+    background_color := Color{ r = 55, g = 55, b = 55, a = 255 }
 
+    rect_color := Color { r = 100, b = 20, g = 0, a = 255 }
     gridW: i32 = 10
     gridH: i32 = 20
     grid: [20][10]u8
@@ -17,18 +18,21 @@ fn main() {
  
     InitWindow(W, H, "Zero Tetris")
     for {
-        // if IsKeyPressed(256) { // escape key
-        //     break
-        // }
         BeginDrawing()
+        ClearBackground(background_color)
+        if IsKeyPressed(256) { // escape key
+            break
+        }
         for y in 0..gridH {
             for x in 0..gridW {
-                // if grid[y][x] != 0 {
-                //     // DrawRectangle(x * cell_size, y * cell_size, cell_size, cell_size, Color{ r = 255, g = 0, b = 0, a = 255 })
-                // }
+                // printf("%d %d %d\n", x, y, grid[y][x])
+                if grid[y][x] != 0 {
+                    // printf("Draw?!")
+                    DrawRectangle(0,0, 100, 100, Color{ r = 255, g = 0, b = 0, a = 255 })
+                    // DrawRectangle(x * cell_size, y * cell_size, cell_size, cell_size, rect_color)
+                }
             }
         }
-        ClearBackground(background_color)
         EndDrawing()
     }
 }
