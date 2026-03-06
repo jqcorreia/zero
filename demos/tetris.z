@@ -1,39 +1,33 @@
 import "std/c"
-
-external "raylib" {
-    fn InitWindow(width: i32, height: i32, title: str)
-    fn BeginDrawing()
-    fn EndDrawing()
-    fn ClearBackground(color: Color)
-    fn DrawRectangle(x: i32, y: i32, w: i32, h: i32, color: Color)
-    fn GetKeyPressed() -> i32
-    fn IsKeyPressed(key: i32) -> bool
-    fn TakeScreenshot(filename: str)
-    fn DrawText(text: str, posX: i32, posY: i32, fontSize: i32, color: Color)    
-}
-
-struct Color {
-    r: u8
-    g: u8
-    b: u8
-    a: u8
-}
+import "vendor/raylib"
 
 fn main() {
     W: i32 = 600
     H: i32 = 800
 
     background_color := Color{ r = 128, g = 128, b = 128, a = 255 }
-    grid: [20][10]u8
 
-    cell_size := 10
+    gridW: i32 = 10
+    gridH: i32 = 20
+    grid: [20][10]u8
+    
+    grid[4][5] = 1
+
+    cell_size: i32 = 10
  
     InitWindow(W, H, "Zero Tetris")
     for {
-        if IsKeyPressed(256) { // escape key
-            break
-        }
+        // if IsKeyPressed(256) { // escape key
+        //     break
+        // }
         BeginDrawing()
+        for y in 0..gridH {
+            for x in 0..gridW {
+                // if grid[y][x] != 0 {
+                //     // DrawRectangle(x * cell_size, y * cell_size, cell_size, cell_size, Color{ r = 255, g = 0, b = 0, a = 255 })
+                // }
+            }
+        }
         ClearBackground(background_color)
         EndDrawing()
     }
