@@ -317,9 +317,9 @@ struct AutomationEventList {
 // PixelFormat, TextureFilter, TextureWrap, CubemapLayout, FontType, BlendMode
 // Gesture, CameraMode, CameraProjection, NPatchLayout
 
-// === WINDOW & DRAWING ===
 
 external "raylib" {
+    // === WINDOW & DRAWING ===
     fn InitWindow(width: i32, height: i32, title: str)
     fn CloseWindow()
     fn WindowShouldClose() -> bool
@@ -543,11 +543,8 @@ external "raylib" {
 
     fn UpdateCamera(camera: &Camera3D, mode: i32)
     fn UpdateCameraPro(camera: &Camera3D, movement: Vector3, rotation: Vector3, zoom: f32)
-}
 
-// === SHAPES ===
-
-external "raylib" {
+    // === SHAPES ===
     fn SetShapesTexture(texture: Texture, source: Rectangle)
     fn GetShapesTexture() -> Texture
     fn GetShapesTextureRectangle() -> Rectangle
@@ -614,11 +611,8 @@ external "raylib" {
     fn CheckCollisionPointLine(point: Vector2, p1: Vector2, p2: Vector2, threshold: i32) -> bool
     fn CheckCollisionCircleLine(center: Vector2, radius: f32, p1: Vector2, p2: Vector2) -> bool
     fn GetCollisionRec(rec1: Rectangle, rec2: Rectangle) -> Rectangle
-}
 
-// === TEXTURES ===
-
-external "raylib" {
+    // === TEXTURES ===
     fn LoadImage(fileName: str) -> Image
     fn LoadImageRaw(fileName: str, width: i32, height: i32, format: i32, headerSize: i32) -> Image
     fn LoadImageSvg(fileNameOrString: str, width: i32, height: i32) -> Image
@@ -735,11 +729,8 @@ external "raylib" {
     fn GetPixelColor(srcPtr: str, format: i32) -> Color
     fn SetPixelColor(dstPtr: str, color: Color, format: i32)
     fn GetPixelDataSize(width: i32, height: i32, format: i32) -> i32
-}
 
-// === TEXT ===
-
-external "raylib" {
+    // === TEXT ===
     fn GetFontDefault() -> Font
     fn LoadFont(fileName: str) -> Font
     fn LoadFontEx(fileName: str, fontSize: i32, codepoints: &i32, codepointCount: i32) -> Font
@@ -796,11 +787,8 @@ external "raylib" {
     fn TextToCamel(text: str) -> str
     fn TextToInteger(text: str) -> i32
     fn TextToFloat(text: str) -> f32
-}
 
-// === 3D SHAPES ===
-
-external "raylib" {
+    // === 3D SHAPES ===
     fn DrawLine3D(startPos: Vector3, endPos: Vector3, color: Color)
     fn DrawPoint3D(position: Vector3, color: Color)
     fn DrawCircle3D(center: Vector3, radius: f32, rotationAxis: Vector3, rotationAngle: f32, color: Color)
@@ -822,11 +810,8 @@ external "raylib" {
     fn DrawPlane(centerPos: Vector3, size: Vector2, color: Color)
     fn DrawRay(ray: Ray, color: Color)
     fn DrawGrid(slices: i32, spacing: f32)
-}
 
-// === MODELS ===
-
-external "raylib" {
+    // === MODELS ===
     fn LoadModel(fileName: str) -> Model
     fn LoadModelFromMesh(mesh: Mesh) -> Model
     fn IsModelValid(model: Model) -> bool
@@ -881,11 +866,8 @@ external "raylib" {
     fn GetRayCollisionMesh(ray: Ray, mesh: Mesh, transform: Matrix) -> RayCollision
     fn GetRayCollisionTriangle(ray: Ray, p1: Vector3, p2: Vector3, p3: Vector3) -> RayCollision
     fn GetRayCollisionQuad(ray: Ray, p1: Vector3, p2: Vector3, p3: Vector3, p4: Vector3) -> RayCollision
-}
 
-// === AUDIO ===
-
-external "raylib" {
+    // === AUDIO ===
     fn InitAudioDevice()
     fn CloseAudioDevice()
     fn IsAudioDeviceReady() -> bool
