@@ -532,17 +532,22 @@ emit_for_loop :: proc(gen: ^Generator, s: ^Ast_For, scope: ^Scope, span: Span) {
 	range := s.range.data.(Expr_Range)
 	iter_type := get_llvm_type(gen, s.symbol.type)
 
+	// Store the initial value of the range
 	iter_ptr := BuildAlloca(gen.builder, iter_type, strings.clone_to_cstring(s.iterator))
 	start_val := emit_value(gen, range.start, scope, span)
 	BuildStore(gen.builder, start_val, iter_ptr)
 	gen.values[s.symbol] = iter_ptr
 
+	// Create the basic blocks
 	cond_bb := AppendBasicBlock(function, "for_cond")
 	loop_bb := AppendBasicBlock(function, "for_body")
 	after_bb := AppendBasicBlock(function, "for_after")
 
 	BuildBr(gen.builder, cond_bb)
 
+	// Conditional part of the loop
+	// Check for current iterator value and check for end case (either inclusive or exclusive)
+	// Set the conditional branching at the end to either the loop body or exit the loop
 	PositionBuilderAtEnd(gen.builder, cond_bb)
 	iter_val := BuildLoad2(gen.builder, iter_type, iter_ptr, "iter")
 	end_val := emit_value(gen, range.end, scope, span)
@@ -554,10 +559,13 @@ emit_for_loop :: proc(gen: ^Generator, s: ^Ast_For, scope: ^Scope, span: Span) {
 	}
 	BuildCondBr(gen.builder, cmp, loop_bb, after_bb)
 
+	// Position builder and emit the body of the loop
 	queue.push_front(&compiler.loops, Loop{break_block = after_bb})
 	PositionBuilderAtEnd(gen.builder, loop_bb)
 	emit_block(gen, s.body)
 
+	// Check for termination
+	// If not terminated yet, advance iterator and branch to condition block again
 	if GetBasicBlockTerminator(GetInsertBlock(gen.builder)) == nil {
 		cur := BuildLoad2(gen.builder, iter_type, iter_ptr, "iter")
 		next := BuildAdd(gen.builder, cur, ConstInt(iter_type, 1, false), "next")
