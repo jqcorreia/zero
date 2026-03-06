@@ -320,7 +320,6 @@ lex :: proc(input: string) -> []Token {
 			append(&tokens, Token{kind = .Comma, lexeme = ",", span = one_char_span(lexer)})
 			lexer.pos += 1
 		case c == '.':
-			fmt.printf("%c %c %c\n", c, lex_peek(&lexer, 1), lex_peek(&lexer, 2))
 			if lex_peek(&lexer, 1) == '.' && lex_peek(&lexer, 2) == '.' {
 				append(
 					&tokens,
@@ -334,7 +333,6 @@ lex :: proc(input: string) -> []Token {
 				)
 				lexer.pos += 3
 			} else if lex_peek(&lexer, 1) == '.' {
-				fmt.println("Should be here")
 				append(&tokens, Token{kind = .DotDot, lexeme = "..", span = two_char_span(lexer)})
 				lexer.pos += 2
 			} else {
