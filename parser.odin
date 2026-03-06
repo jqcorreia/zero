@@ -409,6 +409,8 @@ precedence :: proc(op: Token_Kind) -> int {
 		return 10
 	case .Lesser, .Greater, .GreaterOrEqual, .LesserOrEqual, .DoubleEqual, .NotEqual:
 		return 5
+	case .DotDot, .DotDotEq:
+		return 3
 	}
 	return -1
 }
@@ -497,6 +499,15 @@ parse_expression :: proc(
 		case .Period:
 			field_name := expect(p, .Identifier).value.(string)
 			left = expr_member(left, field_name)
+		case .DotDot, .DotDotEq:
+			right := parse_expression(p, lbp + 1, allow_struct_literal)
+			range := new(Expr)
+			range.data = Expr_Range {
+				start     = left,
+				end       = right,
+				inclusive = op.kind == .DotDotEq,
+			}
+			left = range
 		case:
 			rbp := lbp + 1
 
@@ -715,11 +726,15 @@ parse_if :: proc(p: ^Parser) -> ^Ast_If {
 }
 
 parse_for_loop :: proc(p: ^Parser) -> ^Ast_For {
-	// No condition parsing for now
-
 	stmt := new(Ast_For)
-	stmt.body = parse_block(p)
 
+	if current(p).kind == .Identifier && peek(p).kind == .In_Keyword {
+		stmt.iterator = advance(p).value.(string) // consume iterator name
+		advance(p) // consume 'in'
+		stmt.range = parse_expression(p, 0, false)
+	}
+
+	stmt.body = parse_block(p)
 	return stmt
 }
 

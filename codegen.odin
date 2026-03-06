@@ -503,8 +503,7 @@ emit_if :: proc(gen: ^Generator, s: ^Ast_If, scope: ^Scope, span: Span) {
 	PositionBuilderAtEnd(gen.builder, merge_bb)
 }
 
-emit_for_loop :: proc(gen: ^Generator, s: ^Ast_For, scope: ^Scope, span: Span) {
-	for_stmt := s
+emit_for_loop_unconditional :: proc(gen: ^Generator, s: ^Ast_For, scope: ^Scope, span: Span) {
 	function := GetBasicBlockParent(GetInsertBlock(gen.builder))
 
 	loop_bb := AppendBasicBlock(function, "loop")
@@ -513,10 +512,57 @@ emit_for_loop :: proc(gen: ^Generator, s: ^Ast_For, scope: ^Scope, span: Span) {
 	BuildBr(gen.builder, loop_bb)
 	queue.push_front(&compiler.loops, Loop{break_block = after_bb})
 	PositionBuilderAtEnd(gen.builder, loop_bb)
-	emit_block(gen, for_stmt.body)
+	emit_block(gen, s.body)
 
 	if GetBasicBlockTerminator(GetInsertBlock(gen.builder)) == nil {
 		BuildBr(gen.builder, loop_bb)
+	}
+
+	queue.pop_front(&compiler.loops)
+	PositionBuilderAtEnd(gen.builder, after_bb)
+}
+
+emit_for_loop :: proc(gen: ^Generator, s: ^Ast_For, scope: ^Scope, span: Span) {
+	if s.range == nil {
+		emit_for_loop_unconditional(gen, s, scope, span)
+		return
+	}
+
+	function := GetBasicBlockParent(GetInsertBlock(gen.builder))
+	range := s.range.data.(Expr_Range)
+	iter_type := get_llvm_type(gen, s.symbol.type)
+
+	iter_ptr := BuildAlloca(gen.builder, iter_type, strings.clone_to_cstring(s.iterator))
+	start_val := emit_value(gen, range.start, scope, span)
+	BuildStore(gen.builder, start_val, iter_ptr)
+	gen.values[s.symbol] = iter_ptr
+
+	cond_bb := AppendBasicBlock(function, "for_cond")
+	loop_bb := AppendBasicBlock(function, "for_body")
+	after_bb := AppendBasicBlock(function, "for_after")
+
+	BuildBr(gen.builder, cond_bb)
+
+	PositionBuilderAtEnd(gen.builder, cond_bb)
+	iter_val := BuildLoad2(gen.builder, iter_type, iter_ptr, "iter")
+	end_val := emit_value(gen, range.end, scope, span)
+	cmp: ValueRef
+	if range.inclusive {
+		cmp = BuildICmp(gen.builder, .IntSLE, iter_val, end_val, "cond")
+	} else {
+		cmp = BuildICmp(gen.builder, .IntSLT, iter_val, end_val, "cond")
+	}
+	BuildCondBr(gen.builder, cmp, loop_bb, after_bb)
+
+	queue.push_front(&compiler.loops, Loop{break_block = after_bb})
+	PositionBuilderAtEnd(gen.builder, loop_bb)
+	emit_block(gen, s.body)
+
+	if GetBasicBlockTerminator(GetInsertBlock(gen.builder)) == nil {
+		cur := BuildLoad2(gen.builder, iter_type, iter_ptr, "iter")
+		next := BuildAdd(gen.builder, cur, ConstInt(iter_type, 1, false), "next")
+		BuildStore(gen.builder, next, iter_ptr)
+		BuildBr(gen.builder, cond_bb)
 	}
 
 	queue.pop_front(&compiler.loops)

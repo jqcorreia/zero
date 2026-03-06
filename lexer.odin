@@ -2,6 +2,7 @@
 
 package main
 
+import "core:fmt"
 import "core:math"
 import "core:strings"
 
@@ -32,6 +33,8 @@ Token_Kind :: enum {
 	Colon,
 	Period,
 	Ellipsis,
+	DotDot,
+	DotDotEq,
 	Ampersand,
 	ColonEqual,
 	RightArrow,
@@ -45,6 +48,7 @@ Token_Kind :: enum {
 	Struct_Keyword,
 	Import_Keyword,
 	External_Keyword,
+	In_Keyword,
 	EOF,
 }
 
@@ -99,6 +103,7 @@ Keyword_Map: map[string]Token_Kind = {
 	"struct"   = .Struct_Keyword,
 	"import"   = .Import_Keyword,
 	"external" = .External_Keyword,
+	"in"       = .In_Keyword,
 }
 
 lex_current :: proc(lexer: ^Lexer) -> u8 {
@@ -122,6 +127,8 @@ lex_number :: proc(lexer: ^Lexer, tokens: ^[dynamic]Token) {
 			    lexer.input[lexer.pos] == '.') {
 		if lexer.input[lexer.pos] == '.' {
 			if is_float do break
+			// Don't consume '..' or '..=' as part of a float
+			if lexer.pos + 1 < len(lexer.input) && lexer.input[lexer.pos + 1] == '.' do break
 			is_float = true
 			is_integer = false
 		} else if lexer.input[lexer.pos] != '_' {
@@ -313,12 +320,23 @@ lex :: proc(input: string) -> []Token {
 			append(&tokens, Token{kind = .Comma, lexeme = ",", span = one_char_span(lexer)})
 			lexer.pos += 1
 		case c == '.':
+			fmt.printf("%c %c %c\n", c, lex_peek(&lexer, 1), lex_peek(&lexer, 2))
 			if lex_peek(&lexer, 1) == '.' && lex_peek(&lexer, 2) == '.' {
 				append(
 					&tokens,
 					Token{kind = .Ellipsis, lexeme = "...", span = n_char_span(lexer, 3)},
 				)
 				lexer.pos += 3
+			} else if lex_peek(&lexer, 1) == '.' && lex_peek(&lexer, 2) == '=' {
+				append(
+					&tokens,
+					Token{kind = .DotDotEq, lexeme = "..=", span = n_char_span(lexer, 3)},
+				)
+				lexer.pos += 3
+			} else if lex_peek(&lexer, 1) == '.' {
+				fmt.println("Should be here")
+				append(&tokens, Token{kind = .DotDot, lexeme = "..", span = two_char_span(lexer)})
+				lexer.pos += 2
 			} else {
 				append(&tokens, Token{kind = .Period, lexeme = ".", span = one_char_span(lexer)})
 				lexer.pos += 1

@@ -102,6 +102,11 @@ resolve_types :: proc(node: ^Ast_Node) {
 		}
 
 	case Ast_For:
+		if data.range != nil {
+			resolve_expr_type(data.range, node.scope, node.span)
+			range := data.range.data.(Expr_Range)
+			data.symbol.type = range.start.type
+		}
 		resolve_block_types(data.body)
 
 	case Ast_Return:
@@ -236,6 +241,23 @@ resolve_expr_type :: proc(expr: ^Expr, scope: ^Scope, span: Span) -> ^Type {
 			expr.type = operand
 			return operand
 		}
+
+	case Expr_Range:
+		start_type := resolve_expr_type(e.start, scope, span)
+		end_type := resolve_expr_type(e.end, scope, span)
+		coerced := type_coercion(start_type, end_type, scope)
+		if coerced == nil {
+			expr.type = &error_type
+			return &error_type
+		}
+		if coerced.kind == .Untyped_Int {
+			i64_sym, _ := resolve_symbol(scope, "i64")
+			coerced = i64_sym.type
+		}
+		e.start.type = coerced
+		e.end.type = coerced
+		expr.type = coerced
+		return coerced
 
 	case Expr_Binary:
 		left := resolve_expr_type(e.left, scope, span)

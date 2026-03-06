@@ -104,6 +104,12 @@ bind_scopes :: proc(node: ^Ast_Node, cur_scope: ^Scope) {
 		}
 	case Ast_For:
 		new_scope := make_scope(.Loop, parent = cur_scope)
+		if data.iterator != "" {
+			sym := make_symbol(.Variable)
+			sym.name = data.iterator
+			new_scope.symbols[data.iterator] = sym
+			data.symbol = sym
+		}
 		get_block_symbols(data.body, new_scope)
 	}
 }

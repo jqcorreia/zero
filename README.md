@@ -41,7 +41,7 @@ Potentially this README can look a lot different in a couple of months if this b
 - [ ] Enums
 - [ ] Tagged Unions
 - [ ] Make sure that the available types are synched with the primitive types in codegen
-- [ ] For-range loops (iterate over arrays)
+- [x] For-in-range loops (exclusive `..` and inclusive `..=`)
 - [ ] Proper string with bound check and not null-terminated
 - [ ] Make `external` blocks its own AST node kind, in order to have linking rules and prefixes
 - [ ] Make sure that lexer is UTF-8 compliant
