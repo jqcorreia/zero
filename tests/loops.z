@@ -1,7 +1,12 @@
 import "std/c"
 
+fn number() -> i32 {
+    return 42
+}
+
 fn main() {
-    for a in 0..5 {
+    w := 100
+    for a in 0..number() {
         printf("a: %d\n", a)
     }
 }
