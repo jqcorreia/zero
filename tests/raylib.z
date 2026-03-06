@@ -1,4 +1,5 @@
 import "std/c"
+import "vendor/raylib"
 
 external "raylib" {
     fn InitWindow(width: i32, height: i32, title: str)
