@@ -279,7 +279,6 @@ parse_type_expr :: proc(p: ^Parser) -> Type_Expr {
 			size = u64(size_token.value.(int)),
 			elem = elem_expr,
 		}
-		fmt.println(expr)
 		return expr
 	case:
 		fatal_token(current(p), "Unexpected token in type expression")

@@ -1,5 +1,7 @@
 package main
 
+import "core:fmt"
+
 Symbol :: struct {
 	name:  string,
 	kind:  Symbol_Kind,
@@ -56,7 +58,7 @@ bind_scopes :: proc(node: ^Ast_Node, cur_scope: ^Scope) {
 			error_span(node.span, "Re-declaration of variable '%s'", data.name)
 		}
 	case Ast_Struct_Decl:
-		_, ok := resolve_symbol(cur_scope, data.name)
+		existing, ok := resolve_symbol(cur_scope, data.name)
 		if !ok {
 			type := new(Type)
 			type.kind = .Struct
@@ -71,6 +73,7 @@ bind_scopes :: proc(node: ^Ast_Node, cur_scope: ^Scope) {
 			}
 		} else {
 			error_span(node.span, "Re-declaration of struct '%s'", data.name)
+			data.symbol = existing
 		}
 	case Ast_Function:
 		new_scope := make_scope(.Function, parent = cur_scope)

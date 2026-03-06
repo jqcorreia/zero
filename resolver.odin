@@ -75,7 +75,7 @@ resolve_types :: proc(node: ^Ast_Node) {
 		if !ok {
 			return
 		}
-		fmt.println(data.symbol)
+
 		data.symbol.type = type_sym.type
 		for &field, idx in data.fields {
 			type_sym.type.fields[idx].type = resolve_type_expr(&field.type_expr, node.scope)

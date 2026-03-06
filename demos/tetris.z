@@ -20,14 +20,19 @@ struct Color {
 }
 
 fn main() {
-    W: i32 = 800
-    H: i32 = 600
+    W: i32 = 600
+    H: i32 = 800
 
     background_color := Color{ r = 128, g = 128, b = 128, a = 255 }
     grid: [20][10]u8
+
+    cell_size := 10
  
     InitWindow(W, H, "Zero Tetris")
     for {
+        if IsKeyPressed(256) { // escape key
+            break
+        }
         BeginDrawing()
         ClearBackground(background_color)
         EndDrawing()
