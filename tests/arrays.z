@@ -14,4 +14,7 @@ fn main() {
     printf("Updated value: %d\n", a[1]) // 25
 
     print_first(a) // This will modify the original array
+
+    idx := 3
+    printf("4th element: %d\n", a[idx])
 }

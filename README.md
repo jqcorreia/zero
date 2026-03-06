@@ -37,8 +37,10 @@ Potentially this README can look a lot different in a couple of months if this b
 - [x] Check types for function calls
 - [x] Implement float support
 - [x] Arrays with compile-time bound checked access
+- [x] Pointer types (address-of, dereference)
+- [ ] Enums
+- [ ] Tagged Unions
 - [ ] Make sure that the available types are synched with the primitive types in codegen
-- [ ] Pointer types (address-of, dereference)
 - [ ] For-range loops (iterate over arrays)
 - [ ] Proper string with bound check and not null-terminated
 - [ ] Make `external` blocks its own AST node kind, in order to have linking rules and prefixes
