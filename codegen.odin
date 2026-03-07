@@ -140,6 +140,12 @@ emit_into :: proc(gen: ^Generator, expr: ^Expr, dest: ValueRef, scope: ^Scope, s
 
 emit_address :: proc(gen: ^Generator, expr: ^Expr, scope: ^Scope, span: Span) -> ValueRef {
 	#partial switch &e in expr.data {
+	case Expr_Array_Literal:
+		array_llvm_type := get_llvm_type(gen, expr.type)
+		ptr := build_entry_alloca(gen, array_llvm_type, "")
+		emit_into(gen, expr, ptr, scope, span)
+		return ptr
+
 	case Expr_Struct_Literal:
 		type := resolve_type_expr(&e.type_expr, scope)
 		struct_llvm_type := get_llvm_type(gen, type)
@@ -210,6 +216,10 @@ emit_value :: proc(gen: ^Generator, expr: ^Expr, scope: ^Scope, span: Span) -> V
 		return ConstReal(type, f64(e.value))
 	case Expr_String_Literal:
 		return BuildGlobalStringPtr(gen.builder, strings.clone_to_cstring(e.value), "")
+	case Expr_Array_Literal:
+		addr := emit_address(gen, expr, scope, span)
+		return BuildLoad2(gen.builder, get_llvm_type(gen, expr.type), addr, "")
+
 	case Expr_Struct_Literal:
 		addr := emit_address(gen, expr, scope, span)
 		type := resolve_type_expr(&e.type_expr, scope)
