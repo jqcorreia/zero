@@ -15,6 +15,10 @@ resolve_types :: proc(node: ^Ast_Node) {
 	case Ast_Var_Assign:
 		resolve_expr_type(data.lhs, node.scope, node.span)
 		resolve_expr_type(data.expr, node.scope, node.span)
+		coerced_type := type_coercion(data.expr.type, data.lhs.type, node.scope)
+		if coerced_type != nil {
+			data.expr.type = coerced_type
+		}
 	case Ast_Var_Decl:
 		resolved_type: ^Type
 		initializer_expr_type: ^Type

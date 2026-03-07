@@ -13,6 +13,40 @@ Generator :: struct {
 	primitive_types: map[^Type]TypeRef,
 }
 
+// Returns the integer type used for ABI-passing small structs on x86-64 System V.
+// A struct whose fields are all integer/float primitives totalling ≤ 8 bytes is passed
+// as a single i32 (≤ 4 bytes) or i64 (≤ 8 bytes) instead of being expanded field-by-field.
+get_abi_int_type_for_struct :: proc(gen: ^Generator, type: ^Type) -> (TypeRef, bool) {
+	if type == nil || type.kind != .Struct {
+		return nil, false
+	}
+	total_bytes: u32 = 0
+	for field in type.fields {
+		#partial switch field.type.kind {
+		case .Int8, .Uint8:
+			total_bytes += 1
+		case .Int16, .Uint16:
+			total_bytes += 2
+		case .Int32, .Uint32:
+			total_bytes += 4
+		case .Int64, .Uint64:
+			total_bytes += 8
+		case .Float32:
+			total_bytes += 4
+		case .Float64:
+			total_bytes += 8
+		case:
+			return nil, false
+		}
+	}
+	if total_bytes <= 4 {
+		return Int32TypeInContext(gen.ctx), true
+	} else if total_bytes <= 8 {
+		return Int64TypeInContext(gen.ctx), true
+	}
+	return nil, false
+}
+
 get_llvm_type :: proc(gen: ^Generator, type: ^Type) -> TypeRef {
 	if type.kind == .Array {
 		elem_type := get_llvm_type(gen, type.elem_type)
@@ -69,6 +103,7 @@ emit_stmt :: proc(gen: ^Generator, node: ^Ast_Node) {
 		unimplemented(fmt.tprint("Unimplement emit statement", node))
 	}
 }
+
 emit_into :: proc(gen: ^Generator, expr: ^Expr, dest: ValueRef, scope: ^Scope, span: Span) {
 	#partial switch &e in expr.data {
 	case Expr_Array_Literal:
@@ -273,7 +308,13 @@ emit_value :: proc(gen: ^Generator, expr: ^Expr, scope: ^Scope, span: Span) -> V
 
 emit_assigment :: proc(gen: ^Generator, s: ^Ast_Var_Assign, scope: ^Scope, span: Span) {
 	ptr := emit_address(gen, s.lhs, scope, span)
-	BuildStore(gen.builder, emit_value(gen, s.expr, scope, span), ptr)
+	type := s.expr.type
+
+	if type.kind == .Struct || type.kind == .Array {
+		emit_into(gen, s.expr, ptr, scope, span)
+	} else {
+		BuildStore(gen.builder, emit_value(gen, s.expr, scope, span), ptr)
+	}
 }
 
 emit_var_decl :: proc(gen: ^Generator, s: ^Ast_Var_Decl, scope: ^Scope, span: Span) {
@@ -296,7 +337,6 @@ emit_var_decl :: proc(gen: ^Generator, s: ^Ast_Var_Decl, scope: ^Scope, span: Sp
 		if s.expr != nil {
 			if sym.type.kind == .Struct || sym.type.kind == .Array {
 				emit_into(gen, s.expr, ptr, scope, span)
-
 			} else {
 				BuildStore(gen.builder, emit_value(gen, s.expr, scope, span), ptr)
 			}
@@ -342,7 +382,13 @@ emit_function_decl :: proc(gen: ^Generator, s: ^Ast_Function, scope: ^Scope, spa
 			if param.variadic_marker {
 				variadic = true
 			} else {
-				append(&param_types, get_llvm_type(gen, param.symbol.type))
+				param_type := get_llvm_type(gen, param.symbol.type)
+				if s.external {
+					if int_type, ok := get_abi_int_type_for_struct(gen, param.symbol.type); ok {
+						param_type = int_type
+					}
+				}
+				append(&param_types, param_type)
 			}
 		}
 		fn_type = FunctionType(ret_type_ref, &param_types[0], u32(len(param_types)), i32(variadic))
@@ -436,12 +482,20 @@ emit_call :: proc(gen: ^Generator, e: Expr_Call, scope: ^Scope, span: Span) -> V
 	args: [dynamic]ValueRef
 	variadic_found := false
 	for a, i in e.args {
-		val := emit_value(gen, a, scope, span)
 		is_variadic := variadic_found || i >= len(decl.params)
 		if !is_variadic && decl.params[i].variadic_marker {
 			variadic_found = true
 			is_variadic = true
 		}
+		// ABI coercion for external functions: small structs passed as integers
+		if decl.external && !is_variadic && a.type != nil {
+			if int_type, ok := get_abi_int_type_for_struct(gen, a.type); ok {
+				addr := emit_address(gen, a, scope, span)
+				append(&args, BuildLoad2(gen.builder, int_type, addr, "abi_coerce"))
+				continue
+			}
+		}
+		val := emit_value(gen, a, scope, span)
 		// C variadic ABI: float args must be promoted to double
 		if is_variadic && a.type != nil && a.type.numeric_float && a.type.kind != .Float64 {
 			val = BuildFPExt(gen.builder, val, DoubleTypeInContext(gen.ctx), "fpext")

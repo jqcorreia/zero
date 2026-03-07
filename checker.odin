@@ -36,8 +36,12 @@ check_stmt :: proc(c: ^Checker, node: ^Ast_Node) {
 	case Ast_Return:
 		check_return(c, &data, node.scope, node.span)
 	case Ast_If:
+		check_expr(c, data.cond, node.scope, node.span)
 		check_if(c, &data, node.span)
 	case Ast_For:
+		if data.range != nil {
+			check_expr(c, data.range, node.scope, node.span)
+		}
 		check_for_loop(c, &data, node.span)
 	case Ast_Break:
 		check_break(c, &data, node.scope, node.span)
