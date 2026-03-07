@@ -14,8 +14,8 @@ Generator :: struct {
 }
 
 // Returns the integer type used for ABI-passing small structs on x86-64 System V.
-// A struct whose fields are all integer/float primitives totalling ≤ 8 bytes is passed
-// as a single i32 (≤ 4 bytes) or i64 (≤ 8 bytes) instead of being expanded field-by-field.
+// A struct whose fields are all integer/float primitives totalling <= 8 bytes is passed
+// as a single i32 (<= 4 bytes) or i64 (<= 8 bytes) instead of being expanded field-by-field.
 get_abi_int_type_for_struct :: proc(gen: ^Generator, type: ^Type) -> (TypeRef, bool) {
 	if type == nil || type.kind != .Struct {
 		return nil, false
