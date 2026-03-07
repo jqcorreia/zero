@@ -2,6 +2,12 @@ import "std/c"
 import "vendor/raylib"
 
 fn get_grid_value(grid: [20][10]u8, coords: [2]i32) -> u8 {
+    for y in 0..20 {
+        for x in 0..10 {
+            printf("coords value: %d %d %d\n", grid[y][x], y, x)
+        }
+    }
+    printf("checking coords: %d %d\n", coords[0], coords[1])
     return grid[coords[1]][coords[0]]
 }
 
@@ -28,6 +34,7 @@ fn main() {
     }
 
     grid[active_block_tl[0]][active_block_tl[1]] = 1
+    grid[4][0] = 1
     elapsed_time: f32 = 0.0
 
     InitWindow(W, H, "Zero Tetris")
@@ -40,8 +47,11 @@ fn main() {
             elapsed_time = 0.0
 
             next_position := [active_block_tl[0] + 1, active_block_tl[1]]
-            if get_grid_value(grid,  next_position) == 1 || active_block_tl[0] == gridW - 1{
+            value := get_grid_value(grid,  [active_block_tl[0] + 1, active_block_tl[1]]) 
+            printf("cur value: %d\n", value)
+            if value == 1 {
             // if active_block_tl[0] == gridW - 1 {
+                printf("hit\n")
                 active_block_tl = [0,0]
                 grid[active_block_tl[0]][active_block_tl[1]] = 1
             } else {
