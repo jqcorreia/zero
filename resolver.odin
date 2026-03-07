@@ -273,6 +273,26 @@ resolve_expr_type :: proc(expr: ^Expr, scope: ^Scope, span: Span) -> ^Type {
 		}
 		e.left.type = coerced_type
 		e.right.type = coerced_type
+
+		is_comparison :=
+			e.op == .DoubleEqual ||
+			e.op == .NotEqual ||
+			e.op == .Greater ||
+			e.op == .Lesser ||
+			e.op == .GreaterOrEqual ||
+			e.op == .LesserOrEqual ||
+			e.op == .DoublePipe
+
+		if is_comparison {
+			if coerced_type.kind == .Struct || coerced_type.kind == .Array {
+				expr.type = &error_type
+				return &error_type
+			}
+			bool_sym, _ := resolve_symbol(scope, "bool")
+			expr.type = bool_sym.type
+			return bool_sym.type
+		}
+
 		expr.type = coerced_type
 		return coerced_type
 

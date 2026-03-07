@@ -24,6 +24,8 @@ Token_Kind :: enum {
 	Minus,
 	Slash,
 	Star,
+	Pipe,
+	DoublePipe,
 	Bang,
 	Greater,
 	Lesser,
@@ -314,6 +316,17 @@ lex :: proc(input: string) -> []Token {
 				lexer.pos += 2
 			} else {
 				append(&tokens, Token{kind = .Equal, lexeme = "=", span = one_char_span(lexer)})
+				lexer.pos += 1
+			}
+		case c == '|':
+			if lex_peek(&lexer) == '|' {
+				append(
+					&tokens,
+					Token{kind = .DoublePipe, lexeme = "||", span = two_char_span(lexer)},
+				)
+				lexer.pos += 2
+			} else {
+				append(&tokens, Token{kind = .Pipe, lexeme = "|", span = one_char_span(lexer)})
 				lexer.pos += 1
 			}
 		case c == ',':
