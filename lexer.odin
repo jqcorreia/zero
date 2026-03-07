@@ -38,6 +38,7 @@ Token_Kind :: enum {
 	DotDot,
 	DotDotEq,
 	Ampersand,
+	DoubleAmpersand,
 	ColonEqual,
 	RightArrow,
 	Func_Keyword,
@@ -386,8 +387,19 @@ lex :: proc(input: string) -> []Token {
 				lexer.pos += 1
 			}
 		case c == '&':
-			append(&tokens, Token{kind = .Ampersand, lexeme = "&", span = one_char_span(lexer)})
-			lexer.pos += 1
+			if lex_peek(&lexer) == '&' {
+				append(
+					&tokens,
+					Token{kind = .DoubleAmpersand, lexeme = "&&", span = two_char_span(lexer)},
+				)
+				lexer.pos += 2
+			} else {
+				append(
+					&tokens,
+					Token{kind = .Ampersand, lexeme = "&", span = one_char_span(lexer)},
+				)
+				lexer.pos += 1
+			}
 		case:
 			fatal_span(Span{start = lexer.pos}, "Unrecognized character %c", c)
 		}

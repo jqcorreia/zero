@@ -312,11 +312,9 @@ emit_value :: proc(gen: ^Generator, expr: ^Expr, scope: ^Scope, span: Span) -> V
 			pred := e.left.type.signed || e.right.type.signed ? IntPredicate.IntSLE : .IntULE
 			return BuildICmp(gen.builder, pred, left, right, "lte")
 		case .DoublePipe:
-			// if e.left.type.numeric_float {
-			// 	return BuildFCmp(gen.builder, .RealOLE, left, right, "fle")
-			// }
-			// pred := e.left.type.signed || e.right.type.signed ? IntPredicate.IntSLE : .IntULE
 			return BuildOr(gen.builder, left, right, "or")
+		case .DoubleAmpersand:
+			return BuildAnd(gen.builder, left, right, "and")
 		}
 	}
 	unimplemented(fmt.tprintf("Expression %v emit not implemented", expr))

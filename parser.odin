@@ -409,7 +409,7 @@ precedence :: proc(op: Token_Kind) -> int {
 		return 10
 	case .Lesser, .Greater, .GreaterOrEqual, .LesserOrEqual, .DoubleEqual, .NotEqual:
 		return 5
-	case .Pipe, .DoublePipe:
+	case .DoublePipe, .DoubleAmpersand:
 		return 4
 	case .DotDot, .DotDotEq:
 		return 3
