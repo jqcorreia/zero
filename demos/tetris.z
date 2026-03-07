@@ -39,7 +39,8 @@ fn main() {
             // Tick
             elapsed_time = 0.0
 
-            if get_grid_value(grid, [active_block_tl[0] + 1, active_block_tl[1]]) == 1 {
+            next_position := [active_block_tl[0] + 1, active_block_tl[1]]
+            if get_grid_value(grid,  next_position) == 1 || active_block_tl[0] == gridW - 1{
             // if active_block_tl[0] == gridW - 1 {
                 active_block_tl = [0,0]
                 grid[active_block_tl[0]][active_block_tl[1]] = 1
