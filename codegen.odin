@@ -178,11 +178,19 @@ emit_address :: proc(gen: ^Generator, expr: ^Expr, scope: ^Scope, span: Span) ->
 		}
 		return BuildStructGEP2(gen.builder, base_type, base_ptr, u32(field_index), "")
 	case Expr_Index:
-		array_ptr := emit_address(gen, e.array, scope, span)
 		index_val := emit_value(gen, e.index, scope, span)
 		indices: []ValueRef = {ConstInt(Int32TypeInContext(gen.ctx), 0, false), index_val}
 
-		llvm_type := get_llvm_type(gen, e.array.type)
+		array_ptr: ValueRef
+		llvm_type: TypeRef
+
+		if e.array.type.kind == .Pointer {
+			array_ptr = emit_value(gen, e.array, scope, span)
+			llvm_type = get_llvm_type(gen, e.array.type.pointee_type)
+		} else {
+			array_ptr = emit_address(gen, e.array, scope, span)
+			llvm_type = get_llvm_type(gen, e.array.type)
+		}
 
 		ptr := BuildGEP2(gen.builder, llvm_type, array_ptr, raw_data(indices), 2, "")
 

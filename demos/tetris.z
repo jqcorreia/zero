@@ -1,6 +1,10 @@
 import "std/c"
 import "vendor/raylib"
 
+struct Block {
+    x: i32
+    y: i32
+}
 
 fn main() {
     W: i32 = 600
@@ -14,7 +18,7 @@ fn main() {
     grid: [20][10]u8
 
     cell_size: i32 = 30
-    active_block_tl: [2]i32 = [0,0]
+    block := Block { x = gridW / 2, y = 0 }
 
     // Clear the grid
     for y in 0..gridH {
@@ -23,39 +27,55 @@ fn main() {
         }
     }
 
-    grid[active_block_tl[0]][active_block_tl[1]] = 1
+    grid[block.y][block.x] = 1
     elapsed_time: f32 = 0.0
 
     InitWindow(W, H, "Zero Tetris")
     for {
         // Logic
         elapsed_time = elapsed_time + GetFrameTime()
-
+        
+        // Key mapping
+        if IsKeyPressed(256) { // escape key
+            break
+        } else {
+            keypressed := GetKeyPressed()
+            if keypressed == 263 {
+                if block.x > 0 {
+                    block.x = block.x - 1
+                }
+            }
+            if keypressed == 262 {
+                if block.x < W {
+                    block.x = block.x + 1
+                }
+            }
+            if keypressed != 0 {
+                printf("Keypressed: %d\n", keypressed)
+            }
+        }
         if elapsed_time > 0.5 {
             // Tick
             elapsed_time = 0.0
 
-            next_position := [active_block_tl[0] + 1, active_block_tl[1]]
-            if grid[active_block_tl[0]+1][active_block_tl[1]] == 1 || active_block_tl[0] == gridW - 1 {
-                active_block_tl = [0,0]
-                grid[active_block_tl[0]][active_block_tl[1]] = 1
+            next_position := grid[block.y + 1][block.x]
+            if next_position == 1 || block.y == gridW - 1 {
+                block = Block{x = gridW / 2, y = 0} 
+                grid[block.y][block.x] = 1
             } else {
-                grid[active_block_tl[0]][active_block_tl[1]] = 0
-                active_block_tl[0] = active_block_tl[0] + 1
-                grid[active_block_tl[0]][active_block_tl[1]] = 1
+                grid[block.y][block.x] = 0
+                block.y = block.y + 1
+                grid[block.y][block.x] = 1
             }
         }
 
         // Render
         BeginDrawing()
         ClearBackground(background_color)
-        if IsKeyPressed(256) { // escape key
-            break
-        }
         for y in 0..gridH {
             for x in 0..gridW {
                 // printf("%d %d %d\n", x, y, grid[y][x])
-                if grid[y][x] != 0 {
+                if grid[y][x] != 0 || (block.x == x && block.y == y) {
                     // printf("Draw?!")
                     // DrawRectangle(0,0, 100, 100, Color{ r = 255, g = 0, b = 0, a = 255 })
                     DrawRectangle(x * cell_size, y * cell_size, cell_size, cell_size, rect_color)

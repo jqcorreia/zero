@@ -217,6 +217,10 @@ resolve_expr_type :: proc(expr: ^Expr, scope: ^Scope, span: Span) -> ^Type {
 		type := resolve_expr_type(e.array, scope, span)
 		resolve_expr_type(e.index, scope, span)
 
+		// Support pointer to array
+		if type.kind == .Pointer && type.pointee_type != nil && type.pointee_type.kind == .Array {
+			type = type.pointee_type
+		}
 		if type.kind != .Array {
 			expr.type = &error_type
 			return &error_type

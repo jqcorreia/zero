@@ -4,6 +4,10 @@ fn print_first(arr: [5]i32) {
     printf("First element: %d\n", arr[0])
 }
 
+fn mutate(arr: &[5]i32) {
+    arr[0] = 99 // This will modify the original array
+}
+
 fn main() {
     a: [5]i32 = [10, 20, 30, 40, 50]
 
@@ -17,4 +21,7 @@ fn main() {
 
     idx := 3
     printf("4th element: %d\n", a[idx])
+
+    mutate(&a) // This will modify the original array
+    printf("After mutation, first element: %d\n", a[0]) //
 }

@@ -71,17 +71,21 @@ check_expr :: proc(c: ^Checker, expr: ^Expr, scope: ^Scope, span: Span) {
 		if e.array.type.kind == .Error || e.index.type.kind == .Error {
 			return
 		}
-		if e.array.type.kind != .Array {
+		array_type := e.array.type
+		if array_type.kind == .Pointer && array_type.pointee_type.kind == .Array {
+			array_type = array_type.pointee_type
+		}
+		if array_type.kind != .Array {
 			error_span(span, "'%s' is not an array", e.array.type.kind)
 		} else if !e.index.type.numeric_integer && e.index.type.kind != .Untyped_Int {
 			error_span(span, "Array index must be an integer, got '%s'", e.index.type.kind)
 		} else if lit, ok := e.index.data.(Expr_Int_Literal); ok {
-			if u64(lit.value) >= e.array.type.size {
+			if u64(lit.value) >= array_type.size {
 				error_span(
 					span,
 					"Index %d out of bounds for array of size %d",
 					lit.value,
-					e.array.type.size,
+					array_type.size,
 				)
 			}
 		}
@@ -103,7 +107,11 @@ check_expr :: proc(c: ^Checker, expr: ^Expr, scope: ^Scope, span: Span) {
 			}
 		case .Minus:
 			if !e.expr.type.numeric_integer && !e.expr.type.numeric_float {
-				error_span(span, "Operator '-' requires numeric operand, got '%s'", e.expr.type.kind)
+				error_span(
+					span,
+					"Operator '-' requires numeric operand, got '%s'",
+					e.expr.type.kind,
+				)
 			}
 		case .Star:
 			if e.expr.type.kind != .Pointer {
@@ -120,10 +128,20 @@ check_expr :: proc(c: ^Checker, expr: ^Expr, scope: ^Scope, span: Span) {
 		is_logical := e.op == .DoublePipe || e.op == .DoubleAmpersand
 		if is_logical {
 			if e.left.type.kind != .Bool {
-				error_span(span, "Left operand of '%s' must be bool, got '%s'", e.op, e.left.type.kind)
+				error_span(
+					span,
+					"Left operand of '%s' must be bool, got '%s'",
+					e.op,
+					e.left.type.kind,
+				)
 			}
 			if e.right.type.kind != .Bool {
-				error_span(span, "Right operand of '%s' must be bool, got '%s'", e.op, e.right.type.kind)
+				error_span(
+					span,
+					"Right operand of '%s' must be bool, got '%s'",
+					e.op,
+					e.right.type.kind,
+				)
 			}
 		} else if expr.type.kind == .Error {
 			error_span(
