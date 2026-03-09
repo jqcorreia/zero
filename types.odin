@@ -127,25 +127,25 @@ type_coercion :: proc(from: ^Type, to: ^Type, scope: ^Scope) -> ^Type {
 	return nil
 }
 
-coerce_array_elements :: proc(expr: ^Expr, target_type: ^Type, scope: ^Scope) {
-	if e, ok := expr.data.(Expr_Array_Literal); ok {
+// Set the type on an expression and propagate it inward to untyped sub-expressions.
+// This replaces the need for separate coerce_array_elements / coerce_unary_inner calls.
+set_expr_type :: proc(expr: ^Expr, type: ^Type, scope: ^Scope) {
+	expr.type = type
+	#partial switch &e in expr.data {
+	case Expr_Unary:
+		coerced := type_coercion(e.expr.type, type, scope)
+		if coerced != nil {
+			set_expr_type(e.expr, coerced, scope)
+		}
+	case Expr_Array_Literal:
+		if type.elem_type == nil { return }
 		for elem in e.elements {
 			if elem.type.kind == .Array {
-				elem.type = target_type.elem_type
-				coerce_array_elements(elem, target_type.elem_type, scope)
+				set_expr_type(elem, type.elem_type, scope)
 			} else {
-				elem.type = type_coercion(elem.type, target_type.elem_type, scope)
+				coerced := type_coercion(elem.type, type.elem_type, scope)
+				if coerced != nil { elem.type = coerced }
 			}
-		}
-	}
-}
-
-coerce_unary_inner :: proc(expr: ^Expr, target_type: ^Type, scope: ^Scope) {
-	if unary, ok := &expr.data.(Expr_Unary); ok {
-		coerced := type_coercion(unary.expr.type, target_type, scope)
-		if coerced != nil {
-			unary.expr.type = coerced
-			coerce_unary_inner(unary.expr, coerced, scope)
 		}
 	}
 }

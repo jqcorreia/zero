@@ -44,8 +44,8 @@ fn can_move(grid: Grid, nx: i32, ny: i32, block: Block) -> bool {
         }
     }
 
-    in_h_bounds := nx - min_x >= 0 && (nx + max_x) < grid.w 
-    in_v_bounds := ny - min_y >= 0 && (ny + max_y) < grid.h 
+    in_h_bounds := nx + min_x >= 0 && (nx + max_x) < grid.w 
+    in_v_bounds := ny + min_y >= 0 && (ny + max_y) < grid.h 
     free := grid_value(grid, nx, ny) == 0
     return in_h_bounds && in_v_bounds && free
 }

@@ -17,8 +17,7 @@ resolve_types :: proc(node: ^Ast_Node) {
 		resolve_expr_type(data.expr, node.scope, node.span)
 		coerced_type := type_coercion(data.expr.type, data.lhs.type, node.scope)
 		if coerced_type != nil {
-			data.expr.type = coerced_type
-			coerce_unary_inner(data.expr, coerced_type, node.scope)
+			set_expr_type(data.expr, coerced_type, node.scope)
 		}
 	case Ast_Var_Decl:
 		resolved_type: ^Type
@@ -53,9 +52,7 @@ resolve_types :: proc(node: ^Ast_Node) {
 			coerced_type := type_coercion(initializer_expr_type, resolved_type, node.scope)
 			if coerced_type != nil {
 				data.symbol.type = coerced_type
-				data.expr.type = coerced_type
-				coerce_array_elements(data.expr, coerced_type, node.scope)
-				coerce_unary_inner(data.expr, coerced_type, node.scope)
+				set_expr_type(data.expr, coerced_type, node.scope)
 			} else {
 				// Keep natural types so the checker can report a meaningful mismatch
 				data.symbol.type = resolved_type
@@ -111,8 +108,7 @@ resolve_types :: proc(node: ^Ast_Node) {
 			if sym != nil && sym.type != nil && sym.type.kind != .Error {
 				coerced_type := type_coercion(expr_type, sym.type, node.scope)
 				if coerced_type != nil {
-					data.expr.type = coerced_type
-					coerce_unary_inner(data.expr, coerced_type, node.scope)
+					set_expr_type(data.expr, coerced_type, node.scope)
 				}
 				// On coercion failure, leave data.expr.type as the natural type
 				// so the checker can report expected vs got
@@ -157,8 +153,7 @@ resolve_expr_type :: proc(expr: ^Expr, scope: ^Scope, span: Span) -> ^Type {
 					arg_type := resolve_expr_type(arg, scope, span)
 					coerced_type := type_coercion(arg_type, field.type, scope)
 					if coerced_type != nil {
-						arg.type = coerced_type
-						coerce_array_elements(arg, field.type, scope)
+						set_expr_type(arg, coerced_type, scope)
 					} else {
 						arg.type = arg_type
 					}
@@ -274,8 +269,8 @@ resolve_expr_type :: proc(expr: ^Expr, scope: ^Scope, span: Span) -> ^Type {
 			expr.type = &error_type
 			return &error_type
 		}
-		e.left.type = coerced_type
-		e.right.type = coerced_type
+		set_expr_type(e.left, coerced_type, scope)
+		set_expr_type(e.right, coerced_type, scope)
 
 		is_logical := e.op == .DoublePipe || e.op == .DoubleAmpersand
 		if is_logical {
@@ -351,7 +346,7 @@ resolve_expr_type :: proc(expr: ^Expr, scope: ^Scope, span: Span) -> ^Type {
 			if decl_type != nil {
 				coerced_type := type_coercion(arg_type, decl_type, scope)
 				if coerced_type != nil {
-					arg.type = coerced_type
+					set_expr_type(arg, coerced_type, scope)
 				} else {
 					arg.type = arg_type // keep actual type, checker will report
 				}
