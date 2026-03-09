@@ -185,6 +185,9 @@ check_call :: proc(c: ^Checker, e: Expr_Call, call_expr: ^Expr, scope: ^Scope, s
 	}
 	decl := sym.decl.data.(Ast_Function)
 	variadic_found := false
+	if len(e.args) < len(decl.params) {
+		error_span(span, "Too few arguments for '%s'", func_name)
+	}
 	for arg, i in e.args {
 		check_expr(c, arg, scope, span)
 		if variadic_found || arg.type.kind == .Error {
