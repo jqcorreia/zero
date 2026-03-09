@@ -6,7 +6,10 @@ struct Point {
 }
 
 point := Point{ x = 100, y = 20 }
+global_string := "Hello, World!"
 
 fn main() {
+    printf("Global String: %s\n", global_string)
     printf("Point: (%d, %d)\n", point.x, point.y)
 }
+

@@ -21,6 +21,7 @@ Already done:
 - External function interface
 - Global scope import (a la #include)
 - Pointers (address-of, derefence and dereference-assign)
+- Transparent array dereference
 
 Right now this is an LLVM project and it will be for a while. Trying not to tangle the code to much to that.
 Potentially this README can look a lot different in a couple of months if this becomes a serious project.
@@ -38,10 +39,12 @@ Potentially this README can look a lot different in a couple of months if this b
 - [x] Implement float support
 - [x] Arrays with compile-time bound checked access
 - [x] Pointer types (address-of, dereference)
+- [x] For-in-range loops (exclusive `..` and inclusive `..=`)
+- [x] Proper globals
+- [x] Transparent array dereference
 - [ ] Enums
 - [ ] Tagged Unions
 - [ ] Make sure that the available types are synched with the primitive types in codegen
-- [x] For-in-range loops (exclusive `..` and inclusive `..=`)
 - [ ] Proper string with bound check and not null-terminated
 - [ ] Make `external` blocks its own AST node kind, in order to have linking rules and prefixes
 - [ ] Make sure that lexer is UTF-8 compliant

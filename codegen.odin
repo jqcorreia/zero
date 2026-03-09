@@ -346,6 +346,21 @@ make_const_value :: proc(gen: ^Generator, expr: ^Expr, scope: ^Scope) -> ValueRe
 		return ConstInt(llvm_type, u64(e.value), false)
 	case Expr_Float_Literal:
 		return ConstReal(llvm_type, e.value)
+	case Expr_String_Literal:
+		//NOTE: this a bunch of code for string instantiation
+		//This was partially suggested by an agent, revisit later
+		cstr := strings.clone_to_cstring(e.value)
+		char_type := Int8TypeInContext(gen.ctx)
+		str_data_type := ArrayType(char_type, u32(len(e.value) + 1))
+		str_global := AddGlobal(gen.module, str_data_type, ".str")
+		SetInitializer(str_global, ConstStringInContext(gen.ctx, cstr, u32(len(e.value)), false))
+		SetGlobalConstant(str_global, true)
+		SetLinkage(str_global, .PrivateLinkage)
+		indices := []ValueRef {
+			ConstInt(Int32TypeInContext(gen.ctx), 0, false),
+			ConstInt(Int32TypeInContext(gen.ctx), 0, false),
+		}
+		return ConstInBoundsGEP2(str_data_type, str_global, raw_data(indices), 2)
 	case Expr_Struct_Literal:
 		field_vals: [dynamic]ValueRef
 		for field in expr.type.fields {
