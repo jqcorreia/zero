@@ -4,6 +4,7 @@ import "vendor/raylib"
 struct Block {
     x: i32
     y: i32
+    data: [4][4]u8
 }
 
 struct Grid {
@@ -12,7 +13,15 @@ struct Grid {
     data: [20][10]u8
 }
 
-fn can_move(grid: Grid, nx: i32, ny: i32) -> bool {
+fn clear_grid(grid: &Grid) {
+    for y in 0..grid.h {
+        for x in 0..grid.w {
+            grid.data[y][x] = 0
+        }
+    }
+}
+
+fn can_move(grid: Grid, nx: i32, ny: i32, block: Block) -> bool {
     in_h_bounds := nx >= 0 && nx < grid.w 
     in_v_bounds := ny >= 0 && ny < grid.h 
     free := grid_value(grid, nx, ny) == 0
@@ -41,11 +50,12 @@ fn main() {
     block := Block { x = grid.w / 2, y = 0 }
 
     // Clear the grid
-    for y in 0..grid.h {
-        for x in 0..grid.w {
-            grid.data[y][x] = 0
-        }
-    }
+    clear_grid(&grid)
+    // for y in 0..grid.h {
+    //     for x in 0..grid.w {
+    //         grid.data[y][x] = 0
+    //     }
+    // }
 
     // grid.data[block.y][block.x] = 1
     elapsed_time: f32 = 0.0
@@ -61,17 +71,17 @@ fn main() {
         } else {
             keypressed := GetKeyPressed()
             if keypressed == 263 {
-                if can_move(grid, block.x - 1, block.y) {
+                if can_move(grid, block.x - 1, block.y, block) {
                     block.x = block.x - 1
                 }
             }
             if keypressed == 262 {
-                if can_move(grid, block.x + 1, block.y) {
+                if can_move(grid, block.x + 1, block.y, block) {
                     block.x = block.x + 1
                 }
             }
             if keypressed == 264 {
-                if can_move(grid, block.x, block.y + 1) {
+                if can_move(grid, block.x, block.y + 1, block) {
                     block.y = block.y + 1
                 }
             }

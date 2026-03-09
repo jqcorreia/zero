@@ -179,16 +179,28 @@ emit_address :: proc(gen: ^Generator, expr: ^Expr, scope: ^Scope, span: Span) ->
 		return var
 
 	case Expr_Member:
-		base_ptr := emit_address(gen, e.base, scope, span)
-		base_type := get_llvm_type(gen, e.base.type)
+		base_type: ^Type
+		base_ptr: ValueRef
+		llvm_type: TypeRef
+
+		if e.base.type.kind == .Pointer {
+			base_type = e.base.type.pointee_type
+			base_ptr = emit_value(gen, e.base, scope, span)
+			llvm_type = get_llvm_type(gen, e.base.type.pointee_type)
+		} else {
+			base_type = e.base.type
+			base_ptr = emit_address(gen, e.base, scope, span)
+			llvm_type = get_llvm_type(gen, e.base.type)
+		}
+
 		field_index := 0
-		for f in e.base.type.fields {
+		for f in base_type.fields {
 			if f.name == e.member {
 				field_index = f.index
 				break
 			}
 		}
-		return BuildStructGEP2(gen.builder, base_type, base_ptr, u32(field_index), "")
+		return BuildStructGEP2(gen.builder, llvm_type, base_ptr, u32(field_index), "")
 
 	case Expr_Index:
 		index_val := emit_value(gen, e.index, scope, span)

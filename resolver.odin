@@ -199,13 +199,19 @@ resolve_expr_type :: proc(expr: ^Expr, scope: ^Scope, span: Span) -> ^Type {
 
 	case Expr_Member:
 		type := resolve_expr_type(e.base, scope, span)
+
+		// Support pointer to struct
+		if type.kind == .Pointer && type.pointee_type != nil && type.pointee_type.kind == .Struct {
+			type = type.pointee_type
+		}
+
 		if type == nil || type.kind != .Struct {
 			expr.type = &error_type
 			return &error_type
 		}
 		for &f in type.fields {
 			if f.name == e.member {
-				e.base.type = type
+				// e.base.type = type
 				expr.type = f.type
 				return f.type
 			}
