@@ -93,7 +93,7 @@ fn main() {
             elapsed_time = 0.0
 
             next_position := grid.data[block.y + 1][block.x]
-            if next_position == 1 || block.y == grid.h - 1 {
+            if !can_move(grid, block.x, block.y + 1, block) {
                 grid.data[block.y][block.x] = 1
                 block = Block{x = grid.w / 2, y = 0} 
             } else {

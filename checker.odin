@@ -165,7 +165,8 @@ check_expr :: proc(c: ^Checker, expr: ^Expr, scope: ^Scope, span: Span) {
 			} else {
 				base_type := struct_sym.type
 				is_struct := base_type.kind == .Struct
-				is_ptr_to_struct := base_type.kind == .Pointer &&
+				is_ptr_to_struct :=
+					base_type.kind == .Pointer &&
 					base_type.pointee_type != nil &&
 					base_type.pointee_type.kind == .Struct
 				if !is_struct && !is_ptr_to_struct {
