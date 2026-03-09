@@ -551,7 +551,7 @@ emit_call :: proc(gen: ^Generator, e: Expr_Call, scope: ^Scope, span: Span) -> V
 		}
 		// ABI coercion for external functions: small structs passed as integers
 		if decl.external && !is_variadic && a.type != nil {
-			if int_type, ok := get_abi_int_type_for_struct(gen, a.type); ok {
+			if int_type, t_ok := get_abi_int_type_for_struct(gen, a.type); t_ok {
 				addr := emit_address(gen, a, scope, span)
 				append(&args, BuildLoad2(gen.builder, int_type, addr, "abi_coerce"))
 				continue
