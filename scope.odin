@@ -52,6 +52,7 @@ bind_scopes :: proc(node: ^Ast_Node, cur_scope: ^Scope) {
 		_, ok := resolve_symbol(cur_scope, data.name)
 		if !ok {
 			sym := make_symbol(.Variable)
+			sym.name = data.name
 			cur_scope.symbols[data.name] = sym
 			data.symbol = sym
 		} else {

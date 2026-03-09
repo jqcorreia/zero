@@ -339,6 +339,35 @@ emit_assigment :: proc(gen: ^Generator, s: ^Ast_Var_Assign, scope: ^Scope, span:
 	}
 }
 
+make_const_value :: proc(gen: ^Generator, expr: ^Expr, scope: ^Scope) -> ValueRef {
+	llvm_type := get_llvm_type(gen, expr.type)
+	#partial switch e in expr.data {
+	case Expr_Int_Literal:
+		return ConstInt(llvm_type, u64(e.value), false)
+	case Expr_Float_Literal:
+		return ConstReal(llvm_type, e.value)
+	case Expr_Struct_Literal:
+		field_vals: [dynamic]ValueRef
+		for field in expr.type.fields {
+			if arg, ok := e.args[field.name]; ok {
+				append(&field_vals, make_const_value(gen, arg, scope))
+			} else {
+				append(&field_vals, ConstNull(get_llvm_type(gen, field.type)))
+			}
+		}
+		return ConstNamedStruct(llvm_type, raw_data(field_vals), u32(len(field_vals)))
+	case Expr_Array_Literal:
+		elem_type := get_llvm_type(gen, expr.type.elem_type)
+		elem_vals: [dynamic]ValueRef
+		for elem in e.elements {
+			append(&elem_vals, make_const_value(gen, elem, scope))
+		}
+		return ConstArray2(elem_type, raw_data(elem_vals), u64(len(elem_vals)))
+	case:
+		panic(fmt.tprintf("Cannot use '%v' as global constant initializer", expr.data))
+	}
+}
+
 emit_var_decl :: proc(gen: ^Generator, s: ^Ast_Var_Decl, scope: ^Scope, span: Span) {
 	// Build local variables
 	// If the variable exists, just emit a Store, otherwise emit Alloca + Store
@@ -352,7 +381,6 @@ emit_var_decl :: proc(gen: ^Generator, s: ^Ast_Var_Decl, scope: ^Scope, span: Sp
 
 		if exists do fatal_span(span, "Variable aliasing detected. Fatal error for now")
 
-		// compiler_type := gen.primitive_types[sym.type]
 		compiler_type := get_llvm_type(gen, sym.type)
 		ptr = build_entry_alloca(gen, compiler_type, "")
 		gen.values[sym] = ptr
@@ -364,17 +392,14 @@ emit_var_decl :: proc(gen: ^Generator, s: ^Ast_Var_Decl, scope: ^Scope, span: Sp
 			}
 		}
 	} else {
-		// Create global variables, only constant for now
-		// NOTE: need to rewrite all this, it's hardcoded for i32 literals
-		if _, ok := s.expr.data.(Expr_Int_Literal); ok {
-			ptr := AddGlobal(gen.module, Int32Type(), strings.clone_to_cstring(s.name))
-			SetInitializer(
-				ptr,
-				ConstInt(Int32Type(), u64(s.expr.data.(Expr_Int_Literal).value), false),
-			)
+		llvm_type := get_llvm_type(gen, sym.type)
+		ptr := AddGlobal(gen.module, llvm_type, strings.clone_to_cstring(s.name))
+		if s.expr != nil {
+			SetInitializer(ptr, make_const_value(gen, s.expr, scope))
 		} else {
-			panic("Global variables need to be constants")
+			SetInitializer(ptr, ConstNull(llvm_type))
 		}
+		gen.values[sym] = ptr
 	}
 }
 

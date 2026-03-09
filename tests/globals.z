@@ -1,0 +1,12 @@
+import "std/c"
+
+struct Point {
+    x: i32
+    y: i32
+}
+
+point := Point{ x = 100, y = 20 }
+
+fn main() {
+    printf("Point: (%d, %d)\n", point.x, point.y)
+}

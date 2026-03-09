@@ -6,6 +6,18 @@ struct Block {
     y: i32
 }
 
+struct Grid {
+    w: i32
+    h: i32
+    data: [20][10]u8
+}
+
+
+grid := Grid {
+    w = 20,
+    h = 10,
+}
+
 fn main() {
     W: i32 = 600
     H: i32 = 800
