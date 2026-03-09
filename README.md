@@ -41,7 +41,8 @@ Potentially this README can look a lot different in a couple of months if this b
 - [x] Pointer types (address-of, dereference)
 - [x] For-in-range loops (exclusive `..` and inclusive `..=`)
 - [x] Proper globals
-- [x] Transparent array dereference
+- [x] Transparent array pointer dereference
+- [ ] Transparent struct field access dereference
 - [ ] Enums
 - [ ] Tagged Unions
 - [ ] Make sure that the available types are synched with the primitive types in codegen
