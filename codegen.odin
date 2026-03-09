@@ -272,6 +272,9 @@ emit_value :: proc(gen: ^Generator, expr: ^Expr, scope: ^Scope, span: Span) -> V
 		return BuildLoad2(gen.builder, get_llvm_type(gen, sym.type), ptr, "")
 	case Expr_Unary:
 		#partial switch e.op {
+		case .Bang:
+			operand := emit_value(gen, e.expr, scope, span)
+			return BuildNot(gen.builder, operand, "not")
 		case .Minus:
 			operand := emit_value(gen, e.expr, scope, span)
 			if e.expr.type.numeric_float {

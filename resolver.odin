@@ -18,6 +18,7 @@ resolve_types :: proc(node: ^Ast_Node) {
 		coerced_type := type_coercion(data.expr.type, data.lhs.type, node.scope)
 		if coerced_type != nil {
 			data.expr.type = coerced_type
+			coerce_unary_inner(data.expr, coerced_type, node.scope)
 		}
 	case Ast_Var_Decl:
 		resolved_type: ^Type
@@ -54,6 +55,7 @@ resolve_types :: proc(node: ^Ast_Node) {
 				data.symbol.type = coerced_type
 				data.expr.type = coerced_type
 				coerce_array_elements(data.expr, coerced_type, node.scope)
+				coerce_unary_inner(data.expr, coerced_type, node.scope)
 			} else {
 				// Keep natural types so the checker can report a meaningful mismatch
 				data.symbol.type = resolved_type
@@ -110,6 +112,7 @@ resolve_types :: proc(node: ^Ast_Node) {
 				coerced_type := type_coercion(expr_type, sym.type, node.scope)
 				if coerced_type != nil {
 					data.expr.type = coerced_type
+					coerce_unary_inner(data.expr, coerced_type, node.scope)
 				}
 				// On coercion failure, leave data.expr.type as the natural type
 				// so the checker can report expected vs got
@@ -356,6 +359,7 @@ resolve_expr_type :: proc(expr: ^Expr, scope: ^Scope, span: Span) -> ^Type {
 				arg.type = arg_type
 			}
 		}
+		expr.type = e.callee.type
 		return e.callee.type
 	}
 	unimplemented("You should not be here at all")

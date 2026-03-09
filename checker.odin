@@ -106,7 +106,10 @@ check_expr :: proc(c: ^Checker, expr: ^Expr, scope: ^Scope, span: Span) {
 				error_span(span, "Operator '!' requires bool operand, got '%s'", e.expr.type.kind)
 			}
 		case .Minus:
-			if !e.expr.type.numeric_integer && !e.expr.type.numeric_float {
+			if !e.expr.type.numeric_integer &&
+			   !e.expr.type.numeric_float &&
+			   e.expr.type.kind != .Untyped_Int &&
+			   e.expr.type.kind != .Untyped_Float {
 				error_span(
 					span,
 					"Operator '-' requires numeric operand, got '%s'",

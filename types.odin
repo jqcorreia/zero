@@ -140,6 +140,16 @@ coerce_array_elements :: proc(expr: ^Expr, target_type: ^Type, scope: ^Scope) {
 	}
 }
 
+coerce_unary_inner :: proc(expr: ^Expr, target_type: ^Type, scope: ^Scope) {
+	if unary, ok := &expr.data.(Expr_Unary); ok {
+		coerced := type_coercion(unary.expr.type, target_type, scope)
+		if coerced != nil {
+			unary.expr.type = coerced
+			coerce_unary_inner(unary.expr, coerced, scope)
+		}
+	}
+}
+
 resolve_type_expr :: proc(type_expr: ^Type_Expr, scope: ^Scope) -> ^Type {
 	switch te in type_expr {
 	case string:

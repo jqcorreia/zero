@@ -22,8 +22,30 @@ fn clear_grid(grid: &Grid) {
 }
 
 fn can_move(grid: Grid, nx: i32, ny: i32, block: Block) -> bool {
-    in_h_bounds := nx >= 0 && nx < grid.w 
-    in_v_bounds := ny >= 0 && ny < grid.h 
+    max_x : i32= 0
+    max_y : i32= 0
+    min_x : i32 = -1
+    min_y : i32 = -1
+    
+    limit : i32 = 4 // When I have a cast I can remove this line. This forces x,y to be i32 in loop
+
+    for y in 0..limit {
+        for x in 0..limit {
+            if block.data[y][x] == 1 {
+                max_x = x
+                max_y = y
+                if min_x == -1 {
+                    min_x = x
+                }
+                if min_y == -1 {
+                    min_y = y
+                }
+            }
+        }
+    }
+
+    in_h_bounds := nx - min_x >= 0 && (nx + max_x) < grid.w 
+    in_v_bounds := ny - min_y >= 0 && (ny + max_y) < grid.h 
     free := grid_value(grid, nx, ny) == 0
     return in_h_bounds && in_v_bounds && free
 }
@@ -32,6 +54,32 @@ fn grid_value(grid: Grid, x: i32, y: i32) -> u8 {
     return grid.data[y][x]
 }
 
+
+fn new_random_block(grid: Grid) -> Block {
+    x := grid.w / 2
+    y := 0
+
+    square: [4][4]u8 = [
+        [0, 0, 0, 0],
+        [0, 1, 1, 0],
+        [0, 1, 1, 0],
+        [0, 0, 0, 0],
+    ] 
+    line: [4][4]u8= [
+        [1, 0, 0, 0],
+        [1, 0, 0, 0],
+        [1, 0, 0, 0],
+        [1, 0, 0, 0],
+    ] 
+    lshape: [4][4]u8= [
+        [0, 1, 0, 0],
+        [0, 1, 0, 0],
+        [0, 1, 1, 0],
+        [0, 0, 0, 0],
+    ] 
+
+    return Block { x = x, y = y, data = square }
+}
 
 fn main() {
     W: i32 = 600
@@ -47,12 +95,13 @@ fn main() {
         h = 20,
     }
 
-    block := Block { x = grid.w / 2, y = 0, data = [
-        [0, 0, 0, 0],
-        [0, 1, 1, 0],
-        [0, 1, 1, 0],
-        [0, 0, 0, 0],
-    ]}
+    // block := new_random_block(grid)
+    block := Block {  x = 0, y = 0, data = [
+        [0,0,0,0],
+        [0,1,1,0],
+        [0,1,1,0],
+        [0,0,0,0]]
+    }
 
     clear_grid(&grid)
 
@@ -92,7 +141,6 @@ fn main() {
             // Tick
             elapsed_time = 0.0
 
-            next_position := grid.data[block.y + 1][block.x]
             if !can_move(grid, block.x, block.y + 1, block) {
                 grid.data[block.y][block.x] = 1
                 block = Block{x = grid.w / 2, y = 0} 
@@ -101,19 +149,34 @@ fn main() {
             }
         }
 
+        // printf("Block position: (%d, %d)\n", block.x, block.y)
+
         // Render
         BeginDrawing()
         ClearBackground(background_color)
+        DrawRectangleLines(0 ,0 ,grid.w * cell_size, grid.h * cell_size, Color{r=25,g=150,b=0,a=255})
+
+        // Draw grid
         for y in 0..grid.h {
             for x in 0..grid.w {
-                // printf("%d %d %d\n", x, y, grid[y][x])
-                if grid.data[y][x] != 0 || (block.x == x && block.y == y) {
-                    // printf("Draw?!")
-                    // DrawRectangle(0,0, 100, 100, Color{ r = 255, g = 0, b = 0, a = 255 })
+                if grid.data[y][x] != 0 {
                     DrawRectangle(x * cell_size, y * cell_size, cell_size, cell_size, rect_color)
                 }
             }
         }
+
+        // Draw active block
+        limit: i32 = 4
+        for y in 0..limit {
+            for x in 0..limit {
+                bx := x + block.x
+                by := y + block.y
+                if block.data[y][x] == 1 {
+                    DrawRectangle(bx * cell_size, by * cell_size, cell_size, cell_size, rect_color)
+                }
+            }
+        }
+
         EndDrawing()
     }
 }
