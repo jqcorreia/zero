@@ -12,6 +12,18 @@ struct Grid {
     data: [20][10]u8
 }
 
+fn can_move(grid: Grid, nx: i32, ny: i32) -> bool {
+    in_h_bounds := nx >= 0 && nx < grid.w 
+    in_v_bounds := ny >= 0 && ny < grid.h 
+    free := grid_value(grid, nx, ny) == 0
+    return in_h_bounds && in_v_bounds && free
+}
+
+fn grid_value(grid: Grid, x: i32, y: i32) -> u8 {
+    return grid.data[y][x]
+}
+
+
 fn main() {
     W: i32 = 600
     H: i32 = 800
@@ -27,7 +39,6 @@ fn main() {
     }
 
     block := Block { x = grid.w / 2, y = 0 }
-
 
     // Clear the grid
     for y in 0..grid.h {
@@ -50,31 +61,35 @@ fn main() {
         } else {
             keypressed := GetKeyPressed()
             if keypressed == 263 {
-                if block.x > 0 {
+                if can_move(grid, block.x - 1, block.y) {
                     block.x = block.x - 1
                 }
             }
             if keypressed == 262 {
-                if block.x < W {
+                if can_move(grid, block.x + 1, block.y) {
                     block.x = block.x + 1
+                }
+            }
+            if keypressed == 264 {
+                if can_move(grid, block.x, block.y + 1) {
+                    block.y = block.y + 1
                 }
             }
             if keypressed != 0 {
                 printf("Keypressed: %d\n", keypressed)
             }
         }
+
         if elapsed_time > 0.5 {
             // Tick
             elapsed_time = 0.0
 
             next_position := grid.data[block.y + 1][block.x]
-            if next_position == 1 || block.y == grid.w - 1 {
+            if next_position == 1 || block.y == grid.h - 1 {
+                grid.data[block.y][block.x] = 1
                 block = Block{x = grid.w / 2, y = 0} 
-                grid.data[block.y][block.x] = 1
             } else {
-                grid.data[block.y][block.x] = 0
                 block.y = block.y + 1
-                grid.data[block.y][block.x] = 1
             }
         }
 
