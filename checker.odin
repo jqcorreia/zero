@@ -162,10 +162,17 @@ check_expr :: proc(c: ^Checker, expr: ^Expr, scope: ^Scope, span: Span) {
 			struct_sym, ok := resolve_symbol(scope, struct_name)
 			if !ok {
 				error_span(span, "Undefined variable '%s'", struct_name)
-			} else if struct_sym.type.kind != .Struct {
-				error_span(span, "'%s' is not a struct", struct_name)
 			} else {
-				error_span(span, "Struct '%s' has no field '%s'", struct_name, e.member)
+				base_type := struct_sym.type
+				is_struct := base_type.kind == .Struct
+				is_ptr_to_struct := base_type.kind == .Pointer &&
+					base_type.pointee_type != nil &&
+					base_type.pointee_type.kind == .Struct
+				if !is_struct && !is_ptr_to_struct {
+					error_span(span, "'%s' is not a struct", struct_name)
+				} else {
+					error_span(span, "Struct '%s' has no field '%s'", struct_name, e.member)
+				}
 			}
 		}
 
@@ -185,7 +192,13 @@ check_call :: proc(c: ^Checker, e: Expr_Call, call_expr: ^Expr, scope: ^Scope, s
 	}
 	decl := sym.decl.data.(Ast_Function)
 	variadic_found := false
-	if len(e.args) < len(decl.params) {
+	required_params := 0
+	for param in decl.params {
+		if !param.variadic_marker {
+			required_params += 1
+		}
+	}
+	if len(e.args) < required_params {
 		error_span(span, "Too few arguments for '%s'", func_name)
 	}
 	for arg, i in e.args {

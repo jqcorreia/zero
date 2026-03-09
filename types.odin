@@ -127,6 +127,19 @@ type_coercion :: proc(from: ^Type, to: ^Type, scope: ^Scope) -> ^Type {
 	return nil
 }
 
+coerce_array_elements :: proc(expr: ^Expr, target_type: ^Type, scope: ^Scope) {
+	if e, ok := expr.data.(Expr_Array_Literal); ok {
+		for elem in e.elements {
+			if elem.type.kind == .Array {
+				elem.type = target_type.elem_type
+				coerce_array_elements(elem, target_type.elem_type, scope)
+			} else {
+				elem.type = type_coercion(elem.type, target_type.elem_type, scope)
+			}
+		}
+	}
+}
+
 resolve_type_expr :: proc(type_expr: ^Type_Expr, scope: ^Scope) -> ^Type {
 	switch te in type_expr {
 	case string:

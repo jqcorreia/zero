@@ -1,0 +1,17 @@
+import "std/c"
+
+struct Foo {
+    data: [4][4]u8
+}
+
+
+fn main() {
+    foo := Foo { data = [
+        [0, 0, 0, 0],
+        [0, 1, 1, 0],
+        [0, 1, 1, 0],
+        [0, 0, 0, 0],
+    ]}
+
+    printf("%d\n", foo.data[1][2])
+}

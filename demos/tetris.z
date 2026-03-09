@@ -47,17 +47,15 @@ fn main() {
         h = 20,
     }
 
-    block := Block { x = grid.w / 2, y = 0 }
+    block := Block { x = grid.w / 2, y = 0, data = [
+        [0, 0, 0, 0],
+        [0, 1, 1, 0],
+        [0, 1, 1, 0],
+        [0, 0, 0, 0],
+    ]}
 
-    // Clear the grid
     clear_grid(&grid)
-    // for y in 0..grid.h {
-    //     for x in 0..grid.w {
-    //         grid.data[y][x] = 0
-    //     }
-    // }
 
-    // grid.data[block.y][block.x] = 1
     elapsed_time: f32 = 0.0
 
     InitWindow(W, H, "Zero Tetris")

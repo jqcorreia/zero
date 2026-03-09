@@ -53,18 +53,7 @@ resolve_types :: proc(node: ^Ast_Node) {
 			if coerced_type != nil {
 				data.symbol.type = coerced_type
 				data.expr.type = coerced_type
-				if lit, ok := &data.expr.data.(Expr_Array_Literal); ok {
-					for elem in lit.elements {
-						elem_coerced := type_coercion(
-							elem.type,
-							coerced_type.elem_type,
-							node.scope,
-						)
-						if elem_coerced != nil {
-							elem.type = elem_coerced
-						}
-					}
-				}
+				coerce_array_elements(data.expr, coerced_type, node.scope)
 			} else {
 				// Keep natural types so the checker can report a meaningful mismatch
 				data.symbol.type = resolved_type
@@ -166,6 +155,7 @@ resolve_expr_type :: proc(expr: ^Expr, scope: ^Scope, span: Span) -> ^Type {
 					coerced_type := type_coercion(arg_type, field.type, scope)
 					if coerced_type != nil {
 						arg.type = coerced_type
+						coerce_array_elements(arg, field.type, scope)
 					} else {
 						arg.type = arg_type
 					}
