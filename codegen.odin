@@ -11,6 +11,7 @@ Generator :: struct {
 	builder:         BuilderRef,
 	module:          ModuleRef,
 	primitive_types: map[^Type]TypeRef,
+	empty_str_ptr:   ValueRef,
 }
 
 // Returns the integer type used for ABI-passing small structs on x86-64 System V.
@@ -129,7 +130,10 @@ emit_into :: proc(gen: ^Generator, expr: ^Expr, dest: ValueRef, scope: ^Scope, s
 		for field in type.fields {
 			field_ptr := BuildStructGEP2(gen.builder, struct_llvm_type, dest, u32(field.index), "")
 			arg := e.args[field.name]
-			if field.type.kind == .Struct || field.type.kind == .Array {
+			if arg == nil {
+				// In case of non defined field, zero initialize the literal
+				BuildStore(gen.builder, make_zero_value(gen, field.type), field_ptr)
+			} else if field.type.kind == .Struct || field.type.kind == .Array {
 				emit_into(gen, arg, field_ptr, scope, span)
 			} else {
 				BuildStore(gen.builder, emit_value(gen, arg, scope, span), field_ptr)
@@ -153,7 +157,15 @@ emit_address :: proc(gen: ^Generator, expr: ^Expr, scope: ^Scope, span: Span) ->
 
 		for field in type.fields {
 			field_ptr := BuildStructGEP2(gen.builder, struct_llvm_type, ptr, u32(field.index), "")
-			BuildStore(gen.builder, emit_value(gen, e.args[field.name], scope, span), field_ptr)
+			arg := e.args[field.name]
+			if arg == nil {
+				// In case of non defined field, zero initialize the literal
+				BuildStore(gen.builder, make_zero_value(gen, field.type), field_ptr)
+			} else if field.type.kind == .Struct || field.type.kind == .Array {
+				emit_into(gen, arg, field_ptr, scope, span)
+			} else {
+				BuildStore(gen.builder, emit_value(gen, arg, scope, span), field_ptr)
+			}
 		}
 		return ptr
 
@@ -177,6 +189,7 @@ emit_address :: proc(gen: ^Generator, expr: ^Expr, scope: ^Scope, span: Span) ->
 			}
 		}
 		return BuildStructGEP2(gen.builder, base_type, base_ptr, u32(field_index), "")
+
 	case Expr_Index:
 		index_val := emit_value(gen, e.index, scope, span)
 		indices: []ValueRef = {ConstInt(Int32TypeInContext(gen.ctx), 0, false), index_val}
@@ -339,6 +352,21 @@ emit_assigment :: proc(gen: ^Generator, s: ^Ast_Var_Assign, scope: ^Scope, span:
 	}
 }
 
+make_global_string_ptr :: proc(gen: ^Generator, s: string) -> ValueRef {
+	cstr := strings.clone_to_cstring(s)
+	char_type := Int8TypeInContext(gen.ctx)
+	str_data_type := ArrayType(char_type, u32(len(s) + 1))
+	str_global := AddGlobal(gen.module, str_data_type, ".str")
+	SetInitializer(str_global, ConstStringInContext(gen.ctx, cstr, u32(len(s)), false))
+	SetGlobalConstant(str_global, true)
+	SetLinkage(str_global, .PrivateLinkage)
+	indices := []ValueRef {
+		ConstInt(Int32TypeInContext(gen.ctx), 0, false),
+		ConstInt(Int32TypeInContext(gen.ctx), 0, false),
+	}
+	return ConstInBoundsGEP2(str_data_type, str_global, raw_data(indices), 2)
+}
+
 make_const_value :: proc(gen: ^Generator, expr: ^Expr, scope: ^Scope) -> ValueRef {
 	llvm_type := get_llvm_type(gen, expr.type)
 	#partial switch e in expr.data {
@@ -347,20 +375,7 @@ make_const_value :: proc(gen: ^Generator, expr: ^Expr, scope: ^Scope) -> ValueRe
 	case Expr_Float_Literal:
 		return ConstReal(llvm_type, e.value)
 	case Expr_String_Literal:
-		//NOTE: this a bunch of code for string instantiation
-		//This was partially suggested by an agent, revisit later
-		cstr := strings.clone_to_cstring(e.value)
-		char_type := Int8TypeInContext(gen.ctx)
-		str_data_type := ArrayType(char_type, u32(len(e.value) + 1))
-		str_global := AddGlobal(gen.module, str_data_type, ".str")
-		SetInitializer(str_global, ConstStringInContext(gen.ctx, cstr, u32(len(e.value)), false))
-		SetGlobalConstant(str_global, true)
-		SetLinkage(str_global, .PrivateLinkage)
-		indices := []ValueRef {
-			ConstInt(Int32TypeInContext(gen.ctx), 0, false),
-			ConstInt(Int32TypeInContext(gen.ctx), 0, false),
-		}
-		return ConstInBoundsGEP2(str_data_type, str_global, raw_data(indices), 2)
+		return make_global_string_ptr(gen, e.value)
 	case Expr_Struct_Literal:
 		field_vals: [dynamic]ValueRef
 		for field in expr.type.fields {
@@ -405,6 +420,8 @@ emit_var_decl :: proc(gen: ^Generator, s: ^Ast_Var_Decl, scope: ^Scope, span: Sp
 			} else {
 				BuildStore(gen.builder, emit_value(gen, s.expr, scope, span), ptr)
 			}
+		} else {
+			BuildStore(gen.builder, make_zero_value(gen, sym.type), ptr)
 		}
 	} else {
 		llvm_type := get_llvm_type(gen, sym.type)
@@ -412,7 +429,7 @@ emit_var_decl :: proc(gen: ^Generator, s: ^Ast_Var_Decl, scope: ^Scope, span: Sp
 		if s.expr != nil {
 			SetInitializer(ptr, make_const_value(gen, s.expr, scope))
 		} else {
-			SetInitializer(ptr, ConstNull(llvm_type))
+			SetInitializer(ptr, make_zero_value(gen, sym.type))
 		}
 		gen.values[sym] = ptr
 	}
@@ -755,6 +772,14 @@ setup_codegen :: proc(gen: ^Generator) {
 			}
 		}
 	}
+	gen.empty_str_ptr = make_global_string_ptr(gen, "")
+}
+
+make_zero_value :: proc(gen: ^Generator, type: ^Type) -> ValueRef {
+	if type.kind == .String {
+		return gen.empty_str_ptr
+	}
+	return ConstNull(get_llvm_type(gen, type))
 }
 
 generate :: proc(stmts: []^Ast_Node) {

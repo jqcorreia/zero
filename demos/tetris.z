@@ -12,12 +12,6 @@ struct Grid {
     data: [20][10]u8
 }
 
-
-grid := Grid {
-    w = 20,
-    h = 10,
-}
-
 fn main() {
     W: i32 = 600
     H: i32 = 800
@@ -25,21 +19,24 @@ fn main() {
     background_color := Color{ r = 55, g = 55, b = 55, a = 255 }
     rect_color := Color { r = 200, b = 20, g = 0, a = 255 }
 
-    gridW: i32 = 10
-    gridH: i32 = 20
-    grid: [20][10]u8
-
     cell_size: i32 = 30
-    block := Block { x = gridW / 2, y = 0 }
+
+    grid := Grid {
+        w = 10,
+        h = 20,
+    }
+
+    block := Block { x = grid.w / 2, y = 0 }
+
 
     // Clear the grid
-    for y in 0..gridH {
-        for x in 0..gridW {
-            grid[y][x] = 0
+    for y in 0..grid.h {
+        for x in 0..grid.w {
+            grid.data[y][x] = 0
         }
     }
 
-    grid[block.y][block.x] = 1
+    // grid.data[block.y][block.x] = 1
     elapsed_time: f32 = 0.0
 
     InitWindow(W, H, "Zero Tetris")
@@ -70,24 +67,24 @@ fn main() {
             // Tick
             elapsed_time = 0.0
 
-            next_position := grid[block.y + 1][block.x]
-            if next_position == 1 || block.y == gridW - 1 {
-                block = Block{x = gridW / 2, y = 0} 
-                grid[block.y][block.x] = 1
+            next_position := grid.data[block.y + 1][block.x]
+            if next_position == 1 || block.y == grid.w - 1 {
+                block = Block{x = grid.w / 2, y = 0} 
+                grid.data[block.y][block.x] = 1
             } else {
-                grid[block.y][block.x] = 0
+                grid.data[block.y][block.x] = 0
                 block.y = block.y + 1
-                grid[block.y][block.x] = 1
+                grid.data[block.y][block.x] = 1
             }
         }
 
         // Render
         BeginDrawing()
         ClearBackground(background_color)
-        for y in 0..gridH {
-            for x in 0..gridW {
+        for y in 0..grid.h {
+            for x in 0..grid.w {
                 // printf("%d %d %d\n", x, y, grid[y][x])
-                if grid[y][x] != 0 || (block.x == x && block.y == y) {
+                if grid.data[y][x] != 0 || (block.x == x && block.y == y) {
                     // printf("Draw?!")
                     // DrawRectangle(0,0, 100, 100, Color{ r = 255, g = 0, b = 0, a = 255 })
                     DrawRectangle(x * cell_size, y * cell_size, cell_size, cell_size, rect_color)
