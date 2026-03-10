@@ -80,13 +80,18 @@ fn stamp(grid: &Grid, block: Block) {
 }
 
 fn rotate_block(block: &Block) {
-    limit: i32 = 4
-    for y in 0..limit {
-        for x in 0..limit {
-            cur_value := block.data[y][x]
-            block.data[x][limit - y - 1] = cur_value
-        }
-    }
+  temp: [4][4]u8
+  limit: i32 = 4
+  for y in 0..limit {
+      for x in 0..limit {
+          temp[x][limit - y - 1] = block.data[y][x]
+      }
+  }
+  for y in 0..limit {
+      for x in 0..limit {
+          block.data[y][x] = temp[y][x]
+      }
+  }
 }
 
 fn new_random_block(grid: Grid) -> Block {
