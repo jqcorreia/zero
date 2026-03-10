@@ -106,9 +106,9 @@ Ast_If :: struct {
 
 Ast_For :: struct {
 	body:     ^Ast_Block,
-	iterator: string,  // empty if unconditional loop
+	iterator: string, // empty if unconditional loop
 	symbol:   ^Symbol, // nil if unconditional loop, bound in scope phase
-	range:    ^Expr,   // nil if unconditional loop
+	range:    ^Expr, // nil if unconditional loop
 }
 
 Ast_Break :: struct {}
@@ -128,6 +128,7 @@ Expr :: struct {
 Expr_Data :: union {
 	Expr_Int_Literal,
 	Expr_Float_Literal,
+	Expr_Bool_Literal,
 	Expr_String_Literal,
 	Expr_Struct_Literal,
 	Expr_Array_Literal,
@@ -150,6 +151,10 @@ Expr_Int_Literal :: struct {
 
 Expr_Float_Literal :: struct {
 	value: f64,
+}
+
+Expr_Bool_Literal :: struct {
+	value: bool,
 }
 
 Expr_Unary :: struct {

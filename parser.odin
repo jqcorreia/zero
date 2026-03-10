@@ -395,6 +395,15 @@ expr_index :: proc(left: ^Expr, index: ^Expr) -> ^Expr {
 
 	return ret
 }
+
+expr_bool_literal :: proc(kind: Token_Kind) -> ^Expr {
+	ret := new(Expr)
+	ret.data = Expr_Bool_Literal {
+		value = kind == .True_Keyword ? true : false,
+	}
+
+	return ret
+}
 precedence :: proc(op: Token_Kind) -> int {
 	#partial switch op {
 	case .LParen:
@@ -450,6 +459,8 @@ parse_expression :: proc(
 		case:
 			panic("Number token can't have other types than int or f64")
 		}
+	case .True_Keyword, .False_Keyword:
+		left = expr_bool_literal(t.kind)
 	case .QuotedString:
 		left = expr_string_literal(t.value.(string))
 	case .Identifier:

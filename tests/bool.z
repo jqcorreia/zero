@@ -1,0 +1,21 @@
+import "std/c"
+
+fn test(a: i32) -> bool {
+    if a > 10 {
+        return true
+    } else  {
+        return false
+    }
+    return false
+}
+
+fn main() {
+    if test(5) == true {
+        printf("5 is greater than 10\n")
+    } else {
+        printf("5 is not greater than 10\n")
+    }
+
+    printf("test(5) = %d\n", test(5))
+    printf("test(5) = %d\n", test(100))
+}

@@ -251,6 +251,9 @@ emit_value :: proc(gen: ^Generator, expr: ^Expr, scope: ^Scope, span: Span) -> V
 			type = float64
 		}
 		return ConstReal(type, f64(e.value))
+	case Expr_Bool_Literal:
+		type := get_llvm_type(gen, expr.type)
+		return ConstInt(type, e.value ? 1 : 0, false)
 	case Expr_String_Literal:
 		return BuildGlobalStringPtr(gen.builder, strings.clone_to_cstring(e.value), "")
 	case Expr_Array_Literal:

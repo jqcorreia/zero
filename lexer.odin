@@ -2,7 +2,6 @@
 
 package main
 
-import "core:fmt"
 import "core:math"
 import "core:strings"
 
@@ -41,6 +40,8 @@ Token_Kind :: enum {
 	DoubleAmpersand,
 	ColonEqual,
 	RightArrow,
+	True_Keyword,
+	False_Keyword,
 	Func_Keyword,
 	Return_Keyword,
 	If_Keyword,
@@ -107,6 +108,8 @@ Keyword_Map: map[string]Token_Kind = {
 	"import"   = .Import_Keyword,
 	"external" = .External_Keyword,
 	"in"       = .In_Keyword,
+	"true"     = .True_Keyword,
+	"false"    = .False_Keyword,
 }
 
 lex_current :: proc(lexer: ^Lexer) -> u8 {

@@ -134,6 +134,11 @@ resolve_expr_type :: proc(expr: ^Expr, scope: ^Scope, span: Span) -> ^Type {
 		expr.type = sym.type
 		return sym.type
 
+	case Expr_Bool_Literal:
+		sym, _ := resolve_symbol(scope, "bool")
+		expr.type = sym.type
+		return sym.type
+
 	case Expr_String_Literal:
 		sym, _ := resolve_symbol(scope, "str")
 		expr.type = sym.type

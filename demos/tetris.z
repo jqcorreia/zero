@@ -47,6 +47,7 @@ fn can_move(grid: Grid, nx: i32, ny: i32, block: Block) -> bool {
     in_h_bounds := nx + min_x >= 0 && (nx + max_x) < grid.w 
     in_v_bounds := ny + min_y >= 0 && (ny + max_y) < grid.h 
     free := grid_value(grid, nx, ny) == 0
+    // free = free && !overlap(grid, Block { x = nx, y = ny, data = block.data })
     return in_h_bounds && in_v_bounds && free
 }
 
@@ -54,6 +55,18 @@ fn grid_value(grid: Grid, x: i32, y: i32) -> u8 {
     return grid.data[y][x]
 }
 
+
+fn overlap(grid: Grid, block: Block) -> bool {
+    limit: i32 = 4
+    for y in 0..limit {
+        for x in 0..limit {
+            if block.data[y][x] == 1 && grid_value(grid, block.x + x, block.y + y) != 0 {
+                return true
+            }
+        }
+    }
+    return false
+}
 
 fn stamp(grid: &Grid, block: Block) {
     limit: i32 = 4
@@ -94,12 +107,13 @@ fn new_random_block(grid: Grid) -> Block {
     return Block { x = x, y = y, data = square }
 }
 
+background_color := Color{ r = 55, g = 55, b = 55, a = 255 }
+rect_color := Color { r = 200, b = 20, g = 0, a = 255 }
+border_color := Color { r = 25, g = 150, b = 0, a = 255 }
+
 fn main() {
     W: i32 = 600
     H: i32 = 800
-
-    background_color := Color{ r = 55, g = 55, b = 55, a = 255 }
-    rect_color := Color { r = 200, b = 20, g = 0, a = 255 }
 
     cell_size: i32 = 30
 
@@ -109,17 +123,10 @@ fn main() {
     }
 
     block := new_random_block(grid)
-    // block := Block { x = 0, y = 0, data = [
-    //     [0,0,0,0],
-    //     [0,1,1,0],
-    //     [0,1,1,0],
-    //     [0,0,0,0]]
-    // }
-
-    clear_grid(&grid)
 
     elapsed_time: f32 = 0.0
 
+    clear_grid(&grid)
     InitWindow(W, H, "Zero Tetris")
     for {
         // Logic
@@ -165,7 +172,7 @@ fn main() {
         // Render
         BeginDrawing()
         ClearBackground(background_color)
-        DrawRectangleLines(0 ,0 ,grid.w * cell_size, grid.h * cell_size, Color{r=25,g=150,b=0,a=255})
+        DrawRectangleLines(0, 0, grid.w * cell_size, grid.h * cell_size, border_color)
 
         // Draw grid
         for y in 0..grid.h {
