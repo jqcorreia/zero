@@ -139,6 +139,10 @@ emit_into :: proc(gen: ^Generator, expr: ^Expr, dest: ValueRef, scope: ^Scope, s
 				BuildStore(gen.builder, emit_value(gen, arg, scope, span), field_ptr)
 			}
 		}
+	case:
+		// General fallback: emit value and store into dest
+		val := emit_value(gen, expr, scope, span)
+		BuildStore(gen.builder, val, dest)
 	}
 }
 

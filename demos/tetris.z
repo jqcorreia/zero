@@ -55,6 +55,17 @@ fn grid_value(grid: Grid, x: i32, y: i32) -> u8 {
 }
 
 
+fn stamp(grid: &Grid, block: Block) {
+    limit: i32 = 4
+    for y in 0..limit {
+        for x in 0..limit {
+            if block.data[y][x] == 1 {
+                grid.data[block.y + y][block.x + x] = 1
+            }
+        }
+    }
+}
+
 fn new_random_block(grid: Grid) -> Block {
     x := grid.w / 2
     y := 0
@@ -65,12 +76,14 @@ fn new_random_block(grid: Grid) -> Block {
         [0, 1, 1, 0],
         [0, 0, 0, 0],
     ] 
+
     line: [4][4]u8= [
         [1, 0, 0, 0],
         [1, 0, 0, 0],
         [1, 0, 0, 0],
         [1, 0, 0, 0],
     ] 
+
     lshape: [4][4]u8= [
         [0, 1, 0, 0],
         [0, 1, 0, 0],
@@ -95,13 +108,13 @@ fn main() {
         h = 20,
     }
 
-    // block := new_random_block(grid)
-    block := Block {  x = 0, y = 0, data = [
-        [0,0,0,0],
-        [0,1,1,0],
-        [0,1,1,0],
-        [0,0,0,0]]
-    }
+    block := new_random_block(grid)
+    // block := Block { x = 0, y = 0, data = [
+    //     [0,0,0,0],
+    //     [0,1,1,0],
+    //     [0,1,1,0],
+    //     [0,0,0,0]]
+    // }
 
     clear_grid(&grid)
 
@@ -132,9 +145,9 @@ fn main() {
                     block.y = block.y + 1
                 }
             }
-            if keypressed != 0 {
-                printf("Keypressed: %d\n", keypressed)
-            }
+            // if keypressed != 0 {
+            //     printf("Keypressed: %d\n", keypressed)
+            // }
         }
 
         if elapsed_time > 0.5 {
@@ -142,14 +155,12 @@ fn main() {
             elapsed_time = 0.0
 
             if !can_move(grid, block.x, block.y + 1, block) {
-                grid.data[block.y][block.x] = 1
-                block = Block{x = grid.w / 2, y = 0} 
+                stamp(&grid, block)
+                block = new_random_block(grid)
             } else {
                 block.y = block.y + 1
             }
         }
-
-        // printf("Block position: (%d, %d)\n", block.x, block.y)
 
         // Render
         BeginDrawing()
