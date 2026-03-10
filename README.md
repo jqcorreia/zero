@@ -22,7 +22,7 @@ Already done:
 - Global scope import (a la #include)
 - Pointers (address-of, derefence and dereference-assign)
 - Transparent array dereference
-- For-in loops with '..' and '..=' operator. Reversable.
+- For-in loops with '..' and '..=' operator. Reversible.
 
 Right now this is an LLVM project and it will be for a while. Trying not to tangle the code to much to that.
 Potentially this README can look a lot different in a couple of months if this becomes a serious project.
