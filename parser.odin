@@ -102,7 +102,6 @@ parse_statement :: proc(p: ^Parser) -> ^Ast_Node {
 		data^ = parse_import(p)^
 	case t.kind == .External_Keyword:
 		advance(p)
-
 		lib_name := expect(p, .QuotedString)
 		data^ = parse_external_block(p, lib_name.value.(string))^
 	case t.kind == .Identifier:
@@ -338,6 +337,13 @@ expr_string_literal :: proc(value: string) -> ^Expr {
 	return ret
 }
 
+expr_null_literal :: proc() -> ^Expr {
+	ret := new(Expr)
+	ret.data = Expr_Null{}
+
+	return ret
+}
+
 expr_unary :: proc(op: Token_Kind, e: ^Expr) -> ^Expr {
 	expr := new(Expr)
 	expr.data = Expr_Unary {
@@ -461,6 +467,8 @@ parse_expression :: proc(
 		}
 	case .True_Keyword, .False_Keyword:
 		left = expr_bool_literal(t.kind)
+	case .Nil_Keyword:
+		left = expr_null_literal()
 	case .QuotedString:
 		left = expr_string_literal(t.value.(string))
 	case .Identifier:

@@ -26,6 +26,7 @@ Compiled_Type :: union {
 }
 
 Type_Kind :: enum {
+	Nil,
 	Undefined,
 	Error,
 	Void,
@@ -120,6 +121,14 @@ type_coercion :: proc(from: ^Type, to: ^Type, scope: ^Scope) -> ^Type {
 		return sym.type
 	}
 
+	if from.kind == .Nil && to.kind == .Pointer {
+		return to
+	}
+
+	if to.kind == .Nil && from.kind == .Pointer {
+		return from
+	}
+
 	if from.kind == to.kind {
 		return from
 	}
@@ -138,13 +147,13 @@ set_expr_type :: proc(expr: ^Expr, type: ^Type, scope: ^Scope) {
 			set_expr_type(e.expr, coerced, scope)
 		}
 	case Expr_Array_Literal:
-		if type.elem_type == nil { return }
+		if type.elem_type == nil {return}
 		for elem in e.elements {
 			if elem.type.kind == .Array {
 				set_expr_type(elem, type.elem_type, scope)
 			} else {
 				coerced := type_coercion(elem.type, type.elem_type, scope)
-				if coerced != nil { elem.type = coerced }
+				if coerced != nil {elem.type = coerced}
 			}
 		}
 	}

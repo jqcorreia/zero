@@ -124,6 +124,13 @@ resolve_types :: proc(node: ^Ast_Node) {
 
 resolve_expr_type :: proc(expr: ^Expr, scope: ^Scope, span: Span) -> ^Type {
 	switch &e in expr.data {
+	case Expr_Null:
+		null := new(Type)
+		null.kind = .Nil
+		expr.type = null
+
+		return expr.type
+
 	case Expr_Int_Literal:
 		sym, _ := resolve_symbol(scope, "untyped_int")
 		expr.type = sym.type

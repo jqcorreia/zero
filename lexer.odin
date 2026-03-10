@@ -54,6 +54,7 @@ Token_Kind :: enum {
 	Import_Keyword,
 	External_Keyword,
 	In_Keyword,
+	Nil_Keyword,
 	EOF,
 }
 
@@ -111,6 +112,7 @@ Keyword_Map: map[string]Token_Kind = {
 	"in"       = .In_Keyword,
 	"true"     = .True_Keyword,
 	"false"    = .False_Keyword,
+	"nil"      = .Nil_Keyword,
 }
 
 lex_current :: proc(lexer: ^Lexer) -> u8 {

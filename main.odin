@@ -58,14 +58,15 @@ main :: proc() {
 		compiler_flags,
 		strings.to_string(linker_libs),
 	)
-	fmt.println("Using final build command:", build_command)
 	// Link and run
 	when ODIN_OS == .Linux {
 		if opt.command == "build" {
+			fmt.println("Using final build command:", build_command)
 			posix.system(strings.clone_to_cstring(build_command))
 			os.exit(0)
 		}
 		if opt.command == "run" {
+			fmt.println("Using final build command:", build_command)
 			posix.system(strings.clone_to_cstring(build_command))
 			posix.system("./out")
 			os.exit(0)

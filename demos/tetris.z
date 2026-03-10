@@ -193,6 +193,8 @@ fn main() {
 
     elapsed_time: f32 = 0.0
 
+    score: i32 = 0
+
     clear_grid(&grid)
     InitWindow(W, H, "Zero Tetris")
     for {
@@ -266,6 +268,9 @@ fn main() {
             }
         }
 
+
+        // Draw score
+        DrawText(cstr("Score: %d", score), grid.w * cell_size +
         EndDrawing()
     }
 }

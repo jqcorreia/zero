@@ -126,6 +126,7 @@ Expr :: struct {
 }
 
 Expr_Data :: union {
+	Expr_Null,
 	Expr_Int_Literal,
 	Expr_Float_Literal,
 	Expr_Bool_Literal,
@@ -140,6 +141,8 @@ Expr_Data :: union {
 	Expr_Index,
 	Expr_Range,
 }
+
+Expr_Null :: struct {}
 
 Expr_String_Literal :: struct {
 	value: string,

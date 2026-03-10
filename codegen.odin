@@ -238,6 +238,8 @@ emit_value :: proc(gen: ^Generator, expr: ^Expr, scope: ^Scope, span: Span) -> V
 	int64 := Int64TypeInContext(gen.ctx)
 	float64 := DoubleTypeInContext(gen.ctx)
 	#partial switch &e in expr.data {
+	case Expr_Null:
+		return ConstPointerNull(PointerTypeInContext(gen.ctx, 0))
 	case Expr_Int_Literal:
 		type := get_llvm_type(gen, expr.type)
 		if type == nil {
