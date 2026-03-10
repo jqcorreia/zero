@@ -107,7 +107,7 @@ fn remove_full_rows(grid: &Grid) {
         }
         if full {
             // Move all rows above down
-            for yy in 1..=y {
+            for yy in y..=1 {
                 for x in 0..grid.w {
                     grid.data[yy][x] = grid.data[yy - 1][x]
                 }
