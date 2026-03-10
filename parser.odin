@@ -412,7 +412,7 @@ precedence :: proc(op: Token_Kind) -> int {
 		return 200
 	case .Period:
 		return 200
-	case .Star, .Slash:
+	case .Star, .Slash, .Percent:
 		return 20
 	case .Plus, .Minus:
 		return 10

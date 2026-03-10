@@ -320,6 +320,15 @@ emit_value :: proc(gen: ^Generator, expr: ^Expr, scope: ^Scope, span: Span) -> V
 				return BuildFDiv(gen.builder, left, right, "fdiv")
 			}
 			return BuildSDiv(gen.builder, left, right, "div")
+		case .Percent:
+			if expr.type.numeric_float {
+				return BuildFRem(gen.builder, left, right, "fmod")
+			}
+			if expr.type.signed {
+				return BuildSRem(gen.builder, left, right, "imod")
+			} else {
+				return BuildURem(gen.builder, left, right, "umod")
+			}
 		case .DoubleEqual:
 			if e.left.type.numeric_float {
 				return BuildFCmp(gen.builder, .RealOEQ, left, right, "feq")

@@ -26,6 +26,7 @@ Token_Kind :: enum {
 	Pipe,
 	DoublePipe,
 	Bang,
+	Percent,
 	Greater,
 	Lesser,
 	GreaterOrEqual,
@@ -293,6 +294,9 @@ lex :: proc(input: string) -> []Token {
 				append(&tokens, Token{kind = .Bang, lexeme = "!", span = one_char_span(lexer)})
 				lexer.pos += 1
 			}
+		case c == '%':
+			append(&tokens, Token{kind = .Percent, lexeme = "%", span = one_char_span(lexer)})
+			lexer.pos += 1
 		case c == '(':
 			append(&tokens, Token{kind = .LParen, lexeme = "(", span = one_char_span(lexer)})
 			lexer.pos += 1

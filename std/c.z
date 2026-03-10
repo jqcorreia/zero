@@ -4,6 +4,7 @@ external "c" {
     fn fputc(char: i32, file: &FILE) -> i32
     fn fputs(string: str, file: &FILE) -> u64
     fn fclose(file: &FILE) -> u64
+    fn random() -> i64
 }
 
 struct FILE {}
