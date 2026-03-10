@@ -10,6 +10,6 @@ fn main() {
     }
 
     for b in 10..=0 {
-        printf("a: %d\n", a)
+        printf("b: %d\n", b)
     }
 }
