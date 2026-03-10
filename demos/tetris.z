@@ -237,7 +237,8 @@ fn main() {
             if !can_move(grid, block.x, block.y + 1, block) {
                 stamp(&grid, block)
                 remove_full_rows(&grid)
-                block = new_random_block(grid)
+                block = next_block
+                next_block = new_random_block(grid)
             } else {
                 block.y = block.y + 1
             }
@@ -257,6 +258,7 @@ fn main() {
             }
         }
 
+        DrawRectangleLines(W - 120, 0, 4 * cell_size, 4 * cell_size, border_color)
         // Draw active block
         limit: i32 = 4
         for y in 0..limit {
@@ -274,7 +276,7 @@ fn main() {
         for y in 0..xlimit {
             for x in 0..xlimit {
                 if next_block.data[y][x] == 1 {
-                    DrawRectangle(x * cell_size + 500, y * cell_size + 100, cell_size -2 , cell_size -2, rect_color)
+                    DrawRectangle(x * cell_size + (W - 120), y * cell_size + 20, cell_size -2 , cell_size -2, rect_color)
                 }
             }
         }
