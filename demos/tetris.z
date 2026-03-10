@@ -128,9 +128,6 @@ fn main() {
 
     clear_grid(&grid)
     InitWindow(W, H, "Zero Tetris")
-    printf("random: %d\n", random() % 10)
-    printf("random: %d\n", random() % 10)
-    printf("random: %d\n", 1000 % 10)
     for {
         // Logic
         elapsed_time = elapsed_time + GetFrameTime()
