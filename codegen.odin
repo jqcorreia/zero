@@ -124,7 +124,7 @@ emit_into :: proc(gen: ^Generator, expr: ^Expr, dest: ValueRef, scope: ^Scope, s
 			}
 		}
 	case Expr_Struct_Literal:
-		type := resolve_type_expr(&e.type_expr, scope)
+		type := resolve_type_expr(&e.type_expr, scope, span)
 		struct_llvm_type := get_llvm_type(gen, type)
 
 		for field in type.fields {
@@ -155,7 +155,7 @@ emit_address :: proc(gen: ^Generator, expr: ^Expr, scope: ^Scope, span: Span) ->
 		return ptr
 
 	case Expr_Struct_Literal:
-		type := resolve_type_expr(&e.type_expr, scope)
+		type := resolve_type_expr(&e.type_expr, scope, span)
 		struct_llvm_type := get_llvm_type(gen, type)
 		ptr := build_entry_alloca(gen, struct_llvm_type, "")
 
@@ -264,7 +264,7 @@ emit_value :: proc(gen: ^Generator, expr: ^Expr, scope: ^Scope, span: Span) -> V
 
 	case Expr_Struct_Literal:
 		addr := emit_address(gen, expr, scope, span)
-		type := resolve_type_expr(&e.type_expr, scope)
+		type := resolve_type_expr(&e.type_expr, scope, span)
 		return BuildLoad2(gen.builder, get_llvm_type(gen, type), addr, "")
 	case Expr_Member:
 		ptr := emit_address(gen, expr, scope, span)
@@ -811,7 +811,7 @@ setup_codegen :: proc(gen: ^Generator) {
 				gen.primitive_types[sym.type] = FloatTypeInContext(gen.ctx)
 			case .Float64:
 				gen.primitive_types[sym.type] = DoubleTypeInContext(gen.ctx)
-			case .String:
+			case .CString:
 				gen.primitive_types[sym.type] = PointerTypeInContext(gen.ctx, 0)
 			}
 		}
@@ -820,7 +820,7 @@ setup_codegen :: proc(gen: ^Generator) {
 }
 
 make_zero_value :: proc(gen: ^Generator, type: ^Type) -> ValueRef {
-	if type.kind == .String {
+	if type.kind == .CString {
 		return gen.empty_str_ptr
 	}
 	return ConstNull(get_llvm_type(gen, type))

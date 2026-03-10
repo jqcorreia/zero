@@ -7,7 +7,7 @@
 //   float           -> f32
 //   double          -> f64
 //   bool            -> bool
-//   char* / const char* -> str
+//   char* / const char* -> cstr
 //   void*           -> str  (opaque pointer)
 //   unsigned char   -> u8
 //   unsigned short  -> u16
@@ -78,7 +78,7 @@ struct Rectangle {
 }
 
 struct Image {
-    data: str
+    data: cstr
     width: i32
     height: i32
     mipmaps: i32
@@ -218,7 +218,7 @@ struct ModelAnimation {
     name: [32]u8
     boneCount: i32
     keyframeCount: i32
-    keyframePoses: str
+    keyframePoses: cstr
 }
 
 struct Ray {
@@ -243,12 +243,12 @@ struct Wave {
     sampleRate: u32
     sampleSize: u32
     channels: u32
-    data: str
+    data: cstr
 }
 
 struct AudioStream {
-    buffer: str
-    processor: str
+    buffer: cstr
+    processor: cstr
     sampleRate: u32
     sampleSize: u32
     channels: u32
@@ -264,7 +264,7 @@ struct Music {
     frameCount: u32
     looping: bool
     ctxType: i32
-    ctxData: str
+    ctxData: cstr
 }
 
 struct VrDeviceInfo {
@@ -320,7 +320,7 @@ struct AutomationEventList {
 
 external "raylib" {
     // === WINDOW & DRAWING ===
-    fn InitWindow(width: i32, height: i32, title: str)
+    fn InitWindow(width: i32, height: i32, title: cstr)
     fn CloseWindow()
     fn WindowShouldClose() -> bool
     fn IsWindowReady() -> bool
@@ -340,7 +340,7 @@ external "raylib" {
     fn RestoreWindow()
     fn SetWindowIcon(image: Image)
     fn SetWindowIcons(images: &Image, count: i32)
-    fn SetWindowTitle(title: str)
+    fn SetWindowTitle(title: cstr)
     fn SetWindowPosition(x: i32, y: i32)
     fn SetWindowMonitor(monitor: i32)
     fn SetWindowMinSize(width: i32, height: i32)
@@ -348,7 +348,7 @@ external "raylib" {
     fn SetWindowSize(width: i32, height: i32)
     fn SetWindowOpacity(opacity: f32)
     fn SetWindowFocused()
-    fn GetWindowHandle() -> str
+    fn GetWindowHandle() -> cstr
     fn GetScreenWidth() -> i32
     fn GetScreenHeight() -> i32
     fn GetRenderWidth() -> i32
@@ -363,9 +363,9 @@ external "raylib" {
     fn GetMonitorRefreshRate(monitor: i32) -> i32
     fn GetWindowPosition() -> Vector2
     fn GetWindowScaleDPI() -> Vector2
-    fn GetMonitorName(monitor: i32) -> str
-    fn SetClipboardText(text: str)
-    fn GetClipboardText() -> str
+    fn GetMonitorName(monitor: i32) -> cstr
+    fn SetClipboardText(text: cstr)
+    fn GetClipboardText() -> cstr
     fn GetClipboardImage() -> Image
     fn EnableEventWaiting()
     fn DisableEventWaiting()
@@ -398,13 +398,13 @@ external "raylib" {
     fn LoadVrStereoConfig(device: VrDeviceInfo) -> VrStereoConfig
     fn UnloadVrStereoConfig(config: VrStereoConfig)
 
-    fn LoadShader(vsFileName: str, fsFileName: str) -> Shader
-    fn LoadShaderFromMemory(vsCode: str, fsCode: str) -> Shader
+    fn LoadShader(vsFileName: cstr, fsFileName: cstr) -> Shader
+    fn LoadShaderFromMemory(vsCode: cstr, fsCode: cstr) -> Shader
     fn IsShaderValid(shader: Shader) -> bool
-    fn GetShaderLocation(shader: Shader, uniformName: str) -> i32
-    fn GetShaderLocationAttrib(shader: Shader, attribName: str) -> i32
-    fn SetShaderValue(shader: Shader, locIndex: i32, value: str, uniformType: i32)
-    fn SetShaderValueV(shader: Shader, locIndex: i32, value: str, uniformType: i32, count: i32)
+    fn GetShaderLocation(shader: Shader, uniformName: cstr) -> i32
+    fn GetShaderLocationAttrib(shader: Shader, attribName: cstr) -> i32
+    fn SetShaderValue(shader: Shader, locIndex: i32, value: cstr, uniformType: i32)
+    fn SetShaderValueV(shader: Shader, locIndex: i32, value: cstr, uniformType: i32, count: i32)
     fn SetShaderValueMatrix(shader: Shader, locIndex: i32, mat: Matrix)
     fn SetShaderValueTexture(shader: Shader, locIndex: i32, texture: Texture)
     fn UnloadShader(shader: Shader)
@@ -430,59 +430,59 @@ external "raylib" {
     fn GetRandomValue(min: i32, max: i32) -> i32
     fn LoadRandomSequence(count: u32, min: i32, max: i32) -> &i32
     fn UnloadRandomSequence(sequence: &i32)
-    fn TakeScreenshot(fileName: str)
+    fn TakeScreenshot(fileName: cstr)
     fn SetConfigFlags(flags: u32)
-    fn OpenURL(url: str)
+    fn OpenURL(url: cstr)
     fn SetTraceLogLevel(logLevel: i32)
-    fn TraceLog(logLevel: i32, text: str, ...)
+    fn TraceLog(logLevel: i32, text: cstr, ...)
     // fn SetTraceLogCallback(callback: TraceLogCallback)  // function pointer, not supported
-    fn MemAlloc(size: u32) -> str
-    fn MemRealloc(ptr: str, size: u32) -> str
-    fn MemFree(ptr: str)
+    fn MemAlloc(size: u32) -> cstr
+    fn MemRealloc(ptr: cstr, size: u32) -> cstr
+    fn MemFree(ptr: cstr)
 
-    fn LoadFileData(fileName: str, dataSize: &i32) -> &u8
+    fn LoadFileData(fileName: cstr, dataSize: &i32) -> &u8
     fn UnloadFileData(data: &u8)
-    fn SaveFileData(fileName: str, data: str, dataSize: i32) -> bool
-    fn ExportDataAsCode(data: &u8, dataSize: i32, fileName: str) -> bool
-    fn LoadFileText(fileName: str) -> str
-    fn UnloadFileText(text: str)
-    fn SaveFileText(fileName: str, text: str) -> bool
-    fn FileExists(fileName: str) -> bool
-    fn DirectoryExists(dirPath: str) -> bool
-    fn IsFileExtension(fileName: str, ext: str) -> bool
-    fn GetFileLength(fileName: str) -> i32
-    fn GetFileModTime(fileName: str) -> i64
-    fn GetFileExtension(fileName: str) -> str
-    fn GetFileName(filePath: str) -> str
-    fn GetFileNameWithoutExt(filePath: str) -> str
-    fn GetDirectoryPath(filePath: str) -> str
-    fn GetPrevDirectoryPath(dirPath: str) -> str
-    fn GetWorkingDirectory() -> str
-    fn GetApplicationDirectory() -> str
-    fn MakeDirectory(dirPath: str) -> i32
-    fn ChangeDirectory(dirPath: str) -> bool
-    fn IsPathFile(path: str) -> bool
-    fn IsFileNameValid(fileName: str) -> bool
-    fn LoadDirectoryFiles(dirPath: str) -> FilePathList
-    fn LoadDirectoryFilesEx(basePath: str, filter: str, scanSubdirs: bool) -> FilePathList
+    fn SaveFileData(fileName: cstr, data: cstr, dataSize: i32) -> bool
+    fn ExportDataAsCode(data: &u8, dataSize: i32, fileName: cstr) -> bool
+    fn LoadFileText(fileName: cstr) -> cstr
+    fn UnloadFileText(text: cstr)
+    fn SaveFileText(fileName: cstr, text: cstr) -> bool
+    fn FileExists(fileName: cstr) -> bool
+    fn DirectoryExists(dirPath: cstr) -> bool
+    fn IsFileExtension(fileName: cstr, ext: cstr) -> bool
+    fn GetFileLength(fileName: cstr) -> i32
+    fn GetFileModTime(fileName: cstr) -> i64
+    fn GetFileExtension(fileName: cstr) -> cstr
+    fn GetFileName(filePath: cstr) -> cstr
+    fn GetFileNameWithoutExt(filePath: cstr) -> cstr
+    fn GetDirectoryPath(filePath: cstr) -> cstr
+    fn GetPrevDirectoryPath(dirPath: cstr) -> cstr
+    fn GetWorkingDirectory() -> cstr
+    fn GetApplicationDirectory() -> cstr
+    fn MakeDirectory(dirPath: cstr) -> i32
+    fn ChangeDirectory(dirPath: cstr) -> bool
+    fn IsPathFile(path: cstr) -> bool
+    fn IsFileNameValid(fileName: cstr) -> bool
+    fn LoadDirectoryFiles(dirPath: cstr) -> FilePathList
+    fn LoadDirectoryFilesEx(basePath: cstr, filter: cstr, scanSubdirs: bool) -> FilePathList
     fn UnloadDirectoryFiles(files: FilePathList)
     fn IsFileDropped() -> bool
     fn LoadDroppedFiles() -> FilePathList
     fn UnloadDroppedFiles(files: FilePathList)
-    fn GetDirectoryFileCount(dirPath: str) -> u32
-    fn GetDirectoryFileCountEx(basePath: str, filter: str, scanSubdirs: bool) -> u32
+    fn GetDirectoryFileCount(dirPath: cstr) -> u32
+    fn GetDirectoryFileCountEx(basePath: cstr, filter: cstr, scanSubdirs: bool) -> u32
     fn CompressData(data: &u8, dataSize: i32, compDataSize: &i32) -> &u8
     fn DecompressData(compData: &u8, compDataSize: i32, dataSize: &i32) -> &u8
-    fn EncodeDataBase64(data: &u8, dataSize: i32, outputSize: &i32) -> str
-    fn DecodeDataBase64(text: str, outputSize: &i32) -> &u8
+    fn EncodeDataBase64(data: &u8, dataSize: i32, outputSize: &i32) -> cstr
+    fn DecodeDataBase64(text: cstr, outputSize: &i32) -> &u8
     fn ComputeCRC32(data: &u8, dataSize: i32) -> u32
     fn ComputeMD5(data: &u8, dataSize: i32) -> &u32
     fn ComputeSHA1(data: &u8, dataSize: i32) -> &u32
     fn ComputeSHA256(data: &u8, dataSize: i32) -> &u32
 
-    fn LoadAutomationEventList(fileName: str) -> AutomationEventList
+    fn LoadAutomationEventList(fileName: cstr) -> AutomationEventList
     fn UnloadAutomationEventList(list: AutomationEventList)
-    fn ExportAutomationEventList(list: AutomationEventList, fileName: str) -> bool
+    fn ExportAutomationEventList(list: AutomationEventList, fileName: cstr) -> bool
     fn SetAutomationEventList(list: &AutomationEventList)
     fn SetAutomationEventBaseFrame(frame: i32)
     fn StartAutomationEventRecording()
@@ -496,11 +496,11 @@ external "raylib" {
     fn IsKeyUp(key: i32) -> bool
     fn GetKeyPressed() -> i32
     fn GetCharPressed() -> i32
-    fn GetKeyName(key: i32) -> str
+    fn GetKeyName(key: i32) -> cstr
     fn SetExitKey(key: i32)
 
     fn IsGamepadAvailable(gamepad: i32) -> bool
-    fn GetGamepadName(gamepad: i32) -> str
+    fn GetGamepadName(gamepad: i32) -> cstr
     fn IsGamepadButtonPressed(gamepad: i32, button: i32) -> bool
     fn IsGamepadButtonDown(gamepad: i32, button: i32) -> bool
     fn IsGamepadButtonReleased(gamepad: i32, button: i32) -> bool
@@ -508,7 +508,7 @@ external "raylib" {
     fn GetGamepadButtonPressed() -> i32
     fn GetGamepadAxisCount(gamepad: i32) -> i32
     fn GetGamepadAxisMovement(gamepad: i32, axis: i32) -> f32
-    fn SetGamepadMappings(mappings: str) -> i32
+    fn SetGamepadMappings(mappings: cstr) -> i32
     fn SetGamepadVibration(gamepad: i32, leftMotor: f32, rightMotor: f32, duration: f32)
 
     fn IsMouseButtonPressed(button: i32) -> bool
@@ -613,19 +613,19 @@ external "raylib" {
     fn GetCollisionRec(rec1: Rectangle, rec2: Rectangle) -> Rectangle
 
     // === TEXTURES ===
-    fn LoadImage(fileName: str) -> Image
-    fn LoadImageRaw(fileName: str, width: i32, height: i32, format: i32, headerSize: i32) -> Image
-    fn LoadImageSvg(fileNameOrString: str, width: i32, height: i32) -> Image
-    fn LoadImageAnim(fileName: str, frames: &i32) -> Image
-    fn LoadImageAnimFromMemory(fileType: str, fileData: &u8, dataSize: i32, frames: &i32) -> Image
-    fn LoadImageFromMemory(fileType: str, fileData: &u8, dataSize: i32) -> Image
+    fn LoadImage(fileName: cstr) -> Image
+    fn LoadImageRaw(fileName: cstr, width: i32, height: i32, format: i32, headerSize: i32) -> Image
+    fn LoadImageSvg(fileNameOrString: cstr, width: i32, height: i32) -> Image
+    fn LoadImageAnim(fileName: cstr, frames: &i32) -> Image
+    fn LoadImageAnimFromMemory(fileType: cstr, fileData: &u8, dataSize: i32, frames: &i32) -> Image
+    fn LoadImageFromMemory(fileType: cstr, fileData: &u8, dataSize: i32) -> Image
     fn LoadImageFromTexture(texture: Texture) -> Image
     fn LoadImageFromScreen() -> Image
     fn IsImageValid(image: Image) -> bool
     fn UnloadImage(image: Image)
-    fn ExportImage(image: Image, fileName: str) -> bool
-    fn ExportImageToMemory(image: Image, fileType: str, fileSize: &i32) -> &u8
-    fn ExportImageAsCode(image: Image, fileName: str) -> bool
+    fn ExportImage(image: Image, fileName: cstr) -> bool
+    fn ExportImageToMemory(image: Image, fileType: cstr, fileSize: &i32) -> &u8
+    fn ExportImageAsCode(image: Image, fileName: cstr) -> bool
     fn GenImageColor(width: i32, height: i32, color: Color) -> Image
     fn GenImageGradientLinear(width: i32, height: i32, direction: i32, start: Color, end: Color) -> Image
     fn GenImageGradientRadial(width: i32, height: i32, density: f32, inner: Color, outer: Color) -> Image
@@ -634,12 +634,12 @@ external "raylib" {
     fn GenImageWhiteNoise(width: i32, height: i32, factor: f32) -> Image
     fn GenImagePerlinNoise(width: i32, height: i32, offsetX: i32, offsetY: i32, scale: f32) -> Image
     fn GenImageCellular(width: i32, height: i32, tileSize: i32) -> Image
-    fn GenImageText(width: i32, height: i32, text: str) -> Image
+    fn GenImageText(width: i32, height: i32, text: cstr) -> Image
     fn ImageCopy(image: Image) -> Image
     fn ImageFromImage(image: Image, rec: Rectangle) -> Image
     fn ImageFromChannel(image: Image, selectedChannel: i32) -> Image
-    fn ImageText(text: str, fontSize: i32, color: Color) -> Image
-    fn ImageTextEx(font: Font, text: str, fontSize: f32, spacing: f32, tint: Color) -> Image
+    fn ImageText(text: cstr, fontSize: i32, color: Color) -> Image
+    fn ImageTextEx(font: Font, text: cstr, fontSize: f32, spacing: f32, tint: Color) -> Image
     fn ImageFormat(image: &Image, newFormat: i32)
     fn ImageToPOT(image: &Image, fill: Color)
     fn ImageCrop(image: &Image, crop: Rectangle)
@@ -691,9 +691,9 @@ external "raylib" {
     fn ImageDrawTriangleFan(dst: &Image, points: &Vector2, pointCount: i32, color: Color)
     fn ImageDrawTriangleStrip(dst: &Image, points: &Vector2, pointCount: i32, color: Color)
     fn ImageDraw(dst: &Image, src: Image, srcRec: Rectangle, dstRec: Rectangle, tint: Color)
-    fn ImageDrawText(dst: &Image, text: str, posX: i32, posY: i32, fontSize: i32, color: Color)
-    fn ImageDrawTextEx(dst: &Image, font: Font, text: str, position: Vector2, fontSize: f32, spacing: f32, tint: Color)
-    fn LoadTexture(fileName: str) -> Texture
+    fn ImageDrawText(dst: &Image, text: cstr, posX: i32, posY: i32, fontSize: i32, color: Color)
+    fn ImageDrawTextEx(dst: &Image, font: Font, text: cstr, position: Vector2, fontSize: f32, spacing: f32, tint: Color)
+    fn LoadTexture(fileName: cstr) -> Texture
     fn LoadTextureFromImage(image: Image) -> Texture
     fn LoadTextureCubemap(image: Image, layout: i32) -> Texture
     fn LoadRenderTexture(width: i32, height: i32) -> RenderTexture
@@ -701,8 +701,8 @@ external "raylib" {
     fn UnloadTexture(texture: Texture)
     fn IsRenderTextureValid(target: RenderTexture) -> bool
     fn UnloadRenderTexture(target: RenderTexture)
-    fn UpdateTexture(texture: Texture, pixels: str)
-    fn UpdateTextureRec(texture: Texture, rec: Rectangle, pixels: str)
+    fn UpdateTexture(texture: Texture, pixels: cstr)
+    fn UpdateTextureRec(texture: Texture, rec: Rectangle, pixels: cstr)
     fn GenTextureMipmaps(texture: &Texture)
     fn SetTextureFilter(texture: Texture, filter: i32)
     fn SetTextureWrap(texture: Texture, wrap: i32)
@@ -726,67 +726,67 @@ external "raylib" {
     fn ColorAlphaBlend(dst: Color, src: Color, tint: Color) -> Color
     fn ColorLerp(color1: Color, color2: Color, factor: f32) -> Color
     fn GetColor(hexValue: u32) -> Color
-    fn GetPixelColor(srcPtr: str, format: i32) -> Color
-    fn SetPixelColor(dstPtr: str, color: Color, format: i32)
+    fn GetPixelColor(srcPtr: cstr, format: i32) -> Color
+    fn SetPixelColor(dstPtr: cstr, color: Color, format: i32)
     fn GetPixelDataSize(width: i32, height: i32, format: i32) -> i32
 
     // === TEXT ===
     fn GetFontDefault() -> Font
-    fn LoadFont(fileName: str) -> Font
-    fn LoadFontEx(fileName: str, fontSize: i32, codepoints: &i32, codepointCount: i32) -> Font
+    fn LoadFont(fileName: cstr) -> Font
+    fn LoadFontEx(fileName: cstr, fontSize: i32, codepoints: &i32, codepointCount: i32) -> Font
     fn LoadFontFromImage(image: Image, key: Color, firstChar: i32) -> Font
-    fn LoadFontFromMemory(fileType: str, fileData: &u8, dataSize: i32, fontSize: i32, codepoints: &i32, codepointCount: i32) -> Font
+    fn LoadFontFromMemory(fileType: cstr, fileData: &u8, dataSize: i32, fontSize: i32, codepoints: &i32, codepointCount: i32) -> Font
     fn IsFontValid(font: Font) -> bool
     fn LoadFontData(fileData: &u8, dataSize: i32, fontSize: i32, codepoints: &i32, codepointCount: i32, type: i32, glyphCount: &i32) -> &GlyphInfo
-    fn GenImageFontAtlas(glyphs: &GlyphInfo, glyphRecs: str, glyphCount: i32, fontSize: i32, padding: i32, packMethod: i32) -> Image
+    fn GenImageFontAtlas(glyphs: &GlyphInfo, glyphRecs: cstr, glyphCount: i32, fontSize: i32, padding: i32, packMethod: i32) -> Image
     fn UnloadFontData(glyphs: &GlyphInfo, glyphCount: i32)
     fn UnloadFont(font: Font)
-    fn ExportFontAsCode(font: Font, fileName: str) -> bool
+    fn ExportFontAsCode(font: Font, fileName: cstr) -> bool
     fn DrawFPS(posX: i32, posY: i32)
-    fn DrawText(text: str, posX: i32, posY: i32, fontSize: i32, color: Color)
-    fn DrawTextEx(font: Font, text: str, position: Vector2, fontSize: f32, spacing: f32, tint: Color)
-    fn DrawTextPro(font: Font, text: str, position: Vector2, origin: Vector2, rotation: f32, fontSize: f32, spacing: f32, tint: Color)
+    fn DrawText(text: cstr, posX: i32, posY: i32, fontSize: i32, color: Color)
+    fn DrawTextEx(font: Font, text: cstr, position: Vector2, fontSize: f32, spacing: f32, tint: Color)
+    fn DrawTextPro(font: Font, text: cstr, position: Vector2, origin: Vector2, rotation: f32, fontSize: f32, spacing: f32, tint: Color)
     fn DrawTextCodepoint(font: Font, codepoint: i32, position: Vector2, fontSize: f32, tint: Color)
     fn DrawTextCodepoints(font: Font, codepoints: &i32, codepointCount: i32, position: Vector2, fontSize: f32, spacing: f32, tint: Color)
     fn SetTextLineSpacing(spacing: i32)
-    fn MeasureText(text: str, fontSize: i32) -> i32
-    fn MeasureTextEx(font: Font, text: str, fontSize: f32, spacing: f32) -> Vector2
+    fn MeasureText(text: cstr, fontSize: i32) -> i32
+    fn MeasureTextEx(font: Font, text: cstr, fontSize: f32, spacing: f32) -> Vector2
     fn MeasureTextCodepoints(font: Font, codepoints: &i32, length: i32, fontSize: f32, spacing: f32) -> Vector2
     fn GetGlyphIndex(font: Font, codepoint: i32) -> i32
     fn GetGlyphInfo(font: Font, codepoint: i32) -> GlyphInfo
     fn GetGlyphAtlasRec(font: Font, codepoint: i32) -> Rectangle
-    fn LoadUTF8(codepoints: &i32, length: i32) -> str
-    fn UnloadUTF8(text: str)
-    fn LoadCodepoints(text: str, count: &i32) -> &i32
+    fn LoadUTF8(codepoints: &i32, length: i32) -> cstr
+    fn UnloadUTF8(text: cstr)
+    fn LoadCodepoints(text: cstr, count: &i32) -> &i32
     fn UnloadCodepoints(codepoints: &i32)
-    fn GetCodepointCount(text: str) -> i32
-    fn GetCodepoint(text: str, codepointSize: &i32) -> i32
-    fn GetCodepointNext(text: str, codepointSize: &i32) -> i32
-    fn GetCodepointPrevious(text: str, codepointSize: &i32) -> i32
-    fn CodepointToUTF8(codepoint: i32, utf8Size: &i32) -> str
-    // fn LoadTextLines(text: str, count: &i32) -> str   // char** not supported
-    // fn UnloadTextLines(text: str, lineCount: i32)     // char** not supported
-    fn TextCopy(dst: str, src: str) -> i32
-    fn TextIsEqual(text1: str, text2: str) -> bool
-    fn TextLength(text: str) -> u32
-    fn TextFormat(text: str, ...) -> str
-    fn TextSubtext(text: str, position: i32, length: i32) -> str
-    fn TextRemoveSpaces(text: str) -> str
-    fn GetTextBetween(text: str, begin: str, end: str) -> str
-    fn TextReplace(text: str, search: str, replacement: str) -> str
-    fn TextReplaceBetween(text: str, begin: str, end: str, replacement: str) -> str
-    fn TextInsert(text: str, insert: str, position: i32) -> str
-    // fn TextJoin(textList: str, count: i32, delimiter: str) -> str  // char** not supported
-    // fn TextSplit(text: str, delimiter: u8, count: &i32) -> str     // char** not supported
-    fn TextAppend(text: str, append: str, position: &i32)
-    fn TextFindIndex(text: str, search: str) -> i32
-    fn TextToUpper(text: str) -> str
-    fn TextToLower(text: str) -> str
-    fn TextToPascal(text: str) -> str
-    fn TextToSnake(text: str) -> str
-    fn TextToCamel(text: str) -> str
-    fn TextToInteger(text: str) -> i32
-    fn TextToFloat(text: str) -> f32
+    fn GetCodepointCount(text: cstr) -> i32
+    fn GetCodepoint(text: cstr, codepointSize: &i32) -> i32
+    fn GetCodepointNext(text: cstr, codepointSize: &i32) -> i32
+    fn GetCodepointPrevious(text: cstr, codepointSize: &i32) -> i32
+    fn CodepointToUTF8(codepoint: i32, utf8Size: &i32) -> cstr
+    // fn LoadTextLines(text: cstr, count: &i32) -> str   // char** not supported
+    // fn UnloadTextLines(text: cstr, lineCount: i32)     // char** not supported
+    fn TextCopy(dst: cstr, src: cstr) -> i32
+    fn TextIsEqual(text1: cstr, text2: cstr) -> bool
+    fn TextLength(text: cstr) -> u32
+    fn TextFormat(text: cstr, ...) -> cstr
+    fn TextSubtext(text: cstr, position: i32, length: i32) -> cstr
+    fn TextRemoveSpaces(text: cstr) -> cstr
+    fn GetTextBetween(text: cstr, begin: cstr, end: cstr) -> cstr
+    fn TextReplace(text: cstr, search: cstr, replacement: cstr) -> cstr
+    fn TextReplaceBetween(text: cstr, begin: cstr, end: cstr, replacement: cstr) -> cstr
+    fn TextInsert(text: cstr, insert: cstr, position: i32) -> cstr
+    // fn TextJoin(textList: cstr, count: i32, delimiter: cstr) -> str  // char** not supported
+    // fn TextSplit(text: cstr, delimiter: u8, count: &i32) -> str     // char** not supported
+    fn TextAppend(text: cstr, append: cstr, position: &i32)
+    fn TextFindIndex(text: cstr, search: cstr) -> i32
+    fn TextToUpper(text: cstr) -> cstr
+    fn TextToLower(text: cstr) -> cstr
+    fn TextToPascal(text: cstr) -> cstr
+    fn TextToSnake(text: cstr) -> cstr
+    fn TextToCamel(text: cstr) -> cstr
+    fn TextToInteger(text: cstr) -> i32
+    fn TextToFloat(text: cstr) -> f32
 
     // === 3D SHAPES ===
     fn DrawLine3D(startPos: Vector3, endPos: Vector3, color: Color)
@@ -812,7 +812,7 @@ external "raylib" {
     fn DrawGrid(slices: i32, spacing: f32)
 
     // === MODELS ===
-    fn LoadModel(fileName: str) -> Model
+    fn LoadModel(fileName: cstr) -> Model
     fn LoadModelFromMesh(mesh: Mesh) -> Model
     fn IsModelValid(model: Model) -> bool
     fn UnloadModel(model: Model)
@@ -828,14 +828,14 @@ external "raylib" {
     fn DrawBillboardRec(camera: Camera3D, texture: Texture, source: Rectangle, position: Vector3, size: Vector2, tint: Color)
     fn DrawBillboardPro(camera: Camera3D, texture: Texture, source: Rectangle, position: Vector3, up: Vector3, size: Vector2, origin: Vector2, rotation: f32, tint: Color)
     fn UploadMesh(mesh: &Mesh, dynamic: bool)
-    fn UpdateMeshBuffer(mesh: Mesh, index: i32, data: str, dataSize: i32, offset: i32)
+    fn UpdateMeshBuffer(mesh: Mesh, index: i32, data: cstr, dataSize: i32, offset: i32)
     fn UnloadMesh(mesh: Mesh)
     fn DrawMesh(mesh: Mesh, material: Material, transform: Matrix)
     fn DrawMeshInstanced(mesh: Mesh, material: Material, transforms: &Matrix, instances: i32)
     fn GetMeshBoundingBox(mesh: Mesh) -> BoundingBox
     fn GenMeshTangents(mesh: &Mesh)
-    fn ExportMesh(mesh: Mesh, fileName: str) -> bool
-    fn ExportMeshAsCode(mesh: Mesh, fileName: str) -> bool
+    fn ExportMesh(mesh: Mesh, fileName: cstr) -> bool
+    fn ExportMeshAsCode(mesh: Mesh, fileName: cstr) -> bool
     fn GenMeshPoly(sides: i32, radius: f32) -> Mesh
     fn GenMeshPlane(width: f32, length: f32, resX: i32, resZ: i32) -> Mesh
     fn GenMeshCube(width: f32, height: f32, length: f32) -> Mesh
@@ -847,13 +847,13 @@ external "raylib" {
     fn GenMeshKnot(radius: f32, size: f32, radSeg: i32, sides: i32) -> Mesh
     fn GenMeshHeightmap(heightmap: Image, size: Vector3) -> Mesh
     fn GenMeshCubicmap(cubicmap: Image, cubeSize: Vector3) -> Mesh
-    fn LoadMaterials(fileName: str, materialCount: &i32) -> &Material
+    fn LoadMaterials(fileName: cstr, materialCount: &i32) -> &Material
     fn LoadMaterialDefault() -> Material
     fn IsMaterialValid(material: Material) -> bool
     fn UnloadMaterial(material: Material)
     fn SetMaterialTexture(material: &Material, mapType: i32, texture: Texture)
     fn SetModelMeshMaterial(model: &Model, meshId: i32, materialId: i32)
-    fn LoadModelAnimations(fileName: str, animCount: &i32) -> &ModelAnimation
+    fn LoadModelAnimations(fileName: cstr, animCount: &i32) -> &ModelAnimation
     fn UpdateModelAnimation(model: Model, anim: ModelAnimation, frame: i32)
     fn UpdateModelAnimationEx(model: Model, animA: ModelAnimation, frameA: i32, animB: ModelAnimation, frameB: i32, blend: f32)
     fn UnloadModelAnimations(animations: &ModelAnimation, animCount: i32)
@@ -873,19 +873,19 @@ external "raylib" {
     fn IsAudioDeviceReady() -> bool
     fn SetMasterVolume(volume: f32)
     fn GetMasterVolume() -> f32
-    fn LoadWave(fileName: str) -> Wave
-    fn LoadWaveFromMemory(fileType: str, fileData: &u8, dataSize: i32) -> Wave
+    fn LoadWave(fileName: cstr) -> Wave
+    fn LoadWaveFromMemory(fileType: cstr, fileData: &u8, dataSize: i32) -> Wave
     fn IsWaveValid(wave: Wave) -> bool
-    fn LoadSound(fileName: str) -> Sound
+    fn LoadSound(fileName: cstr) -> Sound
     fn LoadSoundFromWave(wave: Wave) -> Sound
     fn LoadSoundAlias(source: Sound) -> Sound
     fn IsSoundValid(sound: Sound) -> bool
-    fn UpdateSound(sound: Sound, data: str, sampleCount: i32)
+    fn UpdateSound(sound: Sound, data: cstr, sampleCount: i32)
     fn UnloadWave(wave: Wave)
     fn UnloadSound(sound: Sound)
     fn UnloadSoundAlias(alias: Sound)
-    fn ExportWave(wave: Wave, fileName: str) -> bool
-    fn ExportWaveAsCode(wave: Wave, fileName: str) -> bool
+    fn ExportWave(wave: Wave, fileName: cstr) -> bool
+    fn ExportWaveAsCode(wave: Wave, fileName: cstr) -> bool
     fn PlaySound(sound: Sound)
     fn StopSound(sound: Sound)
     fn PauseSound(sound: Sound)
@@ -899,8 +899,8 @@ external "raylib" {
     fn WaveFormat(wave: &Wave, sampleRate: i32, sampleSize: i32, channels: i32)
     fn LoadWaveSamples(wave: Wave) -> &f32
     fn UnloadWaveSamples(samples: &f32)
-    fn LoadMusicStream(fileName: str) -> Music
-    fn LoadMusicStreamFromMemory(fileType: str, data: &u8, dataSize: i32) -> Music
+    fn LoadMusicStream(fileName: cstr) -> Music
+    fn LoadMusicStreamFromMemory(fileType: cstr, data: &u8, dataSize: i32) -> Music
     fn IsMusicValid(music: Music) -> bool
     fn UnloadMusicStream(music: Music)
     fn PlayMusicStream(music: Music)
@@ -918,7 +918,7 @@ external "raylib" {
     fn LoadAudioStream(sampleRate: u32, sampleSize: u32, channels: u32) -> AudioStream
     fn IsAudioStreamValid(stream: AudioStream) -> bool
     fn UnloadAudioStream(stream: AudioStream)
-    fn UpdateAudioStream(stream: AudioStream, data: str, frameCount: i32)
+    fn UpdateAudioStream(stream: AudioStream, data: cstr, frameCount: i32)
     fn IsAudioStreamProcessed(stream: AudioStream) -> bool
     fn PlayAudioStream(stream: AudioStream)
     fn PauseAudioStream(stream: AudioStream)

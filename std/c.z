@@ -1,8 +1,8 @@
 external "c" {
-    fn printf(format: str, ...) -> i32
-    fn fopen(filename: str, mode: str) -> &FILE
+    fn printf(format: cstr, ...) -> i32
+    fn fopen(filename: cstr, mode: cstr) -> &FILE
     fn fputc(char: i32, file: &FILE) -> i32
-    fn fputs(string: str, file: &FILE) -> u64
+    fn fputs(string: cstr, file: &FILE) -> u64
     fn fclose(file: &FILE) -> u64
     fn random() -> i64
 }

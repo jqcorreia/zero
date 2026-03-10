@@ -43,7 +43,7 @@ resolve_types :: proc(node: ^Ast_Node) {
 				resolved_type = f64_sym.type
 			}
 		} else {
-			var_type := resolve_type_expr(&data.type_expr, node.scope)
+			var_type := resolve_type_expr(&data.type_expr, node.scope, node.span)
 			resolved_type = var_type
 		}
 
@@ -70,14 +70,14 @@ resolve_types :: proc(node: ^Ast_Node) {
 
 		data.symbol.type = type_sym.type
 		for &field, idx in data.fields {
-			type_sym.type.fields[idx].type = resolve_type_expr(&field.type_expr, node.scope)
+			type_sym.type.fields[idx].type = resolve_type_expr(&field.type_expr, node.scope, node.span)
 		}
 
 	case Ast_Function:
 		for &param in data.params {
-			param.symbol.type = resolve_type_expr(&param.type_expr, node.scope)
+			param.symbol.type = resolve_type_expr(&param.type_expr, node.scope, node.span)
 		}
-		data.symbol.type = resolve_type_expr(&data.ret_type_expr, node.scope)
+		data.symbol.type = resolve_type_expr(&data.ret_type_expr, node.scope, node.span)
 
 		if !data.external {
 			resolve_block_types(data.body)
@@ -147,12 +147,12 @@ resolve_expr_type :: proc(expr: ^Expr, scope: ^Scope, span: Span) -> ^Type {
 		return sym.type
 
 	case Expr_String_Literal:
-		sym, _ := resolve_symbol(scope, "str")
+		sym, _ := resolve_symbol(scope, "cstr")
 		expr.type = sym.type
 		return sym.type
 
 	case Expr_Struct_Literal:
-		type := resolve_type_expr(&e.type_expr, scope)
+		type := resolve_type_expr(&e.type_expr, scope, span)
 		if type == &error_type {
 			expr.type = &error_type
 			return &error_type
@@ -325,7 +325,7 @@ resolve_expr_type :: proc(expr: ^Expr, scope: ^Scope, span: Span) -> ^Type {
 		decl := sym.decl.data.(Ast_Function)
 		if sym.type == nil {
 			// Not resolved yet, do it here
-			type := resolve_type_expr(&decl.ret_type_expr, scope)
+			type := resolve_type_expr(&decl.ret_type_expr, scope, span)
 			e.callee.type = type
 			sym.type = type
 		} else {
@@ -351,7 +351,7 @@ resolve_expr_type :: proc(expr: ^Expr, scope: ^Scope, span: Span) -> ^Type {
 			decl_type := param.symbol.type
 			if decl_type == nil {
 				// Not resolved yet, do it here
-				param_type := resolve_type_expr(&param.type_expr, scope)
+				param_type := resolve_type_expr(&param.type_expr, scope, span)
 				param.symbol.type = param_type
 				decl_type = param_type
 			}

@@ -44,7 +44,7 @@ Type_Kind :: enum {
 	Float16,
 	Float32,
 	Float64,
-	String,
+	CString,
 	Struct,
 	Array,
 	Pointer,
@@ -85,7 +85,7 @@ create_primitive_types :: proc(scope: ^Scope) {
 	create_type(.Float32, "f32", scope, signed = true, numeric_float = true)
 	create_type(.Float64, "f64", scope, signed = true, numeric_float = true)
 
-	create_type(.String, "str", scope)
+	create_type(.CString, "cstr", scope)
 }
 
 type_coercion :: proc(from: ^Type, to: ^Type, scope: ^Scope) -> ^Type {
@@ -159,17 +159,18 @@ set_expr_type :: proc(expr: ^Expr, type: ^Type, scope: ^Scope) {
 	}
 }
 
-resolve_type_expr :: proc(type_expr: ^Type_Expr, scope: ^Scope) -> ^Type {
+resolve_type_expr :: proc(type_expr: ^Type_Expr, scope: ^Scope, span: Span) -> ^Type {
 	switch te in type_expr {
 	case string:
 		sym, ok := resolve_symbol(scope, te)
 		if !ok {
+			error_span(span, "Undefined type '%s'", te)
 			return &error_type
 		}
 		return sym.type
 
 	case Type_Expr_Array:
-		elem_type := resolve_type_expr(te.elem, scope)
+		elem_type := resolve_type_expr(te.elem, scope, span)
 		if elem_type == &error_type {
 			return &error_type
 		}
@@ -181,7 +182,7 @@ resolve_type_expr :: proc(type_expr: ^Type_Expr, scope: ^Scope) -> ^Type {
 		return type
 
 	case Type_Expr_Pointer:
-		pointee_type := resolve_type_expr(te.pointee, scope)
+		pointee_type := resolve_type_expr(te.pointee, scope, span)
 		if pointee_type == &error_type {
 			return &error_type
 		}
