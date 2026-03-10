@@ -82,6 +82,8 @@ fn stamp(grid: &Grid, block: Block) {
 fn rotate_block(block: &Block) {
   temp: [4][4]u8
   limit: i32 = 4
+
+  // Implement rotating formula: new_x = y, new_y = 3 - x
   for y in 0..limit {
       for x in 0..limit {
           temp[x][limit - y - 1] = block.data[y][x]
