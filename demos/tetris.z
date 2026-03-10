@@ -190,6 +190,7 @@ fn main() {
     }
 
     block := new_random_block(grid)
+    next_block := new_random_block(grid)
 
     elapsed_time: f32 = 0.0
 
@@ -268,9 +269,19 @@ fn main() {
             }
         }
 
+        // Draw next block
+        xlimit: i32 = 4
+        for y in 0..xlimit {
+            for x in 0..xlimit {
+                if next_block.data[y][x] == 1 {
+                    DrawRectangle(x * cell_size + 500, y * cell_size + 100, cell_size -2 , cell_size -2, rect_color)
+                }
+            }
+        }
+
 
         // Draw score
-        DrawText(cstr("Score: %d", score), grid.w * cell_size +
+        // DrawText(cstr("Score: %d", score), grid.w * cell_size +
         EndDrawing()
     }
 }
