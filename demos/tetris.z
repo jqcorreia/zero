@@ -79,6 +79,16 @@ fn stamp(grid: &Grid, block: Block) {
     }
 }
 
+fn rotate_block(block: &Block) {
+    limit: i32 = 4
+    for y in 0..limit {
+        for x in 0..limit {
+            cur_value := block.data[y][x]
+            block.data[x][limit - y - 1] = cur_value
+        }
+    }
+}
+
 fn new_random_block(grid: Grid) -> Block {
     x := grid.w / 2
     y := 0
@@ -154,9 +164,12 @@ fn main() {
                     block.y = block.y + 1
                 }
             }
-            // if keypressed != 0 {
-            //     printf("Keypressed: %d\n", keypressed)
-            // }
+            if keypressed == 32 { // space key
+                rotate_block(&block)
+            }
+            if keypressed != 0 {
+                printf("Keypressed: %d\n", keypressed)
+            }
         }
 
         if elapsed_time > 0.5 {
