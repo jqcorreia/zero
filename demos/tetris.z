@@ -96,6 +96,30 @@ fn rotate_block(block: &Block) {
   }
 }
 
+fn remove_full_rows(grid: &Grid) {
+    for y in 0..grid.h {
+        full := true
+        for x in 0..grid.w {
+            if grid.data[y][x] == 0 {
+                full = false
+                break
+            }
+        }
+        if full {
+            // Move all rows above down
+            for yy in 1..=y {
+                for x in 0..grid.w {
+                    grid.data[yy][x] = grid.data[yy - 1][x]
+                }
+            }
+            // Clear top row
+            for x in 0..grid.w {
+                grid.data[0][x] = 0
+            }
+        }
+    }
+}
+
 fn new_random_block(grid: Grid) -> Block {
     x := grid.w / 2
     y := 0
@@ -185,6 +209,7 @@ fn main() {
 
             if !can_move(grid, block.x, block.y + 1, block) {
                 stamp(&grid, block)
+                remove_full_rows(&grid)
                 block = new_random_block(grid)
             } else {
                 block.y = block.y + 1

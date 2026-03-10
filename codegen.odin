@@ -711,9 +711,14 @@ emit_for_loop :: proc(gen: ^Generator, s: ^Ast_For, scope: ^Scope, span: Span) {
 	range := s.range.data.(Expr_Range)
 	iter_type := get_llvm_type(gen, s.symbol.type)
 
+	// Emit start and end once in the entry block so they are available across all BBs
+	// Determine loop direction at runtime: is start <= end?
+	start_val := emit_value(gen, range.start, scope, span)
+	end_val := emit_value(gen, range.end, scope, span)
+	is_forward := BuildICmp(gen.builder, .IntSLE, start_val, end_val, "is_fwd")
+
 	// Store the initial value of the range
 	iter_ptr := build_entry_alloca(gen, iter_type, strings.clone_to_cstring(s.iterator))
-	start_val := emit_value(gen, range.start, scope, span)
 	BuildStore(gen.builder, start_val, iter_ptr)
 	gen.values[s.symbol] = iter_ptr
 
@@ -729,13 +734,17 @@ emit_for_loop :: proc(gen: ^Generator, s: ^Ast_For, scope: ^Scope, span: Span) {
 	// Set the conditional branching at the end to either the loop body or exit the loop
 	PositionBuilderAtEnd(gen.builder, cond_bb)
 	iter_val := BuildLoad2(gen.builder, iter_type, iter_ptr, "iter")
-	end_val := emit_value(gen, range.end, scope, span)
 	cmp: ValueRef
 	if range.inclusive {
-		cmp = BuildICmp(gen.builder, .IntSLE, iter_val, end_val, "cond")
+		fwd_cmp := BuildICmp(gen.builder, .IntSLE, iter_val, end_val, "fwd_cond")
+		bwd_cmp := BuildICmp(gen.builder, .IntSGE, iter_val, end_val, "bwd_cond")
+		cmp = BuildSelect(gen.builder, is_forward, fwd_cmp, bwd_cmp, "cond")
 	} else {
-		cmp = BuildICmp(gen.builder, .IntSLT, iter_val, end_val, "cond")
+		fwd_cmp := BuildICmp(gen.builder, .IntSLT, iter_val, end_val, "fwd_cond")
+		bwd_cmp := BuildICmp(gen.builder, .IntSGT, iter_val, end_val, "bwd_cond")
+		cmp = BuildSelect(gen.builder, is_forward, fwd_cmp, bwd_cmp, "cond")
 	}
+
 	BuildCondBr(gen.builder, cmp, loop_bb, after_bb)
 
 	// Position builder and emit the body of the loop
@@ -747,7 +756,9 @@ emit_for_loop :: proc(gen: ^Generator, s: ^Ast_For, scope: ^Scope, span: Span) {
 	// If not terminated yet, advance iterator and branch to condition block again
 	if GetBasicBlockTerminator(GetInsertBlock(gen.builder)) == nil {
 		cur := BuildLoad2(gen.builder, iter_type, iter_ptr, "iter")
-		next := BuildAdd(gen.builder, cur, ConstInt(iter_type, 1, false), "next")
+		inc := BuildAdd(gen.builder, cur, ConstInt(iter_type, 1, false), "inc")
+		dec := BuildSub(gen.builder, cur, ConstInt(iter_type, 1, false), "dec")
+		next := BuildSelect(gen.builder, is_forward, inc, dec, "next")
 		BuildStore(gen.builder, next, iter_ptr)
 		BuildBr(gen.builder, cond_bb)
 	}
