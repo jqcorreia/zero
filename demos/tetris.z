@@ -249,7 +249,7 @@ fn main() {
         for y in 0..grid.h {
             for x in 0..grid.w {
                 if grid.data[y][x] != 0 {
-                    DrawRectangle(x * cell_size, y * cell_size, cell_size, cell_size, rect_color)
+                    DrawRectangle(x * cell_size, y * cell_size, cell_size - 2, cell_size - 2, rect_color)
                 }
             }
         }
@@ -261,7 +261,7 @@ fn main() {
                 bx := x + block.x
                 by := y + block.y
                 if block.data[y][x] == 1 {
-                    DrawRectangle(bx * cell_size, by * cell_size, cell_size, cell_size, rect_color)
+                    DrawRectangle(bx * cell_size, by * cell_size, cell_size -2 , cell_size -2, rect_color)
                 }
             }
         }
