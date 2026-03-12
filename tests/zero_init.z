@@ -11,7 +11,7 @@ fn main() {
     f: f64
 
     // String zero init
-    msg: str
+    msg: cstr
 
     // Array zero init
     arr: [4]i32
