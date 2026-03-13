@@ -129,6 +129,15 @@ type_coercion :: proc(from: ^Type, to: ^Type, scope: ^Scope) -> ^Type {
 		return from
 	}
 
+	// Any pointer is compatible with cstr (matches C char* semantics)
+	if from.kind == .Pointer && to.kind == .CString {
+		return to
+	}
+
+	if from.kind == .CString && to.kind == .Pointer {
+		return to
+	}
+
 	if from.kind == to.kind {
 		return from
 	}
