@@ -96,7 +96,6 @@ fn rotate_block(block: &Block) {
   }
 }
 
-score: i64 = 0
 
 fn remove_full_rows(grid: &Grid) {
     num_full_rows := 0
@@ -182,6 +181,7 @@ fn new_random_block(grid: Grid) -> Block {
 background_color := Color{ r = 55, g = 55, b = 55, a = 255 }
 rect_color := Color { r = 200, b = 20, g = 0, a = 255 }
 border_color := Color { r = 25, g = 150, b = 0, a = 255 }
+score: i64 = 0
 
 fn main() {
     score_buf: [64]u8

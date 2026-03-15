@@ -1,6 +1,7 @@
 package main
 
 import "core:container/queue"
+import "core:os"
 
 Compiler :: struct {
 	current_filepath:     string, // Unused for now
@@ -39,6 +40,12 @@ compiler_reset :: proc() {
 compile :: proc(source: string) -> (stmts: []^Ast_Node, ok: bool) {
 	compiler_reset()
 
+	// Auto-include the runtime
+	runtime_source := os.read_entire_file("runtime/start.z") or_else panic("Runtime not found")
+	runtime_tokens := lex(string(runtime_source))
+	runtime_parser := Parser{tokens = runtime_tokens}
+	runtime_stmts := parse_program(&runtime_parser)
+
 	tokens := lex(source)
 	when ODIN_DEBUG {
 		tokens_print(tokens)
@@ -47,7 +54,14 @@ compile :: proc(source: string) -> (stmts: []^Ast_Node, ok: bool) {
 	parser := Parser {
 		tokens = tokens,
 	}
-	stmts = parse_program(&parser)
+	user_stmts := parse_program(&parser)
+
+	// Runtime first, then user code
+	all_stmts: [dynamic]^Ast_Node
+	for s in runtime_stmts do append(&all_stmts, s)
+	for s in user_stmts do append(&all_stmts, s)
+	stmts = order_statements(all_stmts[:])
+
 	when ODIN_DEBUG {
 		for stmt in stmts {
 			statement_print(stmt)
@@ -69,6 +83,34 @@ build :: proc(source: string) -> (ok: bool) {
 	}
 	generate(stmts)
 	return
+}
+
+// Order top-level statements by processing priority:
+// 1. Imports and external blocks (types + external function signatures)
+// 2. Struct declarations
+// 3. Global variable declarations
+// 4. Functions
+stmt_priority :: proc(node: ^Ast_Node) -> int {
+	#partial switch &data in node.data {
+	case Ast_Import:      return 0
+	case Ast_Block:       return 1
+	case Ast_Struct_Decl: return 2
+	case Ast_Var_Decl:    return 3
+	case Ast_Function:    return 4
+	}
+	return 5
+}
+
+order_statements :: proc(stmts: []^Ast_Node) -> []^Ast_Node {
+	ordered: [dynamic]^Ast_Node
+	for priority in 0..=5 {
+		for s in stmts {
+			if stmt_priority(s) == priority {
+				append(&ordered, s)
+			}
+		}
+	}
+	return ordered[:]
 }
 
 setup_native_types :: proc(compiler: ^Compiler) {

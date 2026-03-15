@@ -510,7 +510,16 @@ emit_function_decl :: proc(gen: ^Generator, s: ^Ast_Function, scope: ^Scope, spa
 	}
 
 	sym := s.symbol
-	fn := AddFunction(gen.module, strings.clone_to_cstring(s.name), fn_type)
+	// The runtime defines _zero_main() which becomes "main" in LLVM IR — the
+	// entry point that libc's crt calls. The user's main() is renamed to
+	// _user_main so _zero_main can call it.
+	fn_name := s.name
+	if s.name == "main" && !s.external {
+		fn_name = "_user_main"
+	} else if s.name == "_zero_main" {
+		fn_name = "main"
+	}
+	fn := AddFunction(gen.module, strings.clone_to_cstring(fn_name), fn_type)
 
 	gen.values[sym] = fn
 	gen.types[sym] = fn_type

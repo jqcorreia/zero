@@ -1,0 +1,40 @@
+// Runtime entry point for the zero language.
+//
+// Currently we rely on libc's crt (crt1.o) to provide _start, which calls
+// __libc_start_main, which initializes glibc internals and then calls main().
+// We define _zero_main() here which codegen renames to "main" — the entry
+// point that libc's crt calls. The user's main() is renamed to _user_main
+// in codegen so there's no conflict.
+//
+// Why we can't define _start ourselves (yet):
+//   glibc's printf, malloc, and other functions require internal initialization
+//   that only happens through __libc_start_main. Defining our own _start and
+//   calling main() directly causes crashes (e.g. printf with %f segfaults
+//   because float formatting state is never initialized).
+//
+// Future work to own _start:
+//   1. Implement function pointer types so we can call __libc_start_main from
+//      our own _start (it takes a function pointer to main)
+//   2. Or, replace libc entirely with raw syscalls:
+//      - write(2) for I/O
+//      - mmap(2) for allocation
+//      - rt_sigaction(2) for signal handling
+//      - Implement our own printf/formatting in zero
+//   3. At that point, link with just: ld -o out calc.o (no -lc at all)
+
+external "c" {
+    fn exit(code: i32)
+    // fn signal(signum: i32, handler: &u8) -> &u8
+    // fn write(fd: i32, buf: cstr, count: u64) -> i64
+}
+
+// fn segfault_handler(sig: i32) {
+//     write(2, "Segmentation fault\n", 19)
+//     exit(139)
+// }
+
+fn _zero_main() {
+    // signal(11, &segfault_handler)
+    main()
+    exit(0)
+}

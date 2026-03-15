@@ -45,17 +45,13 @@ main :: proc() {
 		fmt.println("--- Compilation done in", time.diff(start_time, time.now()), "---")
 	}
 
-	compiler_command := "cc"
-	compiler_flags := "-o out calc.o" // Need to change all this 'out' and 'calc.o'
 	linker_libs := strings.builder_make()
 
 	for lib in compiler.external_linker_libs {
 		fmt.sbprintf(&linker_libs, "-l%s ", lib)
 	}
 	build_command := fmt.tprintf(
-		"%s %s %s",
-		compiler_command,
-		compiler_flags,
+		"cc -o out calc.o %s",
 		strings.to_string(linker_libs),
 	)
 	// Link and run
